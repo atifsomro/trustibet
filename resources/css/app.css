@@ -1,0 +1,233 @@
+@import "tailwindcss";
+
+   /* Chrome Autofill Fix */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+
+    -webkit-box-shadow: 0 0 0px 1000px #020617 inset !important;
+    -webkit-text-fill-color: #ffffff !important;
+    caret-color: #ffffff;
+    transition: background-color 99999s ease-in-out 0s;
+
+}
+
+@theme {
+    --color-brand-dark: #020617;
+    --color-brand-surface: #0f172a;
+    --color-brand-light: #ffffff;
+    --color-scrach-lock: #f7a501;
+    --color-brand-border: #1e293b;
+    --color-brand-primary: #0284c7;
+    --color-brand-primary-hover: #0ea5e9;
+    --color-brand-accent: #38bdf8;
+}
+
+@utility container {
+    width: 100%;
+    margin-inline: auto;
+    padding-inline: 12px;
+
+    @media (width >=1400px) {
+        max-width: 1320px;
+    }
+}
+
+@layer base {
+
+    body {
+        @apply bg-brand-dark text-white antialiased;
+        font-family: "Inter", sans-serif;
+        @apply text-base;
+        font-weight: 400;
+        line-height: 1.6;
+    }
+
+    h1 {
+        @apply text-4xl md:text-5xl xl:text-6xl;
+        font-weight: 800;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+    }
+
+    h2 {
+        @apply text-2xl md:text-4xl xl:text-5xl;
+        font-weight: 800;
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+    }
+
+    h3 {
+        @apply text-lg md:text-xl xl:text-2xl;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    h4 {
+        @apply text-base md:text-lg xl:text-xl;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    h5 {
+        @apply text-sm md:text-base xl:text-lg;
+        font-weight: 600;
+        line-height: 1.35;
+    }
+
+    p {
+        @apply text-sm md:text-base xl:text-lg text-gray-300;
+        font-weight: 400;
+        line-height: 1.8;
+    }
+
+    span {
+        @apply text-sm md:text-base xl:text-base;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    a {
+        @apply text-sm xl:text-base transition-colors duration-300;
+        font-weight: 500;
+        line-height: 1.5;
+        text-decoration: none;
+    }
+
+    button {
+        @apply text-sm md:text-base xl:text-base transition-colors duration-300 cursor-pointer;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    input,
+    textarea,
+    select {
+        @apply text-sm md:text-base xl:text-base;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    small {
+        @apply text-xs md:text-sm;
+        line-height: 1.4;
+    }
+
+    strong {
+        font-weight: 700;
+    }
+
+}
+
+@layer components {
+
+    .btn {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-3 lg:px-5 transition-colors duration-300;
+    }
+
+    .btn-primary {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-3 lg:px-5 bg-brand-primary hover:bg-brand-primary-hover transition-colors duration-300;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center justify-center rounded-lg px-4 py-3 lg:px-5 border border-brand-border hover:border-brand-primary hover:bg-brand-surface transition-colors duration-300;
+    }
+
+}
+
+@keyframes diceRoll {
+
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    20% {
+        transform: rotate(90deg) scale(.9);
+    }
+
+    40% {
+        transform: rotate(180deg) scale(1.15);
+    }
+
+    60% {
+        transform: rotate(270deg) scale(.9);
+    }
+
+    80% {
+        transform: rotate(360deg) scale(1.15);
+    }
+
+    100% {
+        transform: rotate(540deg) scale(1);
+    }
+
+}
+
+.dice-rolling {
+
+    animation: diceRoll .8s ease;
+
+}
+
+/* ===========================
+   WHEEL GAME
+=========================== */
+.wheel-pointer {
+    width: 0;
+    height: 0;
+    border-left: 18px solid transparent;
+    border-right: 18px solid transparent;
+    border-top: 32px solid #0284c7;
+    z-index: 5;
+    filter: drop-shadow(0 0 8px rgba(0, 0, 0, .4));
+}
+
+#wheel {
+    transition: transform 6s cubic-bezier(.17, .67, .18, 1);
+    user-select: none;
+}
+
+.chance-package.active {
+    border-color: #0284c7;
+    background: #0284c720;
+}
+
+#wheelResult {
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+@keyframes timerPulse {
+
+    0% {
+
+        transform: scale(1);
+
+    }
+
+    50% {
+
+        transform: scale(1.08);
+
+    }
+
+    100% {
+
+        transform: scale(1);
+
+    }
+
+}
+
+.countdown h2{
+
+    animation: timerPulse 1s infinite;
+
+}
