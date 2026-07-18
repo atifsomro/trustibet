@@ -1,40 +1,39 @@
-<section class="py-8 md:py-10">
-    <div class="container">
-        <div class="wheel_game_wrapper">
-            <div class="grid lg:grid-cols-12 gap-6">
-                {{-- LEFT --}}
-                <div class="lg:col-span-8">
-                    <div class="bg-brand-surface border border-brand-border rounded-2xl p-6">
-                        <div class="flex items-center justify-between mb-8">
-                            <div>
-                                <h3>Lucky Wheel</h3>
-                                <p class="text-gray-400 mt-2">
-                                    Spin the wheel and win exciting rewards.
-                                </p>
-                            </div>
-                            <span class="px-4 py-2 rounded-xl bg-brand-primary text-white">
-                                Live Game
-                            </span>
+<div class="lucky-wheel">
+    <div class="wheel_game_wrapper">
+        <div class="grid lg:grid-cols-12 gap-6">
+            {{-- LEFT --}}
+            <div class="lg:col-span-8 order-2 lg:order-1">
+                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
+                    <div class="flex items-center justify-between mb-8 flex-wrap gap-2">
+                        <div class="text-center sm:text-start">
+                            <h3>Lucky Wheel</h3>
+                            <p class="text-gray-400 mt-2">
+                                Spin the wheel and win exciting rewards.
+                            </p>
                         </div>
-                        <div class="flex flex-col items-center">
-                            {{-- Pointer --}}
-                            <div class="relative z-20">
-                                <div
-                                    class="w-0 h-0
+                        <span class="text-green-500 text-center sm:text-start animate-pulse">
+                            Live Game
+                        </span>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        {{-- Pointer --}}
+                        <div class="relative z-20">
+                            <div
+                                class="w-0 h-0
                                     border-l-18
                                     border-r-18
                                     border-t-32
                                     border-l-transparent
                                     border-r-transparent
                                     border-t-brand-primary">
-                                </div>
                             </div>
-                            {{-- Wheel --}}
-                            <div class="relative -mt-2">
-                                <div class="relative w-105 h-105">
-                                    {{-- Pointer --}}
-                                    <div
-                                        class="absolute left-1/2 -translate-x-1/2 -top-4 z-20
+                        </div>
+                        {{-- Wheel --}}
+                        <div class="relative -mt-2">
+                            <div class="relative w-50 sm:w-80 md:w-96 lg:w-105 aspect-square">
+                                {{-- Pointer --}}
+                                <div
+                                    class="absolute left-1/2 -translate-x-1/2 -top-4 z-20
                                         w-0 h-0
                                         border-l-16
                                         border-r-16
@@ -42,111 +41,104 @@
                                         border-l-transparent
                                         border-r-transparent
                                         border-t-red-500">
-                                    </div>
-                                    {{-- Wheel --}}
-                                    <svg id="wheel" width="420" height="420" viewBox="0 0 420 420"
-                                        class="duration-6000">
-                                        <g id="wheelGroup">
-                                        </g>
-                                    </svg>
-                                    <div
-                                        class="absolute inset-0 rounded-full border-8 border-brand-primary pointer-events-none">
-                                    </div>
+                                </div>
+                                {{-- Wheel --}}
+                                <svg id="wheel" viewBox="0 0 420 420" class="duration-6000">
+                                    <g id="wheelGroup">
+                                    </g>
+                                </svg>
+                                <div
+                                    class="absolute inset-0 rounded-full border-8 border-brand-primary pointer-events-none">
                                 </div>
                             </div>
-                            <button id="spinWheel" class="btn-primary mt-8 min-w-45">
-                                Spin Now
-                            </button>
                         </div>
+                        <button id="spinWheel" class="btn-primary mt-8 min-w-45">
+                            Spin Now
+                        </button>
                     </div>
                 </div>
-                {{-- RIGHT --}}
-                <div class="lg:col-span-4">
-                    <div class="bg-brand-surface border border-brand-border rounded-2xl p-6">
-                        <h3>
-                            Game Panel
-                        </h3>
-                        {{-- Spins --}}
-                        <div class="mt-6">
-                            <label>
-                                Spins
-                            </label>
-                            <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-4 space-y-3">
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">
-                                        Free Spins
-                                    </span>
-                                    <strong id="freeSpins">
-                                        2
-                                    </strong>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span class="text-gray-400">
-                                        Purchased Spins
-                                    </span>
-                                    <strong id="paidSpins">
-                                        0
-                                    </strong>
-                                </div>
+            </div>
+            {{-- RIGHT --}}
+            <div class="lg:col-span-4 order-1 lg:order-2">
+                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
+                    <h3 class="text-center sm:text-start">
+                        Game Panel
+                    </h3>
+                    {{-- Spins --}}
+                    <div class="mt-6">
+                        <label>
+                            Spins
+                        </label>
+                        <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-4 space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">
+                                    Free Spins
+                                </span>
+                                <strong id="freeSpins">
+                                    2
+                                </strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">
+                                    Purchased Spins
+                                </span>
+                                <strong id="paidSpins">
+                                    0
+                                </strong>
                             </div>
                         </div>
-                        {{-- Result --}}
-                        <div id="wheelResult"
-                            class="mt-6 rounded-xl border border-brand-border bg-brand-dark p-5 text-center">
-                            Spin Now To Play
+                    </div>
+                    {{-- Deposit --}}
+                    <div class="mt-6">
+                        <div class="text-[12px] sm:text:sm md:text-base text-center sm:text-start">
+                            Deposit To Get More Spins
                         </div>
-                        {{-- Deposit --}}
-                        <div class="mt-6">
-                            <label>
-                                Deposit To Get More Spins
-                            </label>
-                            <div class="grid grid-cols-2 gap-3 mt-3">
-                                <a href="#"
-                                    class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-4 hover:border-brand-primary"
-                                    data-spin="1">
-                                    <h4>$1</h4>
-                                    <p class="text-sm text-gray-400">
-                                        1 Spin
-                                    </p>
-                                </a>
-                                <a href="#"
-                                    class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-4 hover:border-brand-primary"
-                                    data-spin="6">
-                                    <h4>$5</h4>
-                                    <p class="text-sm text-gray-400">
-                                        6 Spins
-                                    </p>
-                                </a>
-                                <a href="#"
-                                    class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-4 hover:border-brand-primary"
-                                    data-spin="15">
-                                    <h4>$10</h4>
-                                    <p class="text-sm text-gray-400">
-                                        15 Spins
-                                    </p>
-                                </a>
-                                <a href="#"
-                                    class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-4 hover:border-brand-primary"
-                                    data-spin="45">
-                                    <h4>$25</h4>
-                                    <p class="text-sm text-gray-400">
-                                        45 Spins
-                                    </p>
-                                </a>
-                            </div>
+                        <div class="grid grid-cols-2 gap-3 mt-3">
+                            <a href="#"
+                                class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-2 sm:p-4 hover:border-brand-primary"
+                                data-spin="1">
+                                <h4>$1</h4>
+                                <p class="text-[10px] sm:text-sm text-gray-400">
+                                    1 Spin
+                                </p>
+                            </a>
+                            <a href="#"
+                                class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-2 sm:p-4 hover:border-brand-primary"
+                                data-spin="6">
+                                <h4>$5</h4>
+                                <p class="text-[10px] sm:text-sm text-gray-400">
+                                    6 Spins
+                                </p>
+                            </a>
+                            <a href="#"
+                                class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-2 sm:p-4 hover:border-brand-primary"
+                                data-spin="15">
+                                <h4>$10</h4>
+                                <p class="text-[10px] sm:text-sm text-gray-400">
+                                    15 Spins
+                                </p>
+                            </a>
+                            <a href="#"
+                                class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-2 sm:p-4 hover:border-brand-primary"
+                                data-spin="45">
+                                <h4>$25</h4>
+                                <p class="text-[10px] sm:text-sm text-gray-400">
+                                    45 Spins
+                                </p>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</section>
+</div>
 
 
 
 {{-- WIN POPUP --}}
 <div id="winPopup" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
-    <div class="bg-brand-surface border border-brand-border rounded-2xl p-8 w-[500px] text-center">
+    <div class="bg-brand-surface border border-brand-border rounded-2xl p-4 sm:p-8 w-[280px] sm:w-[320px] md:w-[380px] lg:w-[420px] text-center">
         <div class="text-6xl mb-5">
             🎉
         </div>

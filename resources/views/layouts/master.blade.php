@@ -6,7 +6,7 @@
     @include('partials.head')
 
     {{-- Page Specific CSS --}}
-    @vite(['resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/notifications.js'])
     @stack('styles')
 
 </head>
@@ -20,13 +20,9 @@
     </main>
 
     @include('partials.footer')
-    @include('partials.back-to-top')
+    @include('components.back-to-top')
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
-    {{-- Global JS --}}
-    @vite(['resources/js/app.js'])
-    @vite(['resources/js/notifications.js'])
 
     {{-- Page Specific JS --}}
     @stack('scripts')
@@ -48,6 +44,7 @@
             });
         });
     </script>
+    @include('components.support')
 </body>
 
 </html>

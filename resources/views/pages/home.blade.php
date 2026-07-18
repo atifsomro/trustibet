@@ -10,6 +10,7 @@
     @include('sections.why-choose')
     @include('sections.promotions')
     @include('sections.ready-to-win')
+    @include('sections.live-score')
     @include('sections.contact')
 
 @endsection

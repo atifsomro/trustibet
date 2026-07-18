@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@source "../views";
+@source "../js";
    /* Chrome Autofill Fix */
 
 input:-webkit-autofill,
@@ -135,6 +137,12 @@ select:-webkit-autofill {
 
     .btn-secondary {
         @apply inline-flex items-center justify-center rounded-lg px-4 py-3 lg:px-5 border border-brand-border hover:border-brand-primary hover:bg-brand-surface transition-colors duration-300;
+    }
+    .btn-orange {
+        @apply inline-flex items-center justify-center w-full cursor-pointer rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 px-4 md:px-10 py-2 sm:py-4 text-center font-semibold text-white shadow-lg shadow-green-500/20 transition duration-300 hover:scale-[1.02] hover:shadow-orange-500/30;
+    }
+    .btn-green {
+        @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-green-500 to-brand-primary px-4 md:px-10 p-2 sm:py-4 font-semibold text-white transition duration-300 hover:scale-105 hover:shadow-[0_0_35px_rgba(34,197,94,.35)];
     }
 
 }

@@ -6,9 +6,9 @@
                 <div class="rounded-3xl border border-brand-border bg-brand-surface text-center">
                     <div class="relative inline-block">
                         <img id="profilePreview" src="{{ asset('images/profile/avatar.png') }}" alt="Profile"
-                            class="w-30 h-30 rounded-full object-cover border-4 border-brand-primary">
+                            class="w-20 h-20 md:w-30 md:h-30 rounded-full object-cover border-4 border-brand-primary">
                         <label for="profileImage"
-                            class="absolute bottom-2 right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-brand-primary shadow-lg transition hover:scale-110">
+                            class="absolute bottom-2 right-2 flex h-6 w-6 md:h-10 md:w-10 cursor-pointer items-center justify-center rounded-full bg-brand-primary shadow-lg transition hover:scale-110">
                             <i class="fa-solid fa-camera text-white"></i>
                         </label>
                         <input type="file" id="profileImage" accept="image/png,image/jpeg,image/webp" class="hidden">
@@ -56,7 +56,7 @@
             </div>
             {{-- Personal Information --}}
             <div class="xl:col-span-8">
-                <div class="rounded-3xl border border-brand-border bg-brand-surface p-8">
+                <div class="rounded-3xl border border-brand-border bg-brand-surface p-4 md:p-8">
                     <div class="mb-8">
                         <h3>Personal Information</h3>
                         <p class="mt-2">

@@ -475,3 +475,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 // ===== WINNER MODAL POPUP JS END =====
+// ===== HERO COUNTERS JS START =====
+document.addEventListener("DOMContentLoaded", () => {
+    const members = document.getElementById("activeMembers");
+    const rewards = document.getElementById("rewardsPaid");
+    if (members) {
+        let value = parseInt(localStorage.getItem("activeMembers")) || 25000;
+        members.textContent = (value / 1000).toFixed(1) + "K+";
+        setInterval(() => {
+            value += Math.floor(Math.random() * 80) + 20;
+            members.textContent = (value / 1000).toFixed(1) + "K+";
+            localStorage.setItem("activeMembers", value);
+        }, 3000);
+    }
+    if (rewards) {
+        let value = parseInt(localStorage.getItem("rewardsPaid")) || 2000000;
+        rewards.textContent = "$" + (value / 1000000).toFixed(2) + "M+";
+        setInterval(() => {
+            value += Math.floor(Math.random() * 5000) + 1000;
+            rewards.textContent = "$" + (value / 1000000).toFixed(2) + "M+";
+            localStorage.setItem("rewardsPaid", value);
+        }, 4000);
+    }
+});
+// ===== HERO COUNTERS JS END =====

@@ -10,230 +10,155 @@ unlockBetting();
 resetRound();
 Usko tumhari UI ka ek bhi element manually update nahi karna padega. --}}
 
-<section class="py-10">
-    <div class="container">
-        <div class="grid lg:grid-cols-12 gap-6">
-            {{-- LEFT --}}
-            <div class="lg:col-span-8">
-                <div class="bg-brand-surface border border-brand-border rounded-3xl p-6 shadow-2xl">
-
-                    <div class="flex items-center justify-between">
-
-                        <div>
-
-                            <h2 class="text-3xl font-bold">
-                                Color Trading
-                            </h2>
-
-                            <p class="text-gray-400 mt-2">
-                                Predict the winning color before countdown ends.
-                            </p>
-
-                        </div>
-
-                        <span class="bg-green-500 px-5 py-2 rounded-full text-sm font-semibold animate-pulse">
-
-                            LIVE
-
-                        </span>
-
-                    </div>
-
-                    {{-- TIMER --}}
-                    <div class="flex justify-center mt-10">
-
-                        <div
-                            class="relative w-56 h-56 rounded-full border-[12px] border-brand-border flex items-center justify-center">
-
-                            <div class="text-center">
-
-                                <p class="text-gray-400">
-                                    Time Left
-                                </p>
-
-                                <h1 id="timer" class="text-6xl font-black mt-2">
-
-                                    10
-
-                                </h1>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {{-- COLORS --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-12">
-
-                        <button class="color-btn bg-green-500 rounded-2xl h-20 font-bold" data-color="green">
-
-                            Green
-
-                        </button>
-
-                        <button class="color-btn bg-red-500 rounded-2xl h-20 font-bold" data-color="red">
-
-                            Red
-
-                        </button>
-
-                        <button class="color-btn bg-blue-500 rounded-2xl h-20 font-bold" data-color="blue">
-
-                            Blue
-
-                        </button>
-
-                        <button class="color-btn bg-yellow-500 rounded-2xl h-20 font-bold text-black"
-                            data-color="yellow">
-
-                            Yellow
-
-                        </button>
-
-                        <button class="color-btn bg-orange-500 rounded-2xl h-20 font-bold" data-color="orange">
-
-                            Orange
-
-                        </button>
-
-                        <button class="color-btn bg-purple-600 rounded-2xl h-20 font-bold" data-color="purple">
-
-                            Purple
-
-                        </button>
-
-                        <button class="color-btn bg-pink-500 rounded-2xl h-20 font-bold" data-color="pink">
-
-                            Pink
-
-                        </button>
-
-                        <button class="color-btn bg-cyan-500 rounded-2xl h-20 font-bold" data-color="cyan">
-
-                            Cyan
-
-                        </button>
-
-                        <button class="color-btn bg-white rounded-2xl h-20 font-bold text-black" data-color="white">
-
-                            White
-
-                        </button>
-
-                        <button class="color-btn bg-black border border-gray-500 rounded-2xl h-20 font-bold"
-                            data-color="black">
-
-                            Black
-
-                        </button>
-
-                    </div>
-
-                    {{-- BET CHIPS --}}
-                    <div class="mt-10">
-
-                        <label class="font-semibold">
-                            Quick Bet
-                        </label>
-
-                        <div class="grid grid-cols-5 gap-3 mt-4">
-
-                            <button class="chip-btn">10</button>
-                            <button class="chip-btn">50</button>
-                            <button class="chip-btn">100</button>
-                            <button class="chip-btn">500</button>
-                            <button class="chip-btn">1000</button>
-
-                        </div>
-
-                    </div>
-
-                    {{-- INPUT --}}
-                    <div class="mt-8">
-
-                        <input id="betAmount" type="number" placeholder="Enter Bet Amount"
-                            class="w-full h-14 rounded-2xl bg-brand-dark border border-brand-border px-5">
-
-                    </div>
-
-                    <button id="placeBet" class="btn-primary w-full mt-6 h-14 rounded-2xl text-lg">
-
-                        Place Bet
-
-                    </button>
-
-                </div>
-
-            </div>
-
-            {{-- RIGHT --}}
-            <div class="lg:col-span-4">
-
-                <div class="bg-brand-surface border border-brand-border rounded-3xl p-6">
-
-                    <div class="rounded-2xl bg-brand-dark p-5 border border-brand-border">
-
-                        <p class="text-gray-400">
-                            Balance
-                        </p>
-                        <h3 id="balance" class="text-4xl font-bold mt-2">
-                            $1000
-                        </h3>
-                    </div>
-                    <div class="rounded-2xl bg-brand-dark p-5 border border-brand-border mt-5">
-                        <p class="text-gray-400">
-                            Current Round
-                        </p>
-                        <h2 id="round" class="text-3xl font-bold mt-2">
-                            #1001
+<div class="color-trading">
+    <div class="grid lg:grid-cols-12 gap-6">
+        {{-- LEFT --}}
+        <div class="lg:col-span-8">
+            <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6 shadow-2xl">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div class="text-center sm:text-start">
+                        <h2>
+                            Earn more from color trading
                         </h2>
-                    </div>
-
-                    <div class="rounded-2xl bg-brand-dark p-5 border border-brand-border mt-5">
-                        <p class="text-gray-400">
-                            Selected Color
+                        <p class="text-gray-400 mt-2">
+                            Predict the winning color before countdown ends.
                         </p>
-                        <h3 id="selectedColor" class="text-2xl font-bold mt-2 capitalize">
-                            None
-                        </h3>
                     </div>
-
-                    <div class="rounded-2xl bg-brand-dark p-5 border border-brand-border mt-5">
-                        <p class="text-gray-400">
-                            Balance Deduction
-                        </p>
-                        <h3 id="deduction" class="text-2xl font-bold mt-2">
-                            $0
-                        </h3>
-                    </div>
-
-                    <div class="rounded-2xl bg-brand-dark p-5 border border-brand-border mt-5">
-                        <p class="text-gray-400">
-                            Last Result
-                        </p>
-                        <h3 id="result">
-                            Waiting...
-                        </h3>
-                    </div>
-
-                    <div class="mt-8">
-                        <h4 class="font-bold text-xl">
-                            History
-                        </h4>
-                        <div id="history" class="grid grid-cols-5 gap-3 mt-5">
-                        </div>
-                    </div>
+                    <span class="text-green-500 font-semibold animate-pulse">
+                        LIVE
+                    </span>
 
                 </div>
 
+                {{-- TIMER --}}
+                <div class="flex justify-center mt-5 sm:mt-10">
+                    <div
+                        class="relative w-56 h-56 rounded-full border-[12px] border-brand-border flex items-center justify-center">
+                        <div class="text-center">
+                            <p class="text-gray-400">
+                                Time Left
+                            </p>
+                            <h1 id="timer" class="text-6xl font-black mt-2">
+                                10
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- COLORS --}}
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-6 sm:mt-12">
+                    <button class="color-btn bg-green-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="green">
+                        Green
+                    </button>
+                    <button class="color-btn bg-red-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="red">
+                        Red
+                    </button>
+                    <button class="color-btn bg-blue-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="blue">
+                        Blue
+                    </button>
+                    <button class="color-btn bg-yellow-500 rounded-2xl h-10 sm:h-20 font-bold text-black"
+                        data-color="yellow">
+                        Yellow
+                    </button>
+                    <button class="color-btn bg-orange-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="orange">
+                        Orange
+                    </button>
+                    <button class="color-btn bg-purple-600 rounded-2xl h-10 sm:h-20 font-bold" data-color="purple">
+                        Purple
+                    </button>
+                    <button class="color-btn bg-pink-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="pink">
+                        Pink
+                    </button>
+                    <button class="color-btn bg-cyan-500 rounded-2xl h-10 sm:h-20 font-bold" data-color="cyan">
+                        Cyan
+                    </button>
+                    <button class="color-btn bg-white rounded-2xl h-10 sm:h-20 font-bold text-black" data-color="white">
+                        White
+                    </button>
+                    <button class="color-btn bg-black border border-gray-500 rounded-2xl h-10 sm:h-20 font-bold"
+                        data-color="black">
+                        Black
+                    </button>
+                </div>
+                {{-- BET CHIPS --}}
+                <div class="mt-5 sm:mt-10">
+                    <label class="font-semibold">
+                        Quick Bet
+                    </label>
+                    <div class="grid grid-cols-5 gap-3 mt-4">
+                        <button class="chip-btn">10</button>
+                        <button class="chip-btn">50</button>
+                        <button class="chip-btn">100</button>
+                        <button class="chip-btn">500</button>
+                        <button class="chip-btn">1000</button>
+                    </div>
+                </div>
+                {{-- INPUT --}}
+                <div class="mt-4 sm:mt-8">
+                    <input id="betAmount" type="number" placeholder="Enter Bet Amount"
+                        class="w-full h-8 sm:h-14 rounded-2xl bg-brand-dark border border-brand-border px-3 sm:px-5 text-[12px] sm:text-sm">
+                </div>
+                <button id="placeBet"
+                    class="btn-primary w-full mt-3 sm:mt-6 h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
+                    Place Bet
+                </button>
             </div>
-
         </div>
+        {{-- RIGHT --}}
+        <div class="lg:col-span-4">
 
+            <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6">
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400">
+                        Balance
+                    </p>
+                    <h3 id="balance" class="mt-2">
+                        $1000
+                    </h3>
+                </div>
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
+                    <p class="text-gray-400">
+                        Current Round
+                    </p>
+                    <h2 id="round" class="mt-2">
+                        #1001
+                    </h2>
+                </div>
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
+                    <p class="text-gray-400">
+                        Selected Color
+                    </p>
+                    <h3 id="selectedColor" class="mt-2 capitalize">
+                        None
+                    </h3>
+                </div>
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
+                    <p class="text-gray-400">
+                        Balance Deduction
+                    </p>
+                    <h3 id="deduction" class="mt-2">
+                        $0
+                    </h3>
+                </div>
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
+                    <p class="text-gray-400">
+                        Last Result
+                    </p>
+                    <h3 id="result">
+                        Waiting...
+                    </h3>
+                </div>
+                <div class="mt-4 sm:mt-8">
+                    <h4>
+                        History
+                    </h4>
+                    <div id="history" class="grid grid-cols-5 gap-3 mt-5">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-</section>
+</div>
 
 
 @push('scripts')

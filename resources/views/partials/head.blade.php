@@ -9,7 +9,7 @@
 <meta name="robots" content="index, follow">
 <meta name="author" content="TrustiBet">
 <!-- Favicon -->
-<link rel="icon" type="image/x-icon" href="{{ asset('brand/favicon.png') }}">
+<link rel="icon" type="image/x-icon" href="{{ asset('images/brand/favicon.png') }}">
 <!-- PNG Favicon (Recommended) -->
 <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('/images/brand/favicon.png') }}">
 <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('/images/brand/favicon.png') }}">

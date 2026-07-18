@@ -52,35 +52,43 @@
                 <form class="mt-10 rounded-3xl border border-brand-border bg-brand-surface p-8 lg:p-10">
                     <div class="grid gap-6 md:grid-cols-2">
                         <div>
-                            <label class="mb-2 block">
+                            <label for="fname" class="mb-2 block">
                                 Full Name
                             </label>
-                            <input type="text"
+                            <input type="text" id="fname"
                                 class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                 placeholder="Enter your full name">
                         </div>
                         <div>
-                            <label class="mb-2 block">
+                            <label for="email" class="mb-2 block">
                                 Email Address
                             </label>
-                            <input type="email"
+                            <input type="email" id="email"
                                 class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                 placeholder="Enter your email">
                         </div>
                     </div>
                     <div class="mt-6">
-                        <label class="mb-2 block">
+                        <label for="uid" class="mb-2 block">
+                            User ID
+                        </label>
+                        <input type="number" id="uid"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
+                            placeholder="Enter your ID">
+                    </div>
+                    <div class="mt-6">
+                        <label for="subject" class="mb-2 block">
                             Subject
                         </label>
-                        <input type="text"
+                        <input type="text" id="subject"
                             class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                             placeholder="Enter subject">
                     </div>
                     <div class="mt-6">
-                        <label class="mb-2 block">
+                        <label for="depart" class="mb-2 block">
                             Department
                         </label>
-                        <select
+                        <select id="depart"
                             class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
                             <option>General Inquiry</option>
                             <option>Account Support</option>
@@ -89,10 +97,10 @@
                         </select>
                     </div>
                     <div class="mt-6">
-                        <label class="mb-2 block">
+                        <label for="message" class="mb-2 block">
                             Message
                         </label>
-                        <textarea rows="7"
+                        <textarea rows="7" id="message"
                             class="w-full resize-none rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                             placeholder="Write your message here..."></textarea>
                     </div>

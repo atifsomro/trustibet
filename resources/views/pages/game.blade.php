@@ -5,7 +5,7 @@
         <div class="container">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {{-- Game Area --}}
-                <div class="lg:col-span-3 sticky top-0 z-3">
+                <div class="lg:col-span-3 position-relative lg:sticky lg:top-0 z-3 order-2 lg:order-1"">
                     <div class="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden">
                         {{-- Game Header --}}
                         <div class="p-6 border-b border-brand-border">
@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 {{-- Right Panel --}}
-                <div>
+                <div class="order-1 lg:order-2">
                     <div class="bg-brand-surface border border-brand-border rounded-2xl p-6">
                         <h3>Wallet</h3>
                         <div class="mt-4">
@@ -43,7 +43,7 @@
                             </div>
                         </div>
                         <a href="{{ route('deposit') }}" class="btn-primary w-full mt-6">
-                           Deposit
+                            Deposit
                         </a>
                     </div>
                 </div>

@@ -1,6 +1,6 @@
 @extends('layouts.master')
 @section('content')
-    <section class="register py-16 lg:py-20">
+    <section class="register py-10 md:py-16 lg:py-20">
         <div class="container">
             <div class="register__wrapper overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
                 <div class="grid lg:grid-cols-2">
@@ -36,15 +36,15 @@
                         </div>
                     </div>
                     {{-- Right Side --}}
-                    <div class="register__form p-8 md:p-12 lg:p-16">
+                    <div class="register__form p-4 sm:p-8 md:p-12 lg:p-16">
                         <h3>
                             Create Account
                         </h3>
                         <p class="mt-2">
                             Fill in your information to create your account.
                         </p>
-                        <form id="registerForm" class="mt-8">
-                            <div class="grid gap-6 md:grid-cols-2">
+                        <form id="registerForm" class="mt-4 sm:mt-8">
+                            <div class="grid gap-3 sm:gap-6 md:grid-cols-2">
                                 {{-- Full Name --}}
                                 <div>
                                     <label for="fname" class="mb-2 block">
@@ -66,7 +66,7 @@
                                     <small id="unameError" class="mt-2 block text-[10px] text-red-500"></small>
                                 </div>
                             </div>
-                            <div class="grid gap-6 md:grid-cols-2 mt-6">
+                            <div class="grid gap-3 sm:gap-6 md:grid-cols-2 mt-3 sm:mt-6">
                                 {{-- Email --}}
                                 <div>
                                     <label for="email" class="mb-2 block">
@@ -93,7 +93,7 @@
                                     <small id="countryError" class="mt-2 block text-[10px] text-red-500"></small>
                                 </div>
                             </div>
-                            <div class="grid gap-6 md:grid-cols-2 mt-6">
+                            <div class="grid gap-3 sm:gap-6 md:grid-cols-2 mt-3 sm:mt-6">
                                 {{-- Phone Number --}}
                                 <div>
                                     <label for="phone" class="mb-2 block">
@@ -124,11 +124,17 @@
                                 <small id="passwordStrengthText" class="mt-2 block">
                                 </small>
                             </div>
-                            <button type="submit" class="btn-primary mt-8 w-full justify-center">
-                                Register
-                            </button>
+                            <div class="flex flex-col items-center justify-center gap-2">
+                                <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
+                                    Register
+                                </button>
+                                <span>Or login with</span>
+                                <a href="#" class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto" title="Login With Google">
+                                    <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
+                                </a>
+                            </div>
                         </form>
-                        <p class="mt-6 text-center">
+                        <p class="mt-3 sm:mt-6 text-center">
                             Already have an account?
                             <a href="{{ route('login') }}" class="text-brand-primary hover:text-brand-primary-hover">
                                 Login

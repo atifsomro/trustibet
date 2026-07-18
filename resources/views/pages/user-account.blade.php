@@ -6,10 +6,10 @@
             <div class="grid lg:grid-cols-12 gap-6">
                 {{-- Sidebar --}}
                 <aside class="lg:col-span-3">
-                    <div class="rounded-3xl border border-brand-border bg-brand-surface p-6 sticky top-24">
+                    <div class="rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-6 position-static lg:sticky lg:top-24">
                         <div class="text-center">
                             <img src="{{ asset('images/profile/avatar.png') }}"
-                                class="w-24 h-24 rounded-full mx-auto border-4 border-brand-primary object-cover">
+                                class="w-18 h-18 md:w-24 md:h-24 rounded-full mx-auto border-4 border-brand-primary object-cover">
                             <h4 class="mt-4">
                                 Tiger King
                             </h4>
@@ -60,6 +60,13 @@
                                 <i class="fa-solid fa-credit-card"></i>
                                 Transactions
                             </button>
+
+                            <button type="button"
+                                class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
+                                data-tab="invest">
+                                <i class="fa-solid fa-credit-card"></i>
+                                Investments
+                            </button>
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="referral">
@@ -91,8 +98,8 @@
                 </aside>
 
                 {{-- Content --}}
-                <div class="lg:col-span-9">
-                    <div class="rounded-3xl border border-brand-border bg-brand-surface p-8">
+                <div class="lg:col-span-9 min-w-0">
+                    <div class="rounded-3xl border border-brand-border bg-brand-surface p-4 md:p-8">
                         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                             <div>
                                 <small id="tab-label" class="uppercase tracking-[3px] text-brand-primary">
@@ -122,22 +129,22 @@
 
                     <div class="mt-6">
                         <div id="dashboard-panel" class="account-tab-panel grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-wallet text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Wallet Balance</p>
                                 <h3 class="mt-2">Rs. 2,500</h3>
                             </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Active Entries</p>
                                 <h3 class="mt-2">14</h3>
                             </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-trophy text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Total Wins</p>
                                 <h3 class="mt-2">5</h3>
                             </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-6">
+                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-gift text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Bonus Balance</p>
                                 <h3 class="mt-2">Rs. 500</h3>
@@ -145,42 +152,46 @@
                         </div>
 
                         <div id="profile-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.profile-tab')
                         </div>
 
                         <div id="wallet-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.wallet')
                         </div>
 
                         <div id="entries-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.entries')
                         </div>
 
                         <div id="winnings-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.wining')
                         </div>
 
                         <div id="transactions-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.transection')
+                        </div>
+                        <div id="invest-panel"
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
+                            @include('pages.inc.invest')
                         </div>
 
                         <div id="referral-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.referral')
                         </div>
 
                         <div id="kyc-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.kyc')
                         </div>
 
                         <div id="settings-panel"
-                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-5">
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('pages.inc.settings')
                         </div>
                     </div>

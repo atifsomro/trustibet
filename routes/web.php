@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-require __DIR__.'/admin.php';
 
 Route::get('/', function () {
     return view('pages.home');
@@ -48,9 +47,18 @@ Route::get('/terms-conditions', function () {
     return view('pages.terms-conditions');
 })->name('terms.conditions');
 
+Route::get('/lottery', function () {
+    return view('pages.lottery');
+})->name('lottery');
+
+Route::get('/investment', function () {
+    return view('pages.investment');
+})->name('investment');
+
 Route::get('/404', function () {
     return view('errors.404');
 })->name('404');
+
 
 use App\Http\Controllers\GameController;
 Route::get('/game/{slug}', [GameController::class, 'show'])->name('game.show');

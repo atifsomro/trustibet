@@ -1,11 +1,11 @@
 @extends('layouts.master')
 
 @section('content')
-    <section class="about py-16 lg:py-20">
+    <section class="about py-10 md:py-16 lg:py-20">
         <div class="container">
             <div class="grid lg:grid-cols-2 gap-12 lg:gap-20">
                 {{-- Left --}}
-                <div class="about__image relative">
+                <div class="about__image relative order-2 lg:order-1">
                     <img src="{{ asset('/images/about/about.png') }}" alt="About Us"
                         class="w-full h-[550px] rounded-3xl border border-brand-border object-cover">
                     <div class="absolute bottom-80 left-6 bg-brand-surface border border-brand-border rounded-2xl px-6 py-5">
@@ -15,7 +15,7 @@
                 </div>
 
                 {{-- Right --}}
-                <div class="about__content">
+                <div class="about__content order-1 lg:order-2">
                     <small class="uppercase tracking-[3px] text-brand-primary">
                         About Us
                     </small>
@@ -38,8 +38,10 @@
                     </p>
                     <div class="mt-8 space-y-5">
                         <div class="flex items-start gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-brand-primary/15 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-shield-halved text-brand-primary"></i>
+                            <div class="flex h-10 w-10 md:h-14 md:w-14 items-center justify-center rounded-xl bg-green-500/15 shrink-0">
+
+                                <i class="fa-solid fa-shield-halved text-[12px] md:text-xl text-green-500"></i>
+
                             </div>
                             <div>
                                 <h4>
@@ -51,8 +53,8 @@
                             </div>
                         </div>
                         <div class="flex items-start gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-brand-primary/15 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-headset text-brand-primary"></i>
+                            <div class="flex h-10 w-10 md:h-14 md:w-14 items-center justify-center rounded-xl bg-orange-500/15 shrink-0">
+                                <i class="fa-solid fa-headset text-[12px] md:text-xl text-orange-500"></i>
                             </div>
                             <div>
                                 <h4>
@@ -65,7 +67,7 @@
                         </div>
                     </div>
                     <div class="mt-10 flex flex-wrap gap-4">
-                        <a href="{{ route('contact') }}" class="btn-secondary">
+                        <a href="{{ route('contact') }}" class="btn-green">
                             Contact Us
                         </a>
                     </div>
