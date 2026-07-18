@@ -1,0 +1,26 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-Dsh9V8Ix.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-Dflpefff.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "assets/app-Dsh9V8Ix.css"
+    ]
+  },
+  "resources/js/notifications.js": {
+    "file": "assets/notifications-LMc34mhI.js",
+    "name": "notifications",
+    "src": "resources/js/notifications.js",
+    "isEntry": true
+  }
+}
