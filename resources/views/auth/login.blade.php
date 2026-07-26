@@ -2,6 +2,15 @@
 @section('content')
     <section class="login py-10 md:py-16 lg:py-20">
         <div class="container">
+            @if (session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @elseif (session('success'))
+                <div class="alert alert-success">
+                    {{ session('success') }}
+                </div>
+            @endif
             <div class="login__wrapper overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
                 <div class="grid lg:grid-cols-2">
                     {{-- Left Side --}}
@@ -42,22 +51,30 @@
                         <p class="mt-2">
                             Enter your account credentials below.
                         </p>
-                        <form id="loginForm" class="mt-4 sm:mt-8">
+                        <form id="loginForm" action="{{ route('auth.login.post') }}" method="POST" class="mt-4 sm:mt-8">
                             <div>
                                 <label for="loginEmail" class="mb-2 block">
                                     Email Address
                                 </label>
-                                <input type="email" id="loginEmail" placeholder="Enter your email"
+                                <input type="email" name="email" id="loginEmail" placeholder="Enter your email"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
-                                <small id="loginEmailError" class="mt-2 block text-red-500 text-[10px]"></small>
+                                <small id="loginEmailError" class="mt-2 block text-red-500 text-[10px]">
+                                    @error('email')
+                                        {{ $message }}
+                                    @enderror
+                                </small>
                             </div>
                             <div class="mt-4">
                                 <label for="loginPassword" class="mb-2 block">
                                     Password
                                 </label>
-                                <input type="password" id="loginPassword" placeholder="Enter your password"
+                                <input type="password" name="password" id="loginPassword" placeholder="Enter your password"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
-                                <small id="loginPasswordError" class="mt-2 block text-red-500 text-[10px]"></small>
+                                <small id="loginPasswordError" class="mt-2 block text-red-500 text-[10px]">
+                                    @error('password')
+                                        {{ $message }}
+                                    @enderror
+                                </small>
                             </div>
 
                             <div class="flex flex-col items-center justify-center gap-2">
@@ -67,13 +84,13 @@
                                 {{-- <a href="{{ route('forgot.password') }}"
                                     class="block w-fit mt-2 mx-auto text-brand-primary hover:underline text-sm">
                                     Forgot Password ?
-                                </a> --}}
+                                </a>
                                 <span>Or login with</span>
                                 <a href="#"
                                     class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
                                     title="Login With Google">
                                     <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
-                                </a>
+                                </a> --}}
                             </div>
                         </form>
                         <p class="mt-3 sm:mt-6 text-center">

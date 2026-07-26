@@ -52,7 +52,7 @@
 
                 <div class="flex flex-col gap-4">
 
-                    <a href="{{ route('register') }}" class="btn-green">
+                    <a href="{{ route('auth.register') }}" class="btn-green">
                         Create Free Account
                     </a>
 

@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-Dsh9V8Ix.css",
+    "file": "assets/app-BScEAijY.css",
     "name": "app",
     "names": [
       "app.css"
@@ -9,16 +9,16 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-Dflpefff.js",
+    "file": "assets/app-C1JAkgOK.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-Dsh9V8Ix.css"
+      "assets/app-BScEAijY.css"
     ]
   },
   "resources/js/notifications.js": {
-    "file": "assets/notifications-LMc34mhI.js",
+    "file": "assets/notifications-C8A6aVrw.js",
     "name": "notifications",
     "src": "resources/js/notifications.js",
     "isEntry": true

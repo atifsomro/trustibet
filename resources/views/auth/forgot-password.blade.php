@@ -67,7 +67,7 @@ Login --}}
 
                         </button>
 
-                        <a href="{{ route('login') }}" class="btn-secondary w-full mt-4 text-center">
+                        <a href="{{ route('auth.login') }}" class="btn-secondary w-full mt-4 text-center">
 
                             <i class="fa-solid fa-arrow-left mr-2"></i>
 

@@ -20,12 +20,15 @@
             {{-- Right --}}
             <div class="flex items-center gap-3">
                 @include('partials.inc.notification')
-                <a href="{{ route('login') }}" class="btn btn-secondary hidden lg:inline-flex">
-                    Login
-                </a>
-                <a href="#" class="btn btn-primary hidden lg:inline-flex">
-                    Logout
-                </a>
+                @if (!auth()->check())
+                    <a href="{{ route('auth.login') }}" class="btn btn-secondary hidden lg:inline-flex">
+                        Login
+                    </a>
+                @else
+                    <a href="{{ route('auth.logout') }}" class="btn btn-primary hidden lg:inline-flex">
+                        Logout
+                    </a>
+                @endif
                 <button id="MenuToggle" class="flex lg:hidden btn btn-primary">
                     <i class="fa-solid fa-bars"></i>
                 </button>
@@ -112,7 +115,7 @@
         </ul>
         {{-- Buttons --}}
         <div class="mt-4 space-y-3">
-            <a href="{{ route('login') }}"
+            <a href="{{ route('auth.login') }}"
                 class="flex justify-center rounded-xl border border-brand-border py-3 hover:border-green-500 transition">
                 Login
             </a>

@@ -2,6 +2,11 @@
 @section('content')
     <section class="login py-10 md:py-16 lg:py-20">
         <div class="container">
+            @if(session('info'))
+                <div class="alert alert-info">
+                    {{ session('info') }}
+                </div>
+            @endif
             <div class="login__wrapper overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
                 <div class="grid lg:grid-cols-2">
                     {{-- Left Side --}}
@@ -10,9 +15,9 @@
                             Welcome Back
                         </small>
                         <h2 class="mt-4">
-                            Sign In &
+                            Verify Email &
                             <span class="text-brand-primary text-inherit">
-                                Start Winning
+                                Start Your Journey
                             </span>
                         </h2>
                         <p class="mt-6">
@@ -37,51 +42,32 @@
                     {{-- Right Side --}}
                     <div class="login__form p-4 sm:p-8 md:p-12 lg:p-16">
                         <h3>
-                            Login
+                            Email
                         </h3>
                         <p class="mt-2">
-                            Enter your account credentials below.
+                            Enter your email to resend verification code
                         </p>
-                        <form id="loginForm" class="mt-4 sm:mt-8">
-                            <div>
-                                <label for="loginEmail" class="mb-2 block">
-                                    Email Address
-                                </label>
-                                <input type="email" id="loginEmail" placeholder="Enter your email"
-                                    class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
-                                <small id="loginEmailError" class="mt-2 block text-red-500 text-[10px]"></small>
-                            </div>
+                        <form id="verificationForm" action="{{ route('auth.resendCode') }}" method="POST" class="mt-4 sm:mt-8">
+                            @csrf
                             <div class="mt-4">
-                                <label for="loginPassword" class="mb-2 block">
-                                    Password
+                                <label for="emailVerification" class="mb-2 block">
+                                    Verification Code
                                 </label>
-                                <input type="password" id="loginPassword" placeholder="Enter your password"
+                                <input name="email" type="text" id="emailVerification" placeholder="Enter your email"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
-                                <small id="loginPasswordError" class="mt-2 block text-red-500 text-[10px]"></small>
+                                <small id="emailVerificationError" class="mt-2 block text-red-500 text-[10px]">
+                                    @error('email')
+                                        {{ $message }}
+                                    @enderror
+                                </small>
                             </div>
-
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
-                                    Login
+                                    Resend
                                 </button>
-                                {{-- <a href="{{ route('forgot.password') }}"
-                                    class="block w-fit mt-2 mx-auto text-brand-primary hover:underline text-sm">
-                                    Forgot Password ?
-                                </a> --}}
-                                <span>Or login with</span>
-                                <a href="#"
-                                    class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
-                                    title="Login With Google">
-                                    <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
-                                </a>
+                            </div>
                             </div>
                         </form>
-                        <p class="mt-3 sm:mt-6 text-center">
-                            Don't have an account?
-                            <a href="{{ route('auth.showRegisterForm') }}" class="text-brand-primary hover:text-brand-primary-hover">
-                                Register
-                            </a>
-                        </p>
                     </div>
                 </div>
             </div>

@@ -9,7 +9,7 @@ Route::prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::middleware('guest:admin')->group(function () {
-            Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
+            Route::get('/', [LoginController::class, 'showForm'])->name('login');
             Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
         });
         Route::middleware('auth:admin')->group(function () {

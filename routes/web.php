@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -18,8 +19,8 @@ Route::get('/notifications', function () {
     return view('pages.notifications');
 })->name('notifications');
 
-Route::view('/login', 'pages.login')->name('login');
-Route::view('/register', 'pages.register')->name('register');
+// Route::view('/login', 'pages.login')->name('login');
+// Route::view('/register', 'pages.register')->name('register');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/welcome', 'pages.welcome')->name('welcome');
 Route::view('/participate', 'pages.participate')->name('participate');
@@ -66,3 +67,16 @@ Route::get('/game/{slug}', [GameController::class, 'show'])->name('game.show');
 use App\Http\Controllers\ScratchCardController;
 Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
     ->name('scratch.reveal');
+
+### FRONTEND AUTH ROUTE ###
+Route::get('login', [AuthController::class, 'showLoginForm'])->name('auth.login');
+Route::post('login', [AuthController::class, 'login'])->name('auth.login.post');
+Route::get('register', [AuthController::class, 'showRegisterForm'])->name('auth.showRegisterForm');
+Route::post('register', [AuthController::class, 'register'])->name('auth.register');
+Route::get('email-verification', [AuthController::class, 'showVerificationForm'])->name('auth.showVerificationForm');
+Route::post('email-verification', [AuthController::class, 'emailVerification'])->name('auth.emailVerification');
+Route::get('resend-code', [AuthController::class, 'showResendForm'])->name('auth.showResendForm');
+Route::post('resend-code', [AuthController::class, 'resendCode'])->name('auth.resendCode');
+Route::get('logout', [AuthController::class, 'logout'])->name('auth.logout');
+Route::get('forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgotPasswordForm');
+Route::post('forgot-password', [AuthController::class, 'handleForgotPassword'])->name('auth.handleForgot');

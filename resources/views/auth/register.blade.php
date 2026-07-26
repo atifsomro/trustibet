@@ -1,7 +1,15 @@
 @extends('layouts.master')
+@section('title')
+    {{ $title }}
+@endsection
 @section('content')
     <section class="register py-10 md:py-16 lg:py-20">
         <div class="container">
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
             <div class="register__wrapper overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
                 <div class="grid lg:grid-cols-2">
                     {{-- Left Side --}}
@@ -43,27 +51,38 @@
                         <p class="mt-2">
                             Fill in your information to create your account.
                         </p>
-                        <form id="registerForm" class="mt-4 sm:mt-8">
+                        <form id="registerForm" action="{{ route('auth.register') }}" method="POST" class="mt-4 sm:mt-8">
+                            @csrf
                             <div class="grid gap-3 sm:gap-6 md:grid-cols-2">
                                 {{-- Full Name --}}
                                 <div>
                                     <label for="fname" class="mb-2 block">
                                         Full Name
                                     </label>
-                                    <input type="text" id="fname" placeholder="Enter your full name"
+                                    <input type="text" id="fname" name="name" value="{{ old('name') }}"
+                                        placeholder="Enter your full name"
                                         class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
-                                    <small id="fnameError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="fnameError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('name')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                                 {{-- Username --}}
                                 <div>
-                                    <label for="uname" class="mb-2 block">
+                                    <label for="username" class="mb-2 block">
                                         Username
                                     </label>
-                                    <input type="text" id="uname" placeholder="Choose a username"
+                                    <input type="text" id="username" value="{{ old('username') }}" name="username"
+                                        placeholder="Choose a username"
                                         class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
-                                    <small id="unameError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="unameError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('username')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                             </div>
                             <div class="grid gap-3 sm:gap-6 md:grid-cols-2 mt-3 sm:mt-6">
@@ -72,25 +91,37 @@
                                     <label for="email" class="mb-2 block">
                                         Email Address
                                     </label>
-                                    <input type="email" id="email" placeholder="Enter your email"
+                                    <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                        placeholder="Enter your email"
                                         class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
-                                    <small id="emailError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="emailError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('email')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                                 {{-- Country --}}
                                 <div>
                                     <label for="country" class="mb-2 block">
                                         Country
                                     </label>
-                                    <select id="country"
+                                    <select id="country_id" name="country_id"
                                         class="w-full rounded-x bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
                                         <option value="" selected disabled>Select Country</option>
-                                        <option value="Pakistan">Pakistan</option>
-                                        <option value="India">India</option>
-                                        <option value="USA">United States</option>
+                                        @foreach ($countries as $country)
+                                            <option value="{{ $country->id }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>
+                                                {{ $country->name }}
+                                            </option>
+                                        @endforeach
+                                        
                                     </select>
-                                    <small id="countryError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="countryError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('country_id')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                             </div>
                             <div class="grid gap-3 sm:gap-6 md:grid-cols-2 mt-3 sm:mt-6">
@@ -99,20 +130,29 @@
                                     <label for="phone" class="mb-2 block">
                                         Phone Number
                                     </label>
-                                    <input type="tel" id="phone" placeholder="+92 300 1234567"
+                                    <input type="tel" name="phone" id="phone" value="{{ old('phone') }}"
+                                        placeholder="+92 300 1234567"
                                         class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
-                                    <small id="phoneError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="phoneError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('phone')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                                 {{-- Password --}}
                                 <div>
                                     <label for="password" class="mb-2 block">
                                         Password
                                     </label>
-                                    <input type="password" id="password" placeholder="Enter your password"
+                                    <input type="password" name="password" id="password" placeholder="Enter your password"
                                         class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                                         required>
-                                    <small id="passwordError" class="mt-2 block text-[10px] text-red-500"></small>
+                                    <small id="passwordError" class="mt-2 block text-[10px] text-red-500">
+                                        @error('password')
+                                            {{ $message }}
+                                        @enderror
+                                    </small>
                                 </div>
                             </div>
                             <div class="mt-3">
@@ -128,10 +168,11 @@
                                 <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
                                     Register
                                 </button>
-                                <span>Or login with</span>
-                                <a href="#" class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto" title="Login With Google">
+                                {{-- <span>Or login with</span>
+                                <a href="#" class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
+                                    title="Login With Google">
                                     <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
-                                </a>
+                                </a> --}}
                             </div>
                         </form>
                         <p class="mt-3 sm:mt-6 text-center">
