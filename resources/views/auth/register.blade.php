@@ -145,9 +145,16 @@
                                     <label for="password" class="mb-2 block">
                                         Password
                                     </label>
-                                    <input type="password" name="password" id="password" placeholder="Enter your password"
-                                        class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
-                                        required>
+                                    <div class="relative">
+                                        <input type="password" name="password" id="password" placeholder="Enter your password"
+                                            class="password-field w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
+                                            required>
+                                             <button
+                                                type="button"
+                                                class="toggle-password absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-white">
+                                                <i class="fa-regular fa-eye password-icon"></i>
+                                            </button>
+                                    </div>
                                     <small id="passwordError" class="mt-2 block text-[10px] text-red-500">
                                         @error('password')
                                             {{ $message }}

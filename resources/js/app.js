@@ -42,10 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("registerForm");
     if (!form) return;
     const fname = document.getElementById("fname");
-    const uname = document.getElementById("uname");
+    const uname = document.getElementById("username");
     const email = document.getElementById("email");
     const phone = document.getElementById("phone");
-    const country = document.getElementById("country");
+    const country = document.getElementById("country_id");
     const fnameError = document.getElementById("fnameError");
     const unameError = document.getElementById("unameError");
     const emailError = document.getElementById("emailError");
@@ -60,25 +60,36 @@ document.addEventListener("DOMContentLoaded", () => {
     // Full Name
     //==========================
     function validateFullName() {
-        let value = fname.value.trim();
-        value = value.replace(/\s+/g, " ");
+        let value = fname.value;
+
+        // Sirf multiple consecutive spaces ko single space banao
+        value = value.replace(/\s{2,}/g, " ");
+
         fname.value = value;
-        if (value === "") {
+
+        // Validation ke liye trim use karo, input me value modify mat karo
+        const trimmedValue = value.trim();
+
+        if (trimmedValue === "") {
             fnameError.textContent = "Full name is required.";
             return false;
         }
-        if (value.length < 3) {
+
+        if (trimmedValue.length < 3) {
             fnameError.textContent = "Minimum 3 characters required.";
             return false;
         }
-        if (value.length > 30) {
+
+        if (trimmedValue.length > 30) {
             fnameError.textContent = "Maximum 30 characters allowed.";
             return false;
         }
-        if (!/^[A-Za-z ]+$/.test(value)) {
+
+        if (!/^[A-Za-z ]+$/.test(trimmedValue)) {
             fnameError.textContent = "Only letters and spaces are allowed.";
             return false;
         }
+
         fnameError.textContent = "";
         return true;
     }
@@ -244,8 +255,24 @@ document.addEventListener("DOMContentLoaded", () => {
             passwordStrengthText.className = "mt-2 block text-green-500";
         }
     }
-});
+    const registerForm = document.getElementById("registerForm");
+    if (registerForm) {
+        registerForm.querySelectorAll(".toggle-password").forEach((button) => {
+            button.addEventListener("click", function () {
 
+                const input = this.closest(".relative").querySelector(".password-field");
+                const icon = this.querySelector(".password-icon");
+
+                if (!input) return;
+
+                input.type = input.type === "password" ? "text" : "password";
+
+                icon.classList.toggle("fa-eye");
+                icon.classList.toggle("fa-eye-slash");
+            });
+        });
+    }
+});
 // ====== REGISTER FORM VALIDATION END ======
 // ====== LOGIN FORM VALIDATION START ======
 (() => {
@@ -299,6 +326,25 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Login Validation Error:", error);
         }
     });
+
+    const loginForm = document.getElementById("loginForm");
+
+    if (loginForm) {
+        loginForm.querySelectorAll(".toggle-password").forEach((button) => {
+            button.addEventListener("click", function () {
+
+                const input = this.closest(".relative").querySelector(".password-field");
+                const icon = this.querySelector(".password-icon");
+
+                if (!input) return;
+
+                input.type = input.type === "password" ? "text" : "password";
+
+                icon.classList.toggle("fa-eye");
+                icon.classList.toggle("fa-eye-slash");
+            });
+        });
+    }
 })();
 
 // ====== LOGIN FORM VALIDATION END ======

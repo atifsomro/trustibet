@@ -5,12 +5,12 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'TrustiBet Bet With Confidence Online Casino & Sports Betting')</title>
-    <meta name="title" content="TrustiBet Bet With Confidence Online Casino & Sports Betting">
+    <title>@yield('title', 'ClaimRise Mining | ClaimRise UK – Secure Crypto Mining Platform')</title>
+    <meta name="title" content="ClaimRise Mining | ClaimRise UK – Secure Crypto Mining Platform">
     <meta name="description"
-        content="Join TrustiBet and bet with confidence. Enjoy exciting casino games, live sports betting, fast payouts, secure transactions, and exclusive bonuses on one trusted gaming platform.">
+        content="Discover ClaimRise Mining at ClaimRise.uk. Start secure and efficient cryptocurrency mining with a user-friendly platform, real-time insights, and reliable performance.">
     <meta name="keywords"
-        content="TrustiBet, online casino, sports betting, live casino, casino games, online betting, crypto casino, betting platform, slots, roulette, blackjack, live dealer, aviator game, color trading, dice game, lucky wheel, betting bonuses, secure betting, fast withdrawals">
+        content="claimrise, online casino, claimrise mining, live casino, casino games, online betting, claimrise uk, betting platform, slots, roulette, blackjack, live dealer, aviator game, color trading, dice game, lucky wheel, betting bonuses, secure betting, fast withdrawals">
     <meta name="robots" content="index, follow">
     <meta name="author" content="TrustiBet">
     <!-- Favicon -->

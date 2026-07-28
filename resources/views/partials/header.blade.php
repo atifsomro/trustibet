@@ -13,7 +13,9 @@
                     <li><a class="hover:text-brand-primary" href="{{ route('about') }}">About</a></li>
                     <li><a class="hover:text-brand-primary" href="{{ route('lottery') }}">Lottery</a></li>
                     <li><a class="hover:text-brand-primary" href="{{ route('investment') }}">Investment</a></li>
+                    @auth
                     <li><a class="hover:text-brand-primary" href="{{ route('user-account') }}">My Account</a></li>
+                   @endauth
                     <li><a class="hover:text-brand-primary" href="{{ route('winner.history') }}">Leader Board</a></li>
                 </ul>
             </nav>
@@ -98,6 +100,7 @@
                     <span>Investment</span>
                 </a>
             </li>
+            @auth
             <li>
                 <a href="{{ route('user-account') }}"
                     class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-green-500 hover:bg-green-500/10">
@@ -105,6 +108,7 @@
                     <span>My Account</span>
                 </a>
             </li>
+            @endauth
             <li>
                 <a href="{{ route('winner.history') }}"
                     class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-orange-500 hover:bg-orange-500/10">
