@@ -11,7 +11,7 @@
                             <img src="{{ asset('images/profile/avatar.png') }}"
                                 class="w-18 h-18 md:w-24 md:h-24 rounded-full mx-auto border-4 border-brand-primary object-cover">
                             <h4 class="mt-4">
-                                Tiger King
+                                {{ auth()->user()->name }}
                             </h4>
                             <p class="text-sm">
                                 Premium Member
@@ -108,7 +108,7 @@
                                 <h2 id="tab-title" class="mt-3">
                                     Welcome Dear
                                     <span class="text-brand-primary">
-                                        Tiger King 👋
+                                        {{ auth()->user()->name }} 👋
                                     </span>
                                 </h2>
                                 <p id="tab-description" class="mt-4">
@@ -240,7 +240,7 @@
             const tabContent = {
                 dashboard: {
                     label: 'Dashboard',
-                    title: 'Welcome Dear <span class="text-brand-primary">Tiger King 👋</span>',
+                    title: 'Welcome Dear <span class="text-brand-primary">{{ auth()->user()->name }} 👋</span>',
                     description: 'Welcome to your TrustiBet dashboard. Manage your wallet, entries, winnings and account from one place.'
                 },
                 profile: {

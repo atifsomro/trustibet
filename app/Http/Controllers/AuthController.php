@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,8 @@ use App\Mail\ForgotPassword;
 use App\Http\Controllers\Controller;
 use App\Mail\UserVerificationMail;
 use App\Models\Country;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -59,7 +62,7 @@ class AuthController extends Controller
             'name' => 'required|string|min:3|max:30',
             'username' => 'required|min:3|max:20|alpha_dash|unique:users,username',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|max:12',
+            'phone' => 'required',
             'country_id' => 'required',
             'password' => 'required|min:8',
         ]);
@@ -130,9 +133,9 @@ class AuthController extends Controller
 
     public function logout()
     {
-        Auth::guard('frontend')->logout();
+        Auth::guard('web')->logout();
         Session::flush();
-        return redirect()->route('frontend.signIn');
+        return redirect()->route('auth.login');
     }
 
     public function handleUpdate(Request $request, $id)
@@ -152,27 +155,54 @@ class AuthController extends Controller
         }
     }
 
-    public function forgotPassword()
+    public function forgotPasswordForm()
     {
-        $cmsData = (new Page('en'))->getCmsPage('forgot-password');
-
-        $title = ($cmsData) ? $cmsData->title : 'Forgot Password';
-        $meta_title = ($cmsData) ? $cmsData->meta_title : 'Forgot Password';
-        $meta_description = ($cmsData) ? $cmsData->meta_description : "Forgot Password";
-        $meta_keyword = ($cmsData) ? $cmsData->meta_keyword : "Forgot Password";
-        $meta_image = asset('storage/config_logos/' . getWebsiteLogo());
-        $meta_url = route('frontend.forgotPassword');
-
-        return view('frontend.auth.forgot_password', compact('title', 'meta_title', 'meta_description', 'meta_keyword', 'meta_image', 'meta_url'));
+        $title = 'Forgot Password - ' . env('APP_NAME');
+        return view('auth.forgot-password', compact('title'));
     }
 
-    public function handleForgotPassword(Request $request)
+    public function forgotPassword(Request $request)
     {
-        // return $request;
-        $new_pass = random_password(10);
-        Customer::where('email', $request->email)->update(['password' => Hash::make($new_pass)]);
-        Mail::to($request->email)->send(new ForgotPassword($new_pass));
-
-        return redirect()->back()->with('success', 'New password has been e-mailed to you.');
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+        $user = User::where('email', $request->email)->first();
+        // Don't reveal whether email exists
+        if (!$user || !empty($user->password_reset_token)) {
+            return back()->with('success', 'A password reset link has been sent.');
+        }
+        $token = Str::random(64);
+        $user->password_reset_token = hash('sha256', $token);
+        $user->save();
+        $link = URL::temporarySignedRoute('auth.password.reset', now()->addHour(), ['user' => $user->id, 'token' => $token]);
+        Mail::to($user->email)->send(new ResetPasswordMail($user, $link));
+        return back()->with(
+            'success',
+            'A password reset link has been sent.'
+        );
+    }
+    public function showResetPasswordForm(User $user)
+    {
+        return view('auth.reset-password', [
+            'user' => $user,
+            'token' => request()->token,
+        ]);
+    }
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'user_id' => ['required', 'exists:users,id'],
+            'password' => ['required', 'confirmed', 'min:8'],
+        ]);
+        $user = User::findOrFail($request->user_id);
+        if (!hash_equals($user->password_reset_token, hash('sha256', request('token')))) {
+            abort(403);
+        }
+        $user->password_reset_token = null;
+        $user->password = Hash::make($request->password);
+        $user->save();
+        return redirect()
+            ->route('auth.login')
+            ->with('success', 'Password changed successfully.');
     }
 }

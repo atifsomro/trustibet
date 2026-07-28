@@ -83,7 +83,9 @@
                                     @enderror
                                 </small>
                             </div>
-
+                            <a href="{{ route('auth.forgotPasswordForm') }}" class="text-brand-primary hover:text-brand-primary-hover">
+                                Forgot Password
+                            </a>
                             <div class="flex flex-col items-center justify-center gap-2">
                                 <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
                                     Login
