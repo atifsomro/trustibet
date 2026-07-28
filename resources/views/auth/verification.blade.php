@@ -47,14 +47,14 @@
                         <p class="mt-2">
                             Enter six letters code sent to your email
                         </p>
-                        <form id="verificationForm" action="{{ route('auth.emailVerification') }}" method="POST" class="mt-4 sm:mt-8">
+                        <form id="verificationForm" action="{{ route('auth.emailVerification') }}" method="POST" class="mt-2">
                             @csrf
-                            <div class="mt-4">
-                                <label for="emailVerification" class="mb-2 block">
+                            <div class="mt-2">
+                                <label for="emailVerification" class="mb-2 block text-[10px] md:text-sm">
                                     Verification Code
                                 </label>
                                 <input name="code" type="text" id="emailVerification" placeholder="Enter your password"
-                                    class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
+                                    class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary text-[10px] md:text-sm">
                                 <small id="emailVerificationError" class="mt-2 block text-red-500 text-[10px]">
                                     @error('name')
                                         {{ $message }}
@@ -63,7 +63,7 @@
                             </div>
                             <input type="hidden" name="email" value="{{ session('email') }}">
                             <div class="flex flex-col items-center justify-center gap-2">
-                                <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
+                                <button type="submit" class="btn-primary mt-2 w-full justify-center">
                                     Verify
                                 </button>
                                 Don't received the code?
