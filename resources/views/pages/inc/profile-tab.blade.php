@@ -13,7 +13,7 @@
                         </label>
                         <input type="file" id="profileImage" accept="image/png,image/jpeg,image/webp" class="hidden">
                     </div>
-                    <h3 class="mt-3">Tiger King</h3>
+                    <h3 class="mt-3">{{ auth()->user()->name }}</h3>
                     <p class="mt-2 opacity-70">
                         Premium Member
                     </p>

@@ -3,20 +3,36 @@
         <div class="content flex items-center justify-between">
             {{-- Logo --}}
             <a href="/" class="flex items-center gap-3">
-                <img src="{{ asset('/images/brand/logo.png') }}" class="w-32 md:w-36 lg:w-40 h-12 md:h-14 object-contain"
-                    alt="Logo">
+                <img src="{{ asset('/images/brand/logo.png') }}"
+                    class="w-32 md:w-36 lg:w-40 h-12 md:h-14 object-contain" alt="Logo">
             </a>
             {{-- Desktop Menu --}}
             <nav class="hidden lg:block">
                 <ul class="flex items-center gap-8">
-                    <li><a class="hover:text-brand-primary" href="/">Home</a></li>
-                    <li><a class="hover:text-brand-primary" href="{{ route('about') }}">About</a></li>
-                    <li><a class="hover:text-brand-primary" href="{{ route('lottery') }}">Lottery</a></li>
-                    <li><a class="hover:text-brand-primary" href="{{ route('investment') }}">Investment</a></li>
-                    @auth
-                    <li><a class="hover:text-brand-primary" href="{{ route('user-account') }}">My Account</a></li>
-                   @endauth
-                    <li><a class="hover:text-brand-primary" href="{{ route('winner.history') }}">Leader Board</a></li>
+                    <li>
+                        <a class="hover:text-brand-primary" href="/">Home</a>
+                    </li>
+                    <li>
+                        <a class="hover:text-brand-primary"
+                            href="{{ auth()->check() ? route('about') : route('auth.login') }}">About</a>
+                    </li>
+                    <li>
+                        <a class="hover:text-brand-primary"
+                            href="{{ auth()->check() ? route('lottery') : route('auth.login') }}">Lottery</a>
+                    </li>
+                    <li>
+                        <a class="hover:text-brand-primary"
+                            href="{{ auth()->check() ? route('investment') : route('auth.login') }}">Investment</a>
+                    </li>
+                    <li>
+                        <a class="hover:text-brand-primary"
+                            href="{{ auth()->check() ? route('user-account') : route('auth.login') }}">My Account</a>
+                    </li>
+                    <li>
+                        <a class="hover:text-brand-primary"
+                            href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}">Leader
+                            Board</a>
+                    </li>
                 </ul>
             </nav>
             {{-- Right --}}
@@ -101,13 +117,13 @@
                 </a>
             </li>
             @auth
-            <li>
-                <a href="{{ route('user-account') }}"
-                    class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-green-500 hover:bg-green-500/10">
-                    <i class="fa-solid fa-user text-green-500 w-5"></i>
-                    <span>My Account</span>
-                </a>
-            </li>
+                <li>
+                    <a href="{{ route('user-account') }}"
+                        class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-green-500 hover:bg-green-500/10">
+                        <i class="fa-solid fa-user text-green-500 w-5"></i>
+                        <span>My Account</span>
+                    </a>
+                </li>
             @endauth
             <li>
                 <a href="{{ route('winner.history') }}"

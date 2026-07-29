@@ -78,5 +78,7 @@ Route::post('email-verification', [AuthController::class, 'emailVerification'])-
 Route::get('resend-code', [AuthController::class, 'showResendForm'])->name('auth.showResendForm');
 Route::post('resend-code', [AuthController::class, 'resendCode'])->name('auth.resendCode');
 Route::get('logout', [AuthController::class, 'logout'])->name('auth.logout');
-Route::get('forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgotPasswordForm');
-Route::post('forgot-password', [AuthController::class, 'handleForgotPassword'])->name('auth.handleForgot');
+Route::get('forgot-password', [AuthController::class, 'forgotPasswordForm'])->name('auth.forgotPasswordForm');
+Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgotPassword');
+Route::get('/reset-password/{user}', [AuthController::class, 'showResetPasswordForm'])->middleware('signed')->name('auth.password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('auth.password.update');
