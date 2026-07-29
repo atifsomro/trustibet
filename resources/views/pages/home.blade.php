@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'Home')
+@section('title', 'ClaimRise Mining | ClaimRise UK – Secure Crypto Mining Platform')
 
 @section('content')
 
