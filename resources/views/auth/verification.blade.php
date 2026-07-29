@@ -53,7 +53,7 @@
                                 <label for="emailVerification" class="mb-2 block text-[10px] md:text-sm">
                                     Verification Code
                                 </label>
-                                <input name="code" type="text" id="emailVerification" placeholder="Enter your password"
+                                <input name="code" type="text" id="emailVerification" placeholder="Enter code"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary text-[10px] md:text-sm">
                                 <small id="emailVerificationError" class="mt-2 block text-red-500 text-[10px]">
                                     @error('name')

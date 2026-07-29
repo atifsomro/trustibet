@@ -3,8 +3,8 @@
         <div class="content flex items-center justify-between">
             {{-- Logo --}}
             <a href="/" class="flex items-center gap-3">
-                <img src="{{ asset('/images/brand/logo.png') }}"
-                    class="w-32 md:w-36 lg:w-40 h-12 md:h-14 object-contain" alt="Logo">
+                <img src="{{ asset('/images/brand/logo.png') }}" class="w-32 md:w-36 lg:w-40 h-12 md:h-14 object-contain"
+                    alt="Logo">
             </a>
             {{-- Desktop Menu --}}
             <nav class="hidden lg:block">
@@ -24,10 +24,13 @@
                         <a class="hover:text-brand-primary"
                             href="{{ auth()->check() ? route('investment') : route('auth.login') }}">Investment</a>
                     </li>
-                    <li>
-                        <a class="hover:text-brand-primary"
-                            href="{{ auth()->check() ? route('user-account') : route('auth.login') }}">My Account</a>
-                    </li>
+                    @auth
+                        <li>
+                            <a class="hover:text-brand-primary"
+                                href="{{ auth()->check() ? route('user-account') : route('auth.login') }}">My Account</a>
+                        </li>
+                    @endauth
+
                     <li>
                         <a class="hover:text-brand-primary"
                             href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}">Leader
