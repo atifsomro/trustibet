@@ -62,7 +62,7 @@ Route::get('/404', function () {
 
 
 use App\Http\Controllers\GameController;
-Route::get('/game/{slug}', [GameController::class, 'show'])->name('game.show');
+Route::get('/game/{slug}', [GameController::class, 'show'])->middleware('auth')->name('game.show');
 
 use App\Http\Controllers\ScratchCardController;
 Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
