@@ -56,7 +56,7 @@
                                 <label for="loginEmail" class="mb-2 block">
                                     Email Address
                                 </label>
-                                <input type="email" name="email" id="loginEmail" placeholder="Enter your email"
+                                <input type="email" name="email" id="loginEmail" placeholder="Enter your email" autocomplete="email"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
                                 <small id="loginEmailError" class="mt-2 block text-red-500 text-[10px]">
                                     @error('email')
@@ -69,7 +69,7 @@
                                     Password
                                 </label>
                                 <div class="relative">
-                                <input type="password" name="password" id="loginPassword" placeholder="Enter your password"
+                                <input type="password" name="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password"
                                     class="password-field w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
                                      <button
                                         type="button"
