@@ -58,4 +58,9 @@ class User extends Authenticatable
         } while (self::where($column, $code)->exists());
         return $code;
     }
+
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class);
+    }
 }

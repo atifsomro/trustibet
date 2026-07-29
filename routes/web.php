@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DepositController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -69,16 +70,29 @@ Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
     ->name('scratch.reveal');
 
 ### FRONTEND AUTH ROUTE ###
-Route::get('login', [AuthController::class, 'showLoginForm'])->name('auth.login');
-Route::post('login', [AuthController::class, 'login'])->name('auth.login.post');
-Route::get('register', [AuthController::class, 'showRegisterForm'])->name('auth.showRegisterForm');
-Route::post('register', [AuthController::class, 'register'])->name('auth.register');
-Route::get('email-verification', [AuthController::class, 'showVerificationForm'])->name('auth.showVerificationForm');
-Route::post('email-verification', [AuthController::class, 'emailVerification'])->name('auth.emailVerification');
-Route::get('resend-code', [AuthController::class, 'showResendForm'])->name('auth.showResendForm');
-Route::post('resend-code', [AuthController::class, 'resendCode'])->name('auth.resendCode');
-Route::get('logout', [AuthController::class, 'logout'])->name('auth.logout');
-Route::get('forgot-password', [AuthController::class, 'forgotPasswordForm'])->name('auth.forgotPasswordForm');
-Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->name('auth.forgotPassword');
-Route::get('/reset-password/{user}', [AuthController::class, 'showResetPasswordForm'])->middleware('signed')->name('auth.password.reset');
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('auth.password.update');
+Route::controller(AuthController::class)->group(function () {
+    Route::get('login', 'showLoginForm')->name('auth.login');
+    Route::post('login', 'login')->name('auth.login.post');
+    Route::get('register', 'showRegisterForm')->name('auth.showRegisterForm');
+    Route::post('register', 'register')->name('auth.register');
+    Route::get('email-verification', 'showVerificationForm')->name('auth.showVerificationForm');
+    Route::post('email-verification', 'emailVerification')->name('auth.emailVerification');
+    Route::get('resend-code', 'showResendForm')->name('auth.showResendForm');
+    Route::post('resend-code', 'resendCode')->name('auth.resendCode');
+    Route::get('forgot-password', 'forgotPasswordForm')->name('auth.forgotPasswordForm');
+    Route::post('forgot-password', 'forgotPassword')->name('auth.forgotPassword');
+    Route::get('reset-password/{user}', 'showResetPasswordForm')
+        ->middleware('signed')
+        ->name('auth.password.reset');
+    Route::post('reset-password', 'resetPassword')
+        ->name('auth.password.update');
+    Route::get('logout', 'logout')->name('auth.logout');
+});
+
+Route::middleware('auth')->prefix('deposits')->name('deposits.')->controller(DepositController::class)->group(function () {
+    // List all user deposits
+    Route::get('/', 'index')->name('index');
+    // Create deposit
+    Route::get('/create', 'create')->name('create');
+    Route::post('/', 'store')->name('store');
+});
