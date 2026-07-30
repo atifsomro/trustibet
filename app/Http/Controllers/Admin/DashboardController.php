@@ -9,6 +9,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        return view('admin.home.index');
+        $active = 'home';
+        return view('admin.home.index', compact('active'));
     }
 }
