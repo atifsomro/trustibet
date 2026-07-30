@@ -239,3 +239,32 @@ select:-webkit-autofill {
     animation: timerPulse 1s infinite;
 
 }
+/* ===========================
+   PASSWORD TOGGLE BUTTON
+=========================== */
+.toggle-password{
+    position:absolute;
+    top:0;
+    right:0;
+    bottom:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:48px;
+    padding:0;
+    color:#9ca3af;
+    cursor:pointer;
+    border:none;
+    background:transparent;
+    z-index:10;
+}
+
+.toggle-password:hover{
+    color:#fff;
+}
+
+.password-icon{
+    font-size:18px;
+    line-height:1;
+    pointer-events:none;
+}

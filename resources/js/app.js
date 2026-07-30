@@ -255,23 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
             passwordStrengthText.className = "mt-2 block text-green-500";
         }
     }
-    const registerForm = document.getElementById("registerForm");
-    if (registerForm) {
-        registerForm.querySelectorAll(".toggle-password").forEach((button) => {
-            button.addEventListener("click", function () {
-
-                const input = this.closest(".relative").querySelector(".password-field");
-                const icon = this.querySelector(".password-icon");
-
-                if (!input) return;
-
-                input.type = input.type === "password" ? "text" : "password";
-
-                icon.classList.toggle("fa-eye");
-                icon.classList.toggle("fa-eye-slash");
-            });
-        });
-    }
 });
 // ====== REGISTER FORM VALIDATION END ======
 // ====== LOGIN FORM VALIDATION START ======
@@ -326,27 +309,31 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Login Validation Error:", error);
         }
     });
-
-    const loginForm = document.getElementById("loginForm");
-
-    if (loginForm) {
-        loginForm.querySelectorAll(".toggle-password").forEach((button) => {
+})();
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        document.querySelectorAll(".toggle-password").forEach((button) => {
             button.addEventListener("click", function () {
+                const wrapper = this.closest(".relative");
+                if (!wrapper) return;
 
-                const input = this.closest(".relative").querySelector(".password-field");
+                const input = wrapper.querySelector(".password-field");
                 const icon = this.querySelector(".password-icon");
 
-                if (!input) return;
+                if (!input || !icon) return;
 
-                input.type = input.type === "password" ? "text" : "password";
+                const isPassword = input.type === "password";
 
-                icon.classList.toggle("fa-eye");
-                icon.classList.toggle("fa-eye-slash");
+                input.type = isPassword ? "text" : "password";
+
+                icon.classList.toggle("fa-eye", !isPassword);
+                icon.classList.toggle("fa-eye-slash", isPassword);
             });
         });
+    } catch (error) {
+        console.error("Password Toggle Error:", error);
     }
-})();
-
+});
 // ====== LOGIN FORM VALIDATION END ======
 // ====== WELCOME BONUS MODAL START ======
 document.addEventListener("DOMContentLoaded", () => {
