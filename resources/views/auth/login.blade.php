@@ -73,7 +73,7 @@
                                     class="password-field w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
                                      <button
                                         type="button"
-                                        class="toggle-password absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-white">
+                                        class="toggle-password">
                                         <i class="fa-regular fa-eye password-icon"></i>
                                     </button>
                                 </div>
