@@ -45,44 +45,30 @@
                                 </h3>
                             </div>
                         </div>
-                        <form class="mt-8" action="{{ route('deposits.store') }}" method="POST" enctype="multipart/form-data" novalidate>
+                        <form class="mt-8" action="{{ route('deposits.store') }}" method="POST"
+                            enctype="multipart/form-data" novalidate>
                             @csrf
                             {{-- Payment Methods --}}
                             <h4>
                                 Select Payment Method
                             </h4>
                             <div class="grid md:grid-cols-4 gap-5 mt-5">
-                                {{--<label
-                                    class="payment-method rounded-2xl border border-brand-primary p-6 cursor-pointer">
-                                    <input type="radio" name="payment_method" value="easypaisa" checked
-                                        class="hidden bg-white">
-                                    <div class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
-                                        <img src="{{ asset('images/account/easypaisa.png') }}" class="h-14 mx-auto">
-                                    </div>
-                                    <h5 class="text-center mt-4">
-                                        EasyPaisa
-                                    </h5>
-                                </label>
-                                <label class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer">
-                                    <input type="radio" name="payment_method" value="jazzcash" class="hidden bg-white">
-                                    <div class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
-                                        <img src="{{ asset('images/account/jazzcash.png') }}" class="h-14 mx-auto">
-                                    </div>
-                                    <h5 class="text-center mt-4">
-                                        JazzCash
-                                    </h5>
-                                </label>
-                                <label class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer">
-                                    <input type="radio" name="payment_method" value="binance" class="hidden bg-white">
-                                    <div class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
-                                        <img src="{{ asset('images/account/binance.png') }}" class="h-14 mx-auto">
-                                    </div>
-                                    <h5 class="text-center mt-4">
-                                        Binance
-                                    </h5>
-                                </label>--}}
                                 @foreach ($banks as $key => $bank)
-                                    <label class="payment-method rounded-2xl border border-brand-primary p-6 cursor-pointer">
+                                    <label
+                                        class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300"
+                                        data-name="{{ $bank->account_name }}" data-number="{{ $bank->account_number }}"
+                                        data-network="{{ $bank->bank_name }}" data-qr="{{ $bank->qr_code ? Storage::url($bank->qr_code) : asset('images/placeholder/placeholder.webp') }}">
+                                        <input type="radio" name="bank_account_id" value="{{ $bank->id }}"
+                                            @checked($key == 0) class="hidden">
+                                        <div
+                                            class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
+                                            <img src="{{ Storage::url($bank->picture) }}" class="h-14 mx-auto">
+                                        </div>
+                                        <h5 class="text-center mt-4">
+                                            {{ $bank->bank_name }}
+                                        </h5>
+                                    </label>
+                                    {{--   <label class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300">
                                         <input type="radio" name="bank_account_id" value="{{ $bank->id }}" @checked(intval($key) == 0)
                                             class="hidden bg-white">
                                         <div class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
@@ -92,7 +78,7 @@
                                         <h5 class="text-center mt-4">
                                             {{ $bank->bank_name }}
                                         </h5>
-                                    </label>
+                                    </label> --}}
                                 @endforeach
                             </div>
                             {{-- Amount --}}
@@ -144,8 +130,8 @@
                                     Scan QR Code
                                 </h4>
                                 <div class="bg-white p-2 w-50 h-50 flex items-center content-center m-auto">
-                                    <img id="paymentQR" src="{{ asset('images/account/jazzcashqr.png') }}"
-                                        class="w-full h-full mx-auto">
+                                    <img id="paymentQR" src="{{ asset('images/placeholder/placeholder.webp') }}"
+                                        class="w-full h-full mx-auto object-cover">
                                 </div>
                             </div>
                             {{-- Screenshot --}}
@@ -345,84 +331,118 @@
     </section>
 @endsection
 @push('scripts')
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            try {
-                const methods = document.querySelectorAll('input[name="payment_method"]');
-                const accountName = document.getElementById("accountName");
-                const accountNumber = document.getElementById("accountNumber");
-                const networkName = document.getElementById("networkName");
-                const paymentQR = document.getElementById("paymentQR");
-                const depositAmount = document.getElementById("depositAmount");
-                const summaryMethod = document.getElementById("summaryMethod");
-                const summaryAmount = document.getElementById("summaryAmount");
-                const summaryReceive = document.getElementById("summaryReceive");
-                const copyAccount = document.getElementById("copyAccount");
-                const paymentProof = document.getElementById("paymentProof");
-                const preview = document.getElementById("paymentPreview");
-                const paymentData = {
-                    easypaisa: {
-                        name: "TrustiBet",
-                        number: "03451234567",
-                        network: "EasyPaisa",
-                        qr: "/images/account/easypaisaqr.png"
-                    },
-                    jazzcash: {
-                        name: "TrustiBet",
-                        number: "03001234567",
-                        network: "JazzCash",
-                        qr: "/images/account/jazzcashqr.png"
-                    },
-                    binance: {
-                        name: "TrustiBet",
-                        number: "TJ4xM4Y5L9xxxxxxxxxxxxxxxx",
-                        network: "Binanace",
-                        qr: "/images/account/binanceqr.png"
-                    }
-                };
-                const updateSelection = method => {
-                    const data = paymentData[method.value];
-                    accountName.textContent = data.name;
-                    accountNumber.textContent = data.number;
-                    networkName.textContent = data.network;
-                    paymentQR.src = data.qr;
-                    summaryMethod.textContent = method.value.charAt(0).toUpperCase() + method.value.slice(1);
-                    document.querySelectorAll(".payment-method").forEach(card => {
-                        card.classList.remove("border-brand-primary");
-                        card.classList.add("border-brand-border");
-                    });
-                    const selectedCard = method.closest(".payment-method");
-                    if (selectedCard) {
-                        selectedCard.classList.remove("border-brand-border");
-                        selectedCard.classList.add("border-brand-primary");
-                    }
-                };
-                methods.forEach(method => {
-                    method.addEventListener("change", () => updateSelection(method));
-                    if (method.checked) updateSelection(method);
-                });
-                depositAmount?.addEventListener("input", () => {
-                    const amount = parseFloat(depositAmount.value) || 0;
-                    summaryAmount.textContent = "Rs." + amount.toLocaleString();
-                    summaryReceive.textContent = "Rs." + amount.toLocaleString();
-                });
-                copyAccount?.addEventListener("click", () => {
-                    navigator.clipboard.writeText(accountNumber.textContent);
-                    const old = copyAccount.innerHTML;
-                    copyAccount.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied';
-                    setTimeout(() => {
-                        copyAccount.innerHTML = old;
-                    }, 2000);
-                });
-                paymentProof?.addEventListener("change", e => {
-                    const file = e.target.files[0];
-                    if (!file || !preview) return;
-                    preview.src = URL.createObjectURL(file);
-                    preview.classList.remove("hidden");
-                });
-            } catch (error) {
-                console.error(error);
-            }
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+    const methods = document.querySelectorAll('input[name="bank_account_id"]');
+
+    const accountName = document.getElementById("accountName");
+    const accountNumber = document.getElementById("accountNumber");
+    const networkName = document.getElementById("networkName");
+    const paymentQR = document.getElementById("paymentQR");
+
+    const summaryMethod = document.getElementById("summaryMethod");
+    const depositAmount = document.getElementById("depositAmount");
+    const summaryAmount = document.getElementById("summaryAmount");
+    const summaryReceive = document.getElementById("summaryReceive");
+
+    const copyAccount = document.getElementById("copyAccount");
+    const paymentProof = document.getElementById("paymentProof");
+    const paymentPreview = document.getElementById("paymentPreview");
+
+    const placeholderQR = "{{ asset('images/placeholder/placeholder.webp') }}";
+
+    // Update selected payment method
+    function updateSelection(input) {
+
+        // Remove active state from all cards
+        document.querySelectorAll(".payment-method").forEach(card => {
+            card.classList.remove(
+                "border-brand-primary",
+                "shadow-lg",
+                "shadow-brand-primary/20"
+            );
+
+            card.classList.add("border-brand-border");
         });
-    </script>
+
+        // Selected card
+        const card = input.closest(".payment-method");
+
+        card.classList.remove("border-brand-border");
+
+        card.classList.add(
+            "border-brand-primary",
+            "shadow-lg",
+            "shadow-brand-primary/20"
+        );
+
+        // Update payment details
+        accountName.textContent = card.dataset.name || "-";
+        accountNumber.textContent = card.dataset.number || "-";
+        networkName.textContent = card.dataset.network || "-";
+        summaryMethod.textContent = card.dataset.network || "-";
+
+        // Update QR
+        paymentQR.src = card.dataset.qr || placeholderQR;
+
+        paymentQR.onerror = function () {
+            this.onerror = null;
+            this.src = placeholderQR;
+        };
+    }
+
+    // Payment method change
+    methods.forEach(input => {
+
+        input.addEventListener("change", function () {
+            updateSelection(this);
+        });
+
+        // First selected card on page load
+        if (input.checked) {
+            updateSelection(input);
+        }
+
+    });
+
+    // Amount summary
+    depositAmount?.addEventListener("input", function () {
+
+        const amount = parseFloat(this.value) || 0;
+
+        summaryAmount.textContent = "Rs. " + amount.toLocaleString();
+        summaryReceive.textContent = "Rs. " + amount.toLocaleString();
+
+    });
+
+    // Copy account number
+    copyAccount?.addEventListener("click", function () {
+
+        navigator.clipboard.writeText(accountNumber.textContent);
+
+        const originalText = this.innerHTML;
+
+        this.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied';
+
+        setTimeout(() => {
+            this.innerHTML = originalText;
+        }, 2000);
+
+    });
+
+    // Screenshot preview
+    paymentProof?.addEventListener("change", function () {
+
+        const file = this.files[0];
+
+        if (!file) return;
+
+        paymentPreview.src = URL.createObjectURL(file);
+        paymentPreview.classList.remove("hidden");
+
+    });
+
+});
+</script>
 @endpush

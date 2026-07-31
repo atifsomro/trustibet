@@ -30,7 +30,6 @@
                                 href="{{ auth()->check() ? route('user-account') : route('auth.login') }}">My Account</a>
                         </li>
                     @endauth
-
                     <li>
                         <a class="hover:text-brand-primary"
                             href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}">Leader
