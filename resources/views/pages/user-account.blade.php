@@ -117,7 +117,7 @@
                                 </p>
                             </div>
                             <div class="flex gap-3 flex-wrap">
-                                <a href="{{ route('deposit') }}" class="btn-primary">
+                                <a href="{{ route('deposits.index') }}" class="btn-primary">
                                     Deposit
                                 </a>
                                 <a href="{{ route('withdraw') }}" class="btn-secondary">

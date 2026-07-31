@@ -18,9 +18,10 @@ class DepositController extends Controller
         $deposits = Deposit::with('bankAccount')
             ->where('user_id', Auth::id())
             ->latest()
-            ->paginate(20);
+            ->get();
+        $banks = BankAccount::all();
 
-        return view('deposit.index', compact('deposits'));
+        return view('deposits.index', compact('deposits', 'banks'));
     }
 
     /**
@@ -31,7 +32,7 @@ class DepositController extends Controller
         $validated = $request->validate([
             'bank_account_id' => ['required', 'exists:bank_accounts,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'reference_number' => ['nullable', 'string', 'max:255'],
+            'transaction_id' => ['nullable', 'string', 'max:255'],
             'payment_proof' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'remarks' => ['nullable', 'string', 'max:1000'],
         ]);
@@ -48,7 +49,7 @@ class DepositController extends Controller
                 'bank_account_id' => $validated['bank_account_id'],
                 'amount' => $validated['amount'],
                 'currency' => 'PKR', // or config('app.currency')
-                'reference_number' => $validated['reference_number'] ?? null,
+                'reference_number' => $validated['transaction_id'] ?? null,
                 'payment_proof' => $path,
                 'remarks' => $validated['remarks'] ?? null,
                 'status' => 'pending',
