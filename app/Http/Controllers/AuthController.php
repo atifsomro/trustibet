@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\RegisterUserAction;
 use App\Mail\ResetPasswordMail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Mail;
@@ -19,6 +20,9 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        protected RegisterUserAction $registerUserAction
+    ) {}
     public function showLoginForm()
     {
         $title = 'Login - ' . env('APP_NAME');
@@ -66,7 +70,8 @@ class AuthController extends Controller
             'country_id' => 'required',
             'password' => 'required|min:8',
         ]);
-        $inserted = (new User())->store($request);
+        // $inserted = (new User())->store($request);
+        $inserted = $this->registerUserAction->execute($request);
         if ($inserted) {
             return redirect()
                 ->route('auth.showVerificationForm')
@@ -138,23 +143,6 @@ class AuthController extends Controller
         return redirect()->route('auth.login');
     }
 
-    public function handleUpdate(Request $request, $id)
-    {
-        $customer = Customer::where('id', $id)->first();
-        $request->validate([
-            'first_name' => 'required',
-            'last_name' => 'required',
-            'email' => 'required|email|unique:customers,email,' . $customer->id,
-            'telephone' => 'required|regex:/^\d{3}?[-]?\d{3}[-]?\d{4}$/',
-        ]);
-
-        $update = (new Customer())->_update($request, $id);
-
-        if ($update) {
-            return redirect()->back()->with('success', 'Customer Account Information Updated Successfully.');
-        }
-    }
-
     public function forgotPasswordForm()
     {
         $title = 'Forgot Password - ' . env('APP_NAME');
@@ -166,7 +154,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
         ]);
-        $user = User::where('email', $request->email)->first();
+        $user = User::query()->where('email', $request->email)->first();
         // Don't reveal whether email exists
         if (!$user || !empty($user->password_reset_token)) {
             return back()->with('success', 'A password reset link has been sent.');

@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\BankAccountController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepositController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WalletController;
+use App\Http\Controllers\Admin\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -25,4 +27,94 @@ Route::prefix('admin')
             Route::post('deposits/{deposit}/approve', 'approve')->name('deposits.approve');
             Route::post('deposits/{deposit}/reject', 'reject')->name('deposits.reject');
         });
+        /*
+        |--------------------------------------------------------------------------
+        | Users Management
+        |--------------------------------------------------------------------------
+        */
+        Route::controller(UserController::class)->group(function () {
+            Route::get('/users', 'index')
+                ->name('users.index');
+        });
     });
+
+    /*
+|--------------------------------------------------------------------------
+| Wallet Management
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:admin')->prefix('admin/wallets')->name('admin.wallets.')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wallets
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/', [WalletController::class, 'index'])
+        ->name('index');
+
+    Route::get('/{wallet}', [WalletController::class, 'show'])
+        ->name('show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wallet Transactions
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/{wallet}/transactions', [WalletController::class, 'transactions'])
+        ->name('transactions');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wallet Bonuses
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/{wallet}/bonuses', [WalletController::class, 'bonuses'])
+        ->name('bonuses');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wallet Reconciliation
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/{wallet}/reconciliation', [WalletController::class, 'reconciliation'])
+        ->name('reconciliation');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Withdrawal Management
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:admin')->prefix('admin/withdrawals')->name('admin.withdrawals.')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Withdrawal Requests
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/', [WithdrawalController::class, 'index'])
+        ->name('index');
+
+    Route::get('/{withdrawal}', [WithdrawalController::class, 'show'])
+        ->name('show');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actions
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/{withdrawal}/approve', [WithdrawalController::class, 'approve'])
+        ->name('approve');
+
+    Route::post('/{withdrawal}/reject', [WithdrawalController::class, 'reject'])
+        ->name('reject');
+});

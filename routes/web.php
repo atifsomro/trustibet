@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepositController;
+use App\Http\Controllers\User\WalletController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -89,10 +90,61 @@ Route::controller(AuthController::class)->group(function () {
     Route::get('logout', 'logout')->name('auth.logout');
 });
 
-Route::middleware('auth')->prefix('deposits')->name('deposits.')->controller(DepositController::class)->group(function () {
+Route::middleware('auth')->prefix('wallet/deposits')->name('deposits.')->controller(DepositController::class)->group(function () {
     // List all user deposits
     Route::get('/', 'index')->name('index');
     // Create deposit
     Route::get('/create', 'create')->name('create');
     Route::post('/', 'store')->name('store');
+});
+
+/*
+|--------------------------------------------------------------------------
+| User Wallet Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth'])->prefix('wallet')->name('wallet.')->group(function () {
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/', [WalletController::class, 'index'])
+        ->name('index');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Transactions
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/transactions', [WalletController::class, 'transactions'])
+        ->name('transactions');
+    Route::get('/transactions/{transaction}', [WalletController::class, 'showTransaction'])
+    ->name('transactions.show');
+    /*
+    |--------------------------------------------------------------------------
+    | Bonuses
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/bonuses', [WalletController::class, 'bonuses'])
+        ->name('bonuses');
+    /*
+    |--------------------------------------------------------------------------
+    | Withdrawals
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/withdrawals', [WalletController::class, 'withdrawals'])
+        ->name('withdrawals');
+    Route::get('/withdrawals/create', [WalletController::class, 'createWithdrawal'])
+        ->name('withdrawals.create');
+    Route::post('/withdrawals', [WalletController::class, 'storeWithdrawal'])
+        ->name('withdrawals.store');
+    /*
+    |--------------------------------------------------------------------------
+    | Wallet API
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/balance', [WalletController::class, 'balance'])
+        ->name('balance');
 });

@@ -70,7 +70,7 @@ class Deposit extends Model
      */
     public function approvedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'approved_by');
+        return $this->belongsTo(Admin::class, 'approved_by');
     }
 
 
@@ -176,7 +176,7 @@ class Deposit extends Model
      *
      * Wallet credit logic will be added here later.
      */
-    public function approve(int $adminId, ?string $remarks = null): bool
+    public function approve(int $adminId = 1, ?string $remarks = null): bool
     {
         if (!$this->isPending()) {
             return false;

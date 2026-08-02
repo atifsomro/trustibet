@@ -33,7 +33,7 @@
                                     Available Balance
                                 </span>
                                 <h3 class="mt-2 text-green-500">
-                                    $0
+                                    ${{ $user->wallet->withdrawable_balance }}
                                 </h3>
                             </div>
                             <div class="rounded-2xl bg-brand-dark p-6">
@@ -41,7 +41,7 @@
                                     Minimum Deposit
                                 </span>
                                 <h3 class="mt-2">
-                                    $0
+                                    $1
                                 </h3>
                             </div>
                         </div>
@@ -56,7 +56,7 @@
                                 @foreach ($banks as $key => $bank)
                                     <label
                                         class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300"
-                                        data-name="{{ $bank->account_name }}" data-number="{{ $bank->account_number }}"
+                                        data-name="{{ $bank->bank_name }}" data-account_name="{{ $bank->account_title }}" data-number="{{ $bank->account_number }}"
                                         data-network="{{ $bank->bank_name }}" data-qr="{{ $bank->qr_code ? Storage::url($bank->qr_code) : asset('images/placeholder/placeholder.webp') }}">
                                         <input type="radio" name="bank_account_id" value="{{ $bank->id }}"
                                             @checked($key == 0) class="hidden">
@@ -376,9 +376,9 @@
             "shadow-lg",
             "shadow-brand-primary/20"
         );
-
+        console.log(card.dataset);
         // Update payment details
-        accountName.textContent = card.dataset.name || "-";
+        accountName.textContent = card.dataset.account_name || "-";
         accountNumber.textContent = card.dataset.number || "-";
         networkName.textContent = card.dataset.network || "-";
         summaryMethod.textContent = card.dataset.network || "-";

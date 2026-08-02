@@ -20,8 +20,8 @@ class DepositController extends Controller
             ->latest()
             ->get();
         $banks = BankAccount::all();
-
-        return view('deposits.index', compact('deposits', 'banks'));
+        $user = auth('web')->user();
+        return view('deposits.index', compact('user', 'deposits', 'banks'));
     }
 
     /**

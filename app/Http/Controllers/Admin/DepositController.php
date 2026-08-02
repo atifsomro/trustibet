@@ -2,14 +2,21 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\BalanceType;
+use App\Actions\Deposit\ApproveDepositAction;
 use App\Http\Controllers\Controller;
 use App\Models\Deposit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\Wallet\WalletService;
 use Throwable;
 
 class DepositController extends Controller
 {
+
+    public function __construct(
+        protected ApproveDepositAction $approveDepositAction
+    ) {}
     /**
      * Display all deposits.
      */
@@ -76,75 +83,40 @@ class DepositController extends Controller
             'admin_remarks' => [
                 'nullable',
                 'string',
-                'max:1000'
-            ]
+                'max:1000',
+            ],
         ]);
-
-
-        DB::beginTransaction();
 
         try {
 
-
-            if (!$deposit->isPending()) {
-
-                return back()
-                    ->with(
-                        'error',
-                        'This deposit has already been processed.'
-                    );
-            }
-
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Wallet Credit Logic
-            |--------------------------------------------------------------------------
-            |
-            | Add your wallet balance update here.
-            |
-            | Example:
-            |
-            | $user->increment(
-            |     'wallet_balance',
-            |     $deposit->amount
-            | );
-            |
-            */
-
-
-            $deposit->approve(
-                auth()->id(),
-                $request->admin_remarks
+            $this->approveDepositAction->execute(
+                deposit: $deposit,
+                adminId: auth('admin')->id(),
+                remarks: $request->admin_remarks,
             );
 
-
-            DB::commit();
-
-
             return redirect()
-                ->route(
-                    'admin.deposits.index'
-                )
+                ->route('admin.deposits.index')
                 ->with(
                     'success',
                     'Deposit approved successfully.'
                 );
 
+        } catch (\RuntimeException $e) {
+
+            return back()->with(
+                'error',
+                $e->getMessage()
+            );
 
         } catch (Throwable $e) {
 
-            DB::rollBack();
-
             report($e);
 
-
-            return back()
-                ->with(
-                    'error',
-                    'Unable to approve deposit.'
-                );
+            return back()->with(
+                'error',
+                'Unable to approve deposit.'
+            );
         }
     }
 
