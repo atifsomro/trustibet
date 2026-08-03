@@ -71,6 +71,37 @@
         });
     </script>
     @include('components.support')
+
+    @if (session('success'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: @json(session('success')),
+                    confirmButtonText: 'OK'
+                });
+            });
+        </script>
+    @endif
+
+    @if ($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Validation Error',
+                    html: `
+                    <ul class="text-center">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                `
+                });
+            });
+        </script>
+    @endif
 </body>
 
 </html>

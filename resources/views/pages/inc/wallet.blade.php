@@ -6,16 +6,6 @@
                 <h2 class="mt-3">Rs. 12,500</h2>
                 <p class="mt-2 opacity-70">Available balance ready to use.</p>
             </div>
-            <div class="flex flex-wrap gap-4">
-                <a href="{{ route('deposit') }}" class="btn-primary">
-                    <i class="fa-solid fa-wallet mr-2"></i>
-                    Deposit
-                </a>
-                <a href="{{ route('withdraw') }}" class="btn-secondary">
-                    <i class="fa-solid fa-money-bill-wave mr-2"></i>
-                    Withdraw
-                </a>
-            </div>
         </div>
     </div>
 

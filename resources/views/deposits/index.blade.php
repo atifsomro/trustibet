@@ -3,13 +3,6 @@
 @section('content')
     <section class="deposit py-8">
         <div class="container">
-            @if ($errors->any())
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            @endif
             <div class="grid xl:grid-cols-12 gap-6">
                 {{-- Deposit Form --}}
                 <div class="xl:col-span-8">
@@ -68,17 +61,6 @@
                                             {{ $bank->bank_name }}
                                         </h5>
                                     </label>
-                                    {{--   <label class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300">
-                                        <input type="radio" name="bank_account_id" value="{{ $bank->id }}" @checked(intval($key) == 0)
-                                            class="hidden bg-white">
-                                        <div class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
-                                            <img src="{{ Storage::url($bank->picture) }}"
-                                                class="h-14 mx-auto">
-                                        </div>
-                                        <h5 class="text-center mt-4">
-                                            {{ $bank->bank_name }}
-                                        </h5>
-                                    </label> --}}
                                 @endforeach
                             </div>
                             {{-- Amount --}}
