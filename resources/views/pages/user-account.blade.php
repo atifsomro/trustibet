@@ -187,7 +187,7 @@
 
                         <div id="kyc-panel"
                             class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
-                            @include('pages.inc.kyc')
+                            @include('user.kyc.kyc')
                         </div>
 
                         <div id="settings-panel"

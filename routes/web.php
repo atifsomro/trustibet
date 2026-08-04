@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\User\WalletController;
+use App\Http\Controllers\User\KycController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -140,6 +141,18 @@ Route::middleware(['auth'])->prefix('wallet')->name('wallet.')->group(function (
         ->name('withdrawals.create');
     Route::post('/withdrawals', [WalletController::class, 'storeWithdrawal'])
         ->name('withdrawals.store');
+
+     /*
+    |--------------------------------------------------------------------------
+    | KYC Verification
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/kyc', [KycController::class, 'index'])
+        ->name('kyc.index');
+
+    Route::post('/kyc', [KycController::class, 'store'])
+        ->name('kyc.store');
+
     /*
     |--------------------------------------------------------------------------
     | Wallet API
@@ -147,4 +160,6 @@ Route::middleware(['auth'])->prefix('wallet')->name('wallet.')->group(function (
     */
     Route::get('/balance', [WalletController::class, 'balance'])
         ->name('balance');
+
+
 });
