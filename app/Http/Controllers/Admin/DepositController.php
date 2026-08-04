@@ -154,7 +154,7 @@ class DepositController extends Controller
 
 
             $deposit->reject(
-                auth()->id(),
+                auth('admin')->id(),
                 $request->admin_remarks
             );
 

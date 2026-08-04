@@ -70,8 +70,7 @@ class ApproveDepositAction
                 remarks: $remarks
             );
             return $deposit->fresh([
-                'user',
-                'wallet',
+                'user.wallet',
             ]);
         });
     }
