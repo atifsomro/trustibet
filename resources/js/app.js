@@ -536,3 +536,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 // ===== HERO COUNTERS JS END =====
+// ===== KYC Validation JS START =====
+
+// ===== KYC Validation JS END =====

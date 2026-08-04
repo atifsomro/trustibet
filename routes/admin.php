@@ -131,5 +131,9 @@ Route::middleware('auth:admin')->prefix('admin/withdrawals')->name('admin.withdr
 
         Route::get('/', [KycController::class, 'index'])->name('index');
         Route::get('/{kyc}', [KycController::class, 'show'])->name('show');
+        Route::post('/{kyc}/approve', [KycController::class, 'approve'])
+        ->name('approve');
+        Route::post('/{kyc}/reject', [KycController::class, 'reject'])
+        ->name('reject');
 
     });

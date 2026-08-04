@@ -5,6 +5,8 @@ use App\Http\Controllers\DepositController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\User\KycController;
 use Illuminate\Support\Facades\Route;
+use App\Models\Kyc;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('pages.home');
@@ -15,8 +17,10 @@ Route::get('/contact', function () {
 })->name('contact');
 
 Route::get('/user-account', function () {
-    return view('pages.user-account');
-})->name('user-account');
+    $kyc = Kyc::where('user_id', Auth::id())->first();
+    return view('pages.user-account', compact('kyc'));
+})->middleware('auth')->name('user-account');
+
 
 Route::get('/notifications', function () {
     return view('pages.notifications');
