@@ -6,16 +6,30 @@
             <div class="grid lg:grid-cols-12 gap-6">
                 {{-- Sidebar --}}
                 <aside class="lg:col-span-3">
-                    <div class="rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-6 position-static lg:sticky lg:top-24">
+                    <div
+                        class="rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-6 position-static lg:sticky lg:top-24">
                         <div class="text-center">
                             <img src="{{ asset('images/profile/avatar.png') }}"
                                 class="w-18 h-18 md:w-24 md:h-24 rounded-full mx-auto border-4 border-brand-primary object-cover">
                             <h4 class="mt-4">
                                 {{ auth()->user()->name }}
+
+                                @if (isset($kyc) && $kyc)
+                                    @if ($kyc->status == 'approved')
+                                        <span class="mt-2 inline-block text-sm text-green-500">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </span>
+                                    @elseif($kyc->status == 'pending')
+                                        <span class="mt-2 inline-block text-sm text-yellow-500">
+                                            <i class="fa-solid fa-hourglass-half"></i>
+                                        </span>
+                                    @elseif($kyc->status == 'rejected')
+                                        <span class="mt-2 inline-block text-sm text-red-500">
+                                            <i class="fa-solid fa-file-circle-xmark"></i>
+                                        </span>
+                                    @endif
+                                @endif
                             </h4>
-                            <p class="text-sm">
-                                Premium Member
-                            </p>
                         </div>
 
                         <nav class="mt-8 space-y-2" aria-label="Account navigation">
@@ -187,7 +201,7 @@
 
                         <div id="kyc-panel"
                             class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
-                            @include('pages.inc.kyc')
+                            @include('user.kyc.kyc')
                         </div>
 
                         <div id="settings-panel"

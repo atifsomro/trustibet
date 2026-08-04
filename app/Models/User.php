@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use App\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Kyc;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -69,5 +70,10 @@ class User extends Authenticatable
     public function wallet(): HasOne
     {
         return $this->hasOne(Wallet::class);
+    }
+    public function kyc(): HasOne{
+
+    return $this->hasOne(Kyc::class);
+
     }
 }

@@ -1,4 +1,8 @@
 import '../css/app.css';
+import Swal from 'sweetalert2';
+window.Swal = Swal;
+
+
 const menuToggle = document.getElementById("MenuToggle");
 const menuClose = document.getElementById("MenuClose");
 const mobileMenu = document.getElementById("MobileMenu");
@@ -532,3 +536,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 // ===== HERO COUNTERS JS END =====
+// ===== KYC Validation JS START =====
+
+// ===== KYC Validation JS END =====

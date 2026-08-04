@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DepositController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\WithdrawalController;
+use App\Http\Controllers\Admin\KycController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -118,3 +119,21 @@ Route::middleware('auth:admin')->prefix('admin/withdrawals')->name('admin.withdr
     Route::post('/{withdrawal}/reject', [WithdrawalController::class, 'reject'])
         ->name('reject');
 });
+    /*
+    |--------------------------------------------------------------------------
+    | KYC Managment
+    |--------------------------------------------------------------------------
+    */
+  Route::middleware('auth:admin')
+    ->prefix('admin/kyc')
+    ->name('admin.kyc.')
+    ->group(function () {
+
+        Route::get('/', [KycController::class, 'index'])->name('index');
+        Route::get('/{kyc}', [KycController::class, 'show'])->name('show');
+        Route::post('/{kyc}/approve', [KycController::class, 'approve'])
+        ->name('approve');
+        Route::post('/{kyc}/reject', [KycController::class, 'reject'])
+        ->name('reject');
+
+    });
