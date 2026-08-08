@@ -46,7 +46,7 @@
     {{-- Summary --}}
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
 
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <p class="text-gray-500 text-sm">
                 Total Requests
@@ -58,7 +58,7 @@
 
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <p class="text-gray-500 text-sm">
                 Pending
@@ -70,7 +70,7 @@
 
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <p class="text-gray-500 text-sm">
                 Approved
@@ -82,7 +82,7 @@
 
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <p class="text-gray-500 text-sm">
                 Rejected
@@ -97,13 +97,13 @@
     </div>
 
     {{-- Table --}}
-    <div class="bg-white rounded-3xl shadow-sm overflow-hidden">
+    <div class="bg-brand-dark rounded-3xl shadow-sm overflow-hidden">
 
         <div class="overflow-x-auto">
 
             <table class="min-w-full">
 
-                <thead class="bg-gray-50">
+                <thead class="bg-brand-dark">
 
                 <tr>
 

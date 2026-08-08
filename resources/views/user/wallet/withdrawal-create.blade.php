@@ -5,43 +5,29 @@
 @section('content')
 
 <div class="container mx-auto px-4 py-8">
-
     {{-- Header --}}
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-
         <div>
-
-            <h1 class="text-3xl font-bold text-brand-dark">
+            <h2 class=" text-white">
                 Request Withdrawal
-            </h1>
-
+            </h2>
             <p class="text-gray-500 mt-2">
                 Submit a withdrawal request from your withdrawable wallet balance.
             </p>
-
         </div>
-
         <div class="mt-5 lg:mt-0">
-
             <a href="{{ route('wallet.withdrawals') }}"
                class="inline-flex items-center px-5 py-3 rounded-xl border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white transition">
-
                 <i class="fas fa-arrow-left mr-2"></i>
-
                 Back
-
             </a>
-
         </div>
-
     </div>
-
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
         {{-- Form --}}
         <div class="lg:col-span-2">
 
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100">
+            <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100">
 
                 <div class="px-6 py-5 border-b">
 
@@ -70,7 +56,7 @@
                             min="1"
                             step="1"
                             value="{{ old('amount') }}"
-                            class="w-full rounded-xl border-gray-300 focus:border-brand-primary focus:ring-brand-primary"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                             placeholder="Enter amount">
 
                         @error('amount')
@@ -89,7 +75,7 @@
                         <select
                             name="payment_method"
                             id="payment_method"
-                            class="w-full rounded-xl border-gray-300 focus:border-brand-primary focus:ring-brand-primary">
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
 
                             <option value="">
                                 Select Payment Method
@@ -133,7 +119,7 @@
                         <textarea
                             name="account_details"
                             rows="6"
-                            class="w-full rounded-xl border-gray-300 focus:border-brand-primary focus:ring-brand-primary"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                             placeholder="Provide complete account details where you want to receive the payment.">{{ old('account_details') }}</textarea>
 
                         @error('account_details')
@@ -152,7 +138,7 @@
                         <textarea
                             name="remarks"
                             rows="4"
-                            class="w-full rounded-xl border-gray-300 focus:border-brand-primary focus:ring-brand-primary"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
                             placeholder="Any additional information...">{{ old('remarks') }}</textarea>
 
                         @error('remarks')
@@ -184,7 +170,7 @@
         {{-- Sidebar --}}
         <div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
                 <h2 class="text-lg font-semibold mb-6">
 
@@ -252,7 +238,7 @@
 
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mt-6">
+            <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6 mt-6">
 
                 <h2 class="text-lg font-semibold mb-5">
 
