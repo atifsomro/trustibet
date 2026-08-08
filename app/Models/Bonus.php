@@ -25,8 +25,8 @@ class Bonus extends Model
 
     protected $casts = [
         'type' => BonusType::class,
-        'initial_amount' => 'integer',
-        'remaining_amount' => 'integer',
+        'initial_amount' => 'float',
+        'remaining_amount' => 'float',
         'status' => BonusStatus::class,
         'activated_at' => 'datetime',
         'expires_at' => 'datetime',

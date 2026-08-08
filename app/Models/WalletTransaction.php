@@ -33,8 +33,8 @@ class WalletTransaction extends Model
     protected $casts = [
         'balance_type' => BalanceType::class,
         'type' => WalletTransactionType::class,
-        'amount' => 'integer',
-        'balance_after' => 'integer',
+        'amount' => 'float',
+        'balance_after' => 'float',
         'meta' => 'array',
         'created_at' => 'datetime',
     ];

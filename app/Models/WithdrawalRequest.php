@@ -24,7 +24,7 @@ class WithdrawalRequest extends Model
     ];
 
     protected $casts = [
-        'amount' => 'integer',
+        'amount' => 'float',
         'status' => WithdrawalStatus::class,
         'account_details' => 'array',
         'requested_at' => 'datetime',

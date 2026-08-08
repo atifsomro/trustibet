@@ -20,9 +20,9 @@ class Wallet extends Model
     ];
 
     protected $casts = [
-        'withdrawable_balance' => 'integer',
-        'bonus_balance' => 'integer',
-        'locked_balance' => 'integer',
+        'withdrawable_balance' => 'float',
+        'bonus_balance' => 'float',
+        'locked_balance' => 'float',
         'version' => 'integer',
     ];
 

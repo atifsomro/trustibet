@@ -65,7 +65,7 @@ class RegisterUserAction
                 }
                 $this->walletService->grantBonus(
                     user: $user,
-                    amount: (int) config('wallet.welcome_bonus.amount'),
+                    amount: (float) config('wallet.welcome_bonus.amount'),
                     bonusType: BonusType::WELCOME,
                     reference: $user,
                     meta: [

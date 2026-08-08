@@ -134,7 +134,7 @@
                                 <a href="{{ route('deposits.index') }}" class="btn-primary">
                                     Deposit
                                 </a>
-                                <a href="{{ route('withdraw') }}" class="btn-secondary">
+                                <a href="{{ route('wallet.withdrawals') }}" class="btn-secondary">
                                     Withdraw
                                 </a>
                             </div>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Wallet;
 
+use App\Enums\BalanceType;
+use App\Enums\WalletTransactionType;
 use App\Enums\WithdrawalStatus;
 use App\Exceptions\InsufficientBalanceException;
 use App\Models\User;
@@ -47,7 +49,7 @@ class RequestWithdrawalAction
 
             if ($wallet->withdrawable_balance < $amount) {
                 throw new InsufficientBalanceException(
-                    balanceType: \App\Enums\BalanceType::WITHDRAWABLE,
+                    balanceType: BalanceType::WITHDRAWABLE,
                     requestedAmount: $amount,
                     availableAmount: $wallet->withdrawable_balance
                 );
@@ -55,7 +57,7 @@ class RequestWithdrawalAction
 
             /*
             |--------------------------------------------------------------------------
-            | Move funds
+            | Move Funds
             |--------------------------------------------------------------------------
             */
 
@@ -67,7 +69,7 @@ class RequestWithdrawalAction
 
             /*
             |--------------------------------------------------------------------------
-            | Withdrawal Request
+            | Create Withdrawal Request
             |--------------------------------------------------------------------------
             */
 
@@ -92,8 +94,8 @@ class RequestWithdrawalAction
 
             $this->recordTransactionAction->execute(
                 wallet: $wallet,
-                balanceType: \App\Enums\BalanceType::WITHDRAWABLE,
-                transactionType: \App\Enums\WalletTransactionType::WITHDRAW_REQUEST,
+                balanceType: BalanceType::WITHDRAWABLE,
+                transactionType: WalletTransactionType::WITHDRAW_REQUEST,
                 amount: -$amount,
                 balanceAfter: $wallet->withdrawable_balance,
                 reference: $withdrawal

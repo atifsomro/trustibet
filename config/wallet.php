@@ -15,7 +15,7 @@ return [
         /*
          * Amount stored in USD.
          */
-        'amount' => 50,
+        'amount' => 50.00,
 
         /*
          * Null means never expires.
