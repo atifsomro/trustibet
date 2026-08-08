@@ -41,7 +41,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
 
         {{-- Withdrawable --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <div class="flex justify-between items-center">
 
@@ -71,7 +71,7 @@
         </div>
 
         {{-- Bonus --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <div class="flex justify-between items-center">
 
@@ -101,7 +101,7 @@
         </div>
 
         {{-- Locked --}}
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
 
             <div class="flex justify-between items-center">
 
@@ -168,7 +168,7 @@
     {{-- Quick Statistics --}}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
 
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+        <div class="bg-brand-dark rounded-2xl border border-gray-100 p-5 text-center">
 
             <p class="text-sm text-gray-500">Transactions</p>
 
@@ -178,7 +178,7 @@
 
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+        <div class="bg-brand-dark rounded-2xl border border-gray-100 p-5 text-center">
 
             <p class="text-sm text-gray-500">Active Bonuses</p>
 
@@ -188,7 +188,7 @@
 
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+        <div class="bg-brand-dark rounded-2xl border border-gray-100 p-5 text-center">
 
             <p class="text-sm text-gray-500">Withdrawals</p>
 
@@ -198,7 +198,7 @@
 
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-100 p-5 text-center">
+        <div class="bg-brand-dark rounded-2xl border border-gray-100 p-5 text-center">
 
             <p class="text-sm text-gray-500">
                 Wallet Status

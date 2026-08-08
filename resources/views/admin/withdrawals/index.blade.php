@@ -3,18 +3,13 @@
 @section('content')
 
 <div class="container-fluid">
-
     <div class="d-flex justify-content-between align-items-center mb-3">
-
         <h4 class="mb-0">
             Withdrawal Requests
         </h4>
-
     </div>
-
     {{-- Filters --}}
     <div class="card mb-3">
-
         <div class="card-body">
 
             <form method="GET"
