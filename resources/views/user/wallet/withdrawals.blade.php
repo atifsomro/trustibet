@@ -131,9 +131,9 @@
                         Processed
                     </th>
 
-                    <th class="px-6 py-4 text-center">
+                    {{--<th class="px-6 py-4 text-center">
                         Details
-                    </th>
+                    </th>--}}
 
                 </tr>
 
@@ -201,7 +201,7 @@
 
                         </td>
 
-                        <td class="px-6 py-5 text-center">
+                        {{-- <td class="px-6 py-5 text-center">
 
                             <button
                                 x-data
@@ -212,7 +212,7 @@
 
                             </button>
 
-                        </td>
+                        </td> --}}
 
                     </tr>
 

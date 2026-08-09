@@ -8,6 +8,7 @@ use App\Actions\Wallet\ApproveWithdrawalAction;
 use App\Actions\Wallet\RequestWithdrawalAction;
 use App\Actions\Wallet\RejectWithdrawalAction;
 use App\Enums\WithdrawalStatus;
+use App\Models\Admin;
 use App\Models\User;
 use App\Models\WithdrawalRequest;
 use Illuminate\Database\Eloquent\Collection;
@@ -28,7 +29,7 @@ class WithdrawalService
         User $user,
         float $amount,
         string $paymentMethod,
-        array $accountDetails,
+        string $accountDetails,
         ?string $remarks = null
     ): WithdrawalRequest {
 
@@ -46,7 +47,7 @@ class WithdrawalService
      */
     public function approve(
         WithdrawalRequest $withdrawal,
-        User $approvedBy,
+        Admin $approvedBy,
         ?string $remarks = null,
         array $meta = []
     ): WithdrawalRequest {
@@ -64,7 +65,7 @@ class WithdrawalService
      */
     public function reject(
         WithdrawalRequest $withdrawal,
-        User $rejectedBy,
+        Admin $rejectedBy,
         ?string $remarks = null,
         array $meta = []
     ): WithdrawalRequest {

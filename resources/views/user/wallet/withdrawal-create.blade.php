@@ -96,9 +96,9 @@
                                 EasyPaisa
                             </option>
 
-                            <option value="paypal"
-                                @selected(old('payment_method')=='paypal')>
-                                PayPal
+                            <option value="crypto"
+                                @selected(old('payment_method')=='crypto')>
+                                Crypto
                             </option>
 
                         </select>
@@ -265,7 +265,7 @@
 
                     <li class="flex">
                         <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
-                        Processing time may take 24–48 hours.
+                        Processing time may take 30-60 minutes.
                     </li>
 
                     <li class="flex">

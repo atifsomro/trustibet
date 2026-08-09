@@ -23,7 +23,7 @@ return new class extends Migration
 
             $table->string('payment_method')->nullable();
 
-            $table->json('account_details')->nullable();
+            $table->string('account_details')->nullable();
 
             $table->bigInteger('approved_by')->nullable();
 

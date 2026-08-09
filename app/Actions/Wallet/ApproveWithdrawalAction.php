@@ -8,6 +8,7 @@ use App\Enums\BalanceType;
 use App\Enums\WalletTransactionType;
 use App\Enums\WithdrawalStatus;
 use App\Exceptions\WalletException;
+use App\Models\Admin;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WithdrawalRequest;
@@ -27,7 +28,7 @@ class ApproveWithdrawalAction
      */
     public function execute(
         WithdrawalRequest $withdrawal,
-        User $approvedBy,
+        Admin $approvedBy,
         ?string $remarks = null,
         array $meta = []
     ): WithdrawalRequest {

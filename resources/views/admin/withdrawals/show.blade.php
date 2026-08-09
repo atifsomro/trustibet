@@ -330,8 +330,6 @@
 
                             @csrf
 
-                            @method('PATCH')
-
                             <div class="mb-3">
 
                                 <label class="form-label">

@@ -29,7 +29,7 @@ class RequestWithdrawalAction
         User $user,
         float $amount,
         string $paymentMethod,
-        array $accountDetails,
+        string $accountDetails,
         ?string $remarks = null
     ): WithdrawalRequest {
 

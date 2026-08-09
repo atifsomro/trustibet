@@ -132,7 +132,6 @@ class WalletController extends Controller
     public function storeWithdrawal(
         RequestWithdrawalRequest $request
     ): RedirectResponse {
-
         $this->withdrawalService->request(
             user: $request->user(),
             amount: (int) $request->amount,
