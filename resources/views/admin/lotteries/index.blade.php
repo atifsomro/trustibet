@@ -5,9 +5,8 @@
 <div class="container-fluid">
 
     {{-- ================================================================
-         HEADER
+        Header
     ================================================================= --}}
-
     <div class="d-flex justify-content-between align-items-center mb-3">
 
         <h4 class="mb-0">
@@ -25,9 +24,8 @@
 
 
     {{-- ================================================================
-         FILTERS
+        Filters
     ================================================================= --}}
-
     <div class="card mb-3">
 
         <div class="card-body">
@@ -119,7 +117,7 @@
                 </div>
 
 
-                {{-- Filter Buttons --}}
+                {{-- Filter --}}
                 <div class="col-md-2">
 
                     <button
@@ -146,24 +144,21 @@
 
 
     {{-- ================================================================
-         LOTTERY TABLE
+        Lottery Table
     ================================================================= --}}
-
     <div class="card">
 
         <div class="card-body p-0">
 
             <div class="table-responsive">
 
-                <table class="table table-striped table-hover align-middle mb-0">
+                <table class="table table-striped align-middle mb-0">
 
                     <thead>
 
                         <tr>
 
-                            <th>
-                                #
-                            </th>
+                            <th>#</th>
 
                             <th>
                                 Lottery
@@ -212,19 +207,17 @@
 
                         <tr>
 
-                            {{-- =================================================
-                                 #
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                #
+                            ===================================================== --}}
                             <td>
                                 {{ $lotteries->firstItem() + $loop->index }}
                             </td>
 
 
-                            {{-- =================================================
-                                 LOTTERY
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Lottery
+                            ===================================================== --}}
                             <td>
 
                                 <strong>
@@ -240,14 +233,12 @@
                             </td>
 
 
-                            {{-- =================================================
-                                 TICKET PRICE
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Ticket Price
+                            ===================================================== --}}
                             <td>
 
                                 {{ $lottery->currency }}
-
                                 {{ number_format(
                                     (float) $lottery->ticket_price,
                                     2
@@ -256,93 +247,98 @@
                             </td>
 
 
-                            {{-- =================================================
-                                 PRIZE POOL
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Prize Pool
+                            ===================================================== --}}
                             <td>
 
                                 {{ $lottery->currency }}
-
                                 {{ number_format(
-                                    (float) $lottery->totalPrizeAmount(),
+                                    (float) $lottery->total_prize_pool,
                                     2
                                 ) }}
 
                             </td>
 
 
-                            {{-- =================================================
-                                 DRAWS
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Completed Draws
+                            ===================================================== --}}
                             <td>
 
-                                <span class="badge bg-info">
+                                @if ($lottery->completed_draws_count > 0)
 
-                                    {{ $lottery->completed_draws_count }}
+                                    <a
+                                        href="{{ route(
+                                            'admin.lotteries.show',
+                                            $lottery
+                                        ) }}"
+                                        class="text-decoration-none"
+                                    >
 
-                                </span>
+                                        <span class="badge bg-success">
+                                            {{ $lottery->completed_draws_count }}
+                                        </span>
 
-                                <small class="text-muted">
+                                        <small class="text-muted">
+                                            {{ $lottery->completed_draws_count == 1
+                                                ? 'Draw'
+                                                : 'Draws'
+                                            }}
+                                        </small>
 
-                                    /
-                                    {{ $lottery->total_draws_count }}
+                                    </a>
 
-                                </small>
+                                @else
+
+                                    <span class="text-muted">
+                                        —
+                                    </span>
+
+                                @endif
 
                             </td>
 
 
-                            {{-- =================================================
-                                 SALES CLOSE
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Sales Close
+                            ===================================================== --}}
                             <td>
 
-                                {{ optional(
-                                    $lottery->sales_end_at
-                                )->format('d M Y h:i A') ?? '—' }}
+                                {{ optional($lottery->sales_end_at)
+                                    ->format('d M Y h:i A') }}
 
                             </td>
 
 
-                            {{-- =================================================
-                                 DRAW DATE
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Draw Date
+                            ===================================================== --}}
                             <td>
 
-                                {{ optional(
-                                    $lottery->draw_at
-                                )->format('d M Y h:i A') ?? '—' }}
+                                {{ optional($lottery->draw_at)
+                                    ->format('d M Y h:i A') ?? '—' }}
 
                             </td>
 
 
-                            {{-- =================================================
-                                 STATUS
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Status
+                            ===================================================== --}}
                             <td>
 
                                 <span
-                                    class="badge bg-{{
-                                        $lottery->status_badge
-                                    }}"
+                                    class="badge bg-{{ $lottery->status_badge }}"
                                 >
-
                                     {{ $lottery->status_label }}
-
                                 </span>
 
                             </td>
 
 
-                            {{-- =================================================
-                                 ACTIVE
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Active
+                            ===================================================== --}}
                             <td>
 
                                 <span
@@ -352,24 +348,23 @@
                                             : 'secondary'
                                     }}"
                                 >
-
                                     {{ $lottery->is_active
                                         ? 'Yes'
                                         : 'No'
                                     }}
-
                                 </span>
 
                             </td>
 
 
-                            {{-- =================================================
-                                 ACTIONS
-                            ================================================== --}}
-
+                            {{-- ====================================================
+                                Actions
+                            ===================================================== --}}
                             <td>
 
-                                {{-- Edit --}}
+                                {{-- =================================================
+                                    Edit
+                                ================================================== --}}
                                 <a
                                     href="{{ route(
                                         'admin.lotteries.edit',
@@ -381,7 +376,11 @@
                                 </a>
 
 
-                                {{-- Results --}}
+                                {{-- =================================================
+                                    Results
+                                    Show when this lottery has at least one
+                                    completed draw.
+                                ================================================== --}}
                                 @if ($lottery->completed_draws_count > 0)
 
                                     <a
@@ -391,21 +390,20 @@
                                         ) }}"
                                         class="btn btn-sm btn-success"
                                     >
-
                                         <i class="fas fa-trophy"></i>
-
                                         Results
-
                                     </a>
 
                                 @endif
 
 
                                 {{-- =================================================
-                                     DRAW WINNERS
-                                     ONLY WHEN STATUS IS ENDED
-                                ================================================== --}}
+                                    Draw Winners
 
+                                    IMPORTANT:
+                                    Only show this button when the CURRENT
+                                    lottery round is in "ended" status.
+                                ================================================== --}}
                                 @if ($lottery->isEnded())
 
                                     <form
@@ -426,11 +424,8 @@
                                             type="submit"
                                             class="btn btn-sm btn-primary"
                                         >
-
                                             <i class="fas fa-trophy"></i>
-
                                             Draw Winners
-
                                         </button>
 
                                     </form>
@@ -439,14 +434,11 @@
 
 
                                 {{-- =================================================
-                                     DELETE
-                                ================================================== --}}
+                                    Delete
 
-                                @if (
-                                    !$lottery->tickets()->exists()
-                                    &&
-                                    !$lottery->draws()->exists()
-                                )
+                                    Only allow delete if no tickets exist.
+                                ================================================== --}}
+                                @if (!$lottery->tickets()->exists())
 
                                     <form
                                         action="{{ route(
@@ -468,9 +460,7 @@
                                             )"
                                             class="btn btn-sm btn-danger"
                                         >
-
                                             Delete
-
                                         </button>
 
                                     </form>
@@ -506,9 +496,8 @@
 
 
         {{-- ================================================================
-             PAGINATION
+            Pagination
         ================================================================= --}}
-
         <div class="card-footer">
 
             {{ $lotteries->links() }}

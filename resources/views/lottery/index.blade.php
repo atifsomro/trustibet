@@ -182,19 +182,9 @@
                                         @endforeach
                                     </div>
 
-                                    {{-- <a
+                                    <a
                                         href="{{ route('lotteries.show', $completedLottery) }}"
                                         class="mt-5 block rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 py-3 text-center font-semibold text-white transition hover:scale-[1.01]">
-                                        <i class="fa-solid fa-trophy mr-2"></i>
-                                        View Full Results
-                                    </a> --}}
-                                    <a
-                                        href="{{ route('lotteries.draws.show', [
-                                            'lottery' => $completedLottery,
-                                            'draw' => $completedLottery->draws->first(),
-                                        ]) }}"
-                                        class="mt-5 block rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 py-3 text-center font-semibold text-white transition hover:scale-[1.01]"
-                                    >
                                         <i class="fa-solid fa-trophy mr-2"></i>
                                         View Full Results
                                     </a>

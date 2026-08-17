@@ -19,18 +19,29 @@ Route::prefix('admin')
             Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
         });
         Route::middleware('auth:admin')->group(function () {
-            Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-            Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
-            Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
-                ->name('lotteries.draw');
-
-            Route::get('lotteries/{lottery}/draws/{draw}', [LotteryController::class, 'drawShow'])
-                ->name('lotteries.draws.show');
-
-            Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
-                ->name('lotteries.show');
-
-            Route::resource('lotteries', LotteryController::class)->except(['show']);
+        Route::get('/dashboard', [DashboardController::class, 'index'])
+            ->name('dashboard');
+        Route::get('/logout', [LoginController::class, 'logout'])
+            ->name('logout');
+        /*
+        |--------------------------------------------------------------------------
+        | Lottery Management
+        |--------------------------------------------------------------------------
+        */
+        // Resource routes
+        Route::resource('lotteries', LotteryController::class)
+            ->except(['show']);
+        // Lottery details
+        Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
+            ->name('lotteries.show');
+        // Draw lottery
+        Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
+            ->name('lotteries.draw');
+        // Individual draw results
+        Route::get(
+                'lotteries/{lottery}/draws/{draw}',
+                [LotteryController::class, 'drawShow']
+            )->name('lotteries.draws.show');
         });
         Route::resource('bank-accounts', BankAccountController::class);
         Route::controller(DepositController::class)->group(function () {
