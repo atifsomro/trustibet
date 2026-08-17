@@ -314,8 +314,6 @@
 
                             @csrf
 
-                            @method('PATCH')
-
                             <button class="btn btn-success w-100"
                                     onclick="return confirm('Approve this withdrawal?')">
 

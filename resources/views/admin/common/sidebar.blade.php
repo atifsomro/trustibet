@@ -167,6 +167,13 @@
                         </span>
                     </a>
                 </li>
+                <li>
+                    <a class="has-arrow waves-effect waves-dark" href="javascript:void(0)" aria-expanded="false">
+                    <i class="ti-settings"></i><span class="hide-menu">Management</span></a>
+                    <ul aria-expanded="false" class="collapse">
+                        <li class="{{ $active == 'lottery' ? 'active' : '' }}"><a href="{{ route('admin.lotteries.index') }}">Lottery</a></li>
+                    </ul>
+                </li>
             </ul>
 
         </nav>

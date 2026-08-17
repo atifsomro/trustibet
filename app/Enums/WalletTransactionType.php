@@ -33,6 +33,13 @@ enum WalletTransactionType: string
     case WITHDRAW_CANCELLED = 'withdraw_cancelled';
 
     /**
+     * Lottery
+     */
+    case LOTTERY_TICKET_PURCHASE = 'lottery_ticket_purchase';
+    case LOTTERY_TICKET_REFUND = 'lottery_ticket_refund';
+    case LOTTERY_PRIZE = 'lottery_prize';
+
+    /**
      * Admin
      */
     case ADMIN_CREDIT = 'admin_credit';
@@ -55,6 +62,10 @@ enum WalletTransactionType: string
             self::BONUS_GRANTED,
             self::GAME_WIN,
             self::DEPOSIT,
+
+            self::LOTTERY_TICKET_REFUND,
+            self::LOTTERY_PRIZE,
+
             self::ADMIN_CREDIT,
         ], true);
     }
@@ -67,6 +78,9 @@ enum WalletTransactionType: string
         return in_array($this, [
             self::GAME_BET,
             self::WITHDRAW_REQUEST,
+
+            self::LOTTERY_TICKET_PURCHASE,
+
             self::ADMIN_DEBIT,
             self::BONUS_EXPIRED,
             self::BONUS_VOIDED,
@@ -92,6 +106,10 @@ enum WalletTransactionType: string
             self::WITHDRAW_APPROVED => 'Withdrawal Approved',
             self::WITHDRAW_REJECTED => 'Withdrawal Rejected',
             self::WITHDRAW_CANCELLED => 'Withdrawal Cancelled',
+
+            self::LOTTERY_TICKET_PURCHASE => 'Lottery Ticket Purchase',
+            self::LOTTERY_TICKET_REFUND => 'Lottery Ticket Refund',
+            self::LOTTERY_PRIZE => 'Lottery Prize',
 
             self::ADMIN_CREDIT => 'Admin Credit',
             self::ADMIN_DEBIT => 'Admin Debit',

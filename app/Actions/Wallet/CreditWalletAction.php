@@ -21,12 +21,7 @@ class CreditWalletAction
     /**
      * Credit a wallet balance.
      *
-     * This action:
-     * - Locks the wallet row
-     * - Updates cached balance
-     * - Records the ledger transaction
-     *
-     * @return Wallet
+     * Idempotent when an idempotency key is provided.
      */
     public function execute(
         Wallet $wallet,
@@ -39,7 +34,6 @@ class CreditWalletAction
         array $meta = [],
         bool $lockWallet = true
     ): Wallet {
-
         return DB::transaction(function () use (
             $wallet,
             $balanceType,
@@ -60,20 +54,58 @@ class CreditWalletAction
             /** @var Wallet $wallet */
             $wallet = $query->findOrFail($wallet->id);
 
+            /*
+             * ----------------------------------------------------------
+             * Idempotency check
+             * ----------------------------------------------------------
+             *
+             * Do this AFTER locking the wallet and BEFORE changing
+             * the balance.
+             */
+            if ($idempotencyKey !== null) {
+                $existingTransaction = $wallet->transactions()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existingTransaction) {
+                    return $wallet;
+                }
+            }
+
+            /*
+             * ----------------------------------------------------------
+             * Determine balance column
+             * ----------------------------------------------------------
+             */
+
             $balanceColumn = match ($balanceType) {
                 BalanceType::WITHDRAWABLE => 'withdrawable_balance',
                 BalanceType::BONUS => 'bonus_balance',
                 BalanceType::LOCKED => 'locked_balance',
             };
-            
+
+            /*
+             * ----------------------------------------------------------
+             * Update balance
+             * ----------------------------------------------------------
+             */
+
             $newBalance = $wallet->{$balanceColumn} + $amount;
 
             $wallet->{$balanceColumn} = $newBalance;
 
-            // optimistic locking
+            /*
+             * Optimistic locking.
+             */
             $wallet->version++;
 
             $wallet->save();
+
+            /*
+             * ----------------------------------------------------------
+             * Record ledger transaction
+             * ----------------------------------------------------------
+             */
 
             $this->recordTransactionAction->execute(
                 wallet: $wallet,

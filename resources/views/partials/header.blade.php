@@ -18,7 +18,7 @@
                     </li>
                     <li>
                         <a class="hover:text-brand-primary"
-                            href="{{ auth()->check() ? route('lottery') : route('auth.login') }}">Lottery</a>
+                            href="{{ auth()->check() ? route('lotteries.index') : route('auth.login') }}">Lottery</a>
                     </li>
                     <li>
                         <a class="hover:text-brand-primary"

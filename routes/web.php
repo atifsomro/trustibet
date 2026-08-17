@@ -17,7 +17,7 @@ Route::get('/contact', function () {
 })->name('contact');
 
 Route::get('/user-account', function () {
-    $kyc = Kyc::where('user_id', Auth::id())->first();
+    $kyc = Kyc::query()->where('user_id', auth('web')->user()->id)->first();
     return view('pages.user-account', compact('kyc'));
 })->middleware('auth')->name('user-account');
 
@@ -69,6 +69,8 @@ Route::get('/404', function () {
 
 
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\LotteryController;
+
 Route::get('/game/{slug}', [GameController::class, 'show'])->middleware('auth')->name('game.show');
 
 use App\Http\Controllers\ScratchCardController;
@@ -166,4 +168,17 @@ Route::middleware(['auth'])->prefix('wallet')->name('wallet.')->group(function (
         ->name('balance');
 
 
+});
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/lotteries', [LotteryController::class, 'index'])
+        ->name('lotteries.index');
+
+    Route::get('/lotteries/{lottery}', [LotteryController::class, 'show'])
+        ->name('lotteries.show');
+
+    Route::post('/lotteries/{lottery}/tickets', [LotteryController::class, 'buyTickets'])
+        ->name('lotteries.tickets.buy');
+    Route::get('/lotteries/{lottery}/draws/{draw}', [LotteryController::class, 'drawShow',])->name('lotteries.draws.show');
 });

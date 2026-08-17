@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use App\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\Kyc;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -72,8 +73,16 @@ class User extends Authenticatable
         return $this->hasOne(Wallet::class);
     }
     public function kyc(): HasOne{
+        return $this->hasOne(Kyc::class);
+    }
 
-    return $this->hasOne(Kyc::class);
+    public function lotteryTickets(): HasMany
+    {
+        return $this->hasMany(LotteryTicket::class);
+    }
 
+    public function lotteryWins(): HasMany
+    {
+        return $this->hasMany(LotteryWinner::class);
     }
 }

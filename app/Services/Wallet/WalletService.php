@@ -13,9 +13,11 @@ use App\Actions\Wallet\RejectWithdrawalAction;
 use App\Enums\BalanceType;
 use App\Enums\BonusType;
 use App\Enums\WalletTransactionType;
+use App\Models\Admin;
 use App\Models\Bonus;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletTransaction;
 use App\Models\WithdrawalRequest;
 use Illuminate\Database\Eloquent\Model;
 
@@ -67,6 +69,9 @@ class WalletService
 
     /**
      * Debit a wallet balance.
+     *
+     * Existing wallet functionality should continue
+     * using this method.
      */
     public function debit(
         User $user,
@@ -78,8 +83,35 @@ class WalletService
         ?string $idempotencyKey = null,
         array $meta = []
     ): Wallet {
-
         return $this->debitWalletAction->execute(
+            wallet: $this->wallet($user),
+            balanceType: $balanceType,
+            transactionType: $transactionType,
+            amount: $amount,
+            reference: $reference,
+            bonus: $bonus,
+            idempotencyKey: $idempotencyKey,
+            meta: $meta
+        );
+    }
+
+    /**
+     * Debit a wallet balance and return the
+     * exact wallet transaction.
+     *
+     * Use this when the caller needs the transaction ID.
+     */
+    public function debitWithTransaction(
+        User $user,
+        BalanceType $balanceType,
+        WalletTransactionType $transactionType,
+        float $amount,
+        ?Model $reference = null,
+        ?Bonus $bonus = null,
+        ?string $idempotencyKey = null,
+        array $meta = []
+    ): WalletTransaction {
+        return $this->debitWalletAction->executeWithTransaction(
             wallet: $this->wallet($user),
             balanceType: $balanceType,
             transactionType: $transactionType,
@@ -102,7 +134,6 @@ class WalletService
         array $meta = [],
         ?\DateTimeInterface $expiresAt = null
     ): Bonus {
-
         return $this->grantBonusAction->execute(
             user: $user,
             amount: $amount,
@@ -120,10 +151,9 @@ class WalletService
         User $user,
         float $amount,
         string $paymentMethod,
-        array $accountDetails,
+        string $accountDetails,
         ?string $remarks = null
     ): WithdrawalRequest {
-
         return $this->requestWithdrawalAction->execute(
             user: $user,
             amount: $amount,
@@ -138,11 +168,10 @@ class WalletService
      */
     public function approveWithdrawal(
         WithdrawalRequest $withdrawal,
-        User $approvedBy,
+        Admin $approvedBy,
         ?string $remarks = null,
         array $meta = []
     ): WithdrawalRequest {
-
         return $this->approveWithdrawalAction->execute(
             withdrawal: $withdrawal,
             approvedBy: $approvedBy,
@@ -156,11 +185,10 @@ class WalletService
      */
     public function rejectWithdrawal(
         WithdrawalRequest $withdrawal,
-        User $rejectedBy,
+        Admin $rejectedBy,
         ?string $remarks = null,
         array $meta = []
     ): WithdrawalRequest {
-
         return $this->rejectWithdrawalAction->execute(
             withdrawal: $withdrawal,
             rejectedBy: $rejectedBy,

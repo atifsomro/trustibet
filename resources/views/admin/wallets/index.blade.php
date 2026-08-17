@@ -128,11 +128,11 @@
 
                         <th>Currency</th>
 
-                        <th>Version</th>
+                        {{-- <th>Version</th> --}}
 
-                        <th width="260">
+                        {{-- <th width="260">
                             Action
-                        </th>
+                        </th> --}}
 
                     </tr>
 
@@ -202,13 +202,13 @@
 
                             </td>
 
-                            <td>
+                            {{-- <td>
 
                                 {{ $wallet->version }}
 
-                            </td>
+                            </td> --}}
 
-                            <td>
+                            {{-- <td>
 
                                 <div class="btn-group btn-group-sm">
 
@@ -242,7 +242,7 @@
 
                                 </div>
 
-                            </td>
+                            </td> --}}
 
                         </tr>
 

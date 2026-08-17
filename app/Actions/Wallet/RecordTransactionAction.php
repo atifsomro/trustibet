@@ -21,6 +21,10 @@ class RecordTransactionAction
      *
      * This is the ONLY place responsible for creating
      * wallet_transactions records.
+     *
+     * If an idempotency key is provided and a transaction with
+     * that key already exists for this wallet, the existing
+     * transaction is returned instead of creating another one.
      */
     public function execute(
         Wallet $wallet,
@@ -33,6 +37,29 @@ class RecordTransactionAction
         ?string $idempotencyKey = null,
         array $meta = []
     ): WalletTransaction {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Idempotency
+        |--------------------------------------------------------------------------
+        */
+
+        if ($idempotencyKey !== null) {
+            $existingTransaction = WalletTransaction::query()
+                ->where('wallet_id', $wallet->id)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existingTransaction) {
+                return $existingTransaction;
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create transaction
+        |--------------------------------------------------------------------------
+        */
 
         $transaction = new WalletTransaction();
 

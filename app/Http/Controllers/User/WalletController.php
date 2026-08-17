@@ -134,7 +134,7 @@ class WalletController extends Controller
     ): RedirectResponse {
         $this->withdrawalService->request(
             user: $request->user(),
-            amount: (int) $request->amount,
+            amount: (float) $request->amount,
             paymentMethod: $request->payment_method,
             accountDetails: $request->account_details,
             remarks: $request->remarks

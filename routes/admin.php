@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\WithdrawalController;
 use App\Http\Controllers\Admin\KycController;
+use App\Http\Controllers\Admin\LotteryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -20,6 +21,16 @@ Route::prefix('admin')
         Route::middleware('auth:admin')->group(function () {
             Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
             Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+            Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
+                ->name('lotteries.draw');
+
+            Route::get('lotteries/{lottery}/draws/{draw}', [LotteryController::class, 'drawShow'])
+                ->name('lotteries.draws.show');
+
+            Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
+                ->name('lotteries.show');
+
+            Route::resource('lotteries', LotteryController::class)->except(['show']);
         });
         Route::resource('bank-accounts', BankAccountController::class);
         Route::controller(DepositController::class)->group(function () {
