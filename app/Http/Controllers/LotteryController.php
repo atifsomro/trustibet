@@ -51,10 +51,10 @@ class LotteryController extends Controller
             ->latest('id')
             ->get();
 
-        return view(
-            'lottery.show',
-            compact('lottery', 'draws')
-        );
+        return view('lottery.show', [
+            'lottery' => $lottery,
+            'draws' => $draws,
+        ]);
     }
 
     /**

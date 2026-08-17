@@ -31,6 +31,13 @@
         );
     }
 
+    /*
+     * $draws is provided by LotteryController@show().
+     *
+     * There is NO $draw variable on this page.
+     * Individual draw results are available through
+     * lotteries.draws.show.
+     */
     $latestDraw = $draws->first();
 @endphp
 
@@ -53,6 +60,7 @@
 
         </div>
 
+
         {{-- Messages --}}
         @if (session('success'))
 
@@ -64,6 +72,7 @@
             </div>
 
         @endif
+
 
         @if ($errors->any())
 
@@ -86,10 +95,22 @@
 
         @endif
 
+
+        {{-- ========================================================= --}}
+        {{-- MAIN LAYOUT --}}
+        {{-- ========================================================= --}}
+
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
 
-            {{-- Lottery Information --}}
+            {{-- ===================================================== --}}
+            {{-- LEFT COLUMN --}}
+            {{-- ===================================================== --}}
+
             <div class="lg:col-span-2">
+
+                {{-- ================================================= --}}
+                {{-- LOTTERY INFORMATION --}}
+                {{-- ================================================= --}}
 
                 <div
                     class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
@@ -122,6 +143,7 @@
 
                             </div>
 
+
                             {{-- Ticket Price --}}
                             <div
                                 class="shrink-0 rounded-2xl border border-green-500/20 bg-green-500/5 px-6 py-4 text-center">
@@ -141,7 +163,11 @@
 
                         </div>
 
-                        {{-- Lottery Information --}}
+
+                        {{-- ================================================= --}}
+                        {{-- LOTTERY INFORMATION --}}
+                        {{-- ================================================= --}}
+
                         <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
 
                             {{-- Sales End --}}
@@ -160,6 +186,7 @@
 
                             </div>
 
+
                             {{-- Draw --}}
                             <div
                                 class="rounded-2xl border border-green-500/10 bg-gradient-to-b from-brand-dark to-[#07131b] p-5">
@@ -176,6 +203,7 @@
 
                             </div>
 
+
                             {{-- Tickets Sold --}}
                             <div
                                 class="rounded-2xl border border-green-500/10 bg-gradient-to-b from-brand-dark to-[#07131b] p-5">
@@ -191,6 +219,7 @@
                                 </div>
 
                             </div>
+
 
                             {{-- Tickets Remaining --}}
                             <div
@@ -218,7 +247,11 @@
 
                         </div>
 
-                        {{-- Prizes --}}
+
+                        {{-- ================================================= --}}
+                        {{-- PRIZES --}}
+                        {{-- ================================================= --}}
+
                         <div class="mt-8">
 
                             <h3 class="text-xl font-bold">
@@ -228,6 +261,7 @@
                             <p class="mt-2 text-sm opacity-60">
                                 Five winners will be selected. Each user can win only once.
                             </p>
+
 
                             <div class="mt-4 space-y-3">
 
@@ -239,9 +273,7 @@
 
                                         <span
                                             class="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-sm font-bold text-orange-400">
-
                                             1
-
                                         </span>
 
                                         <span class="opacity-70">
@@ -259,6 +291,7 @@
 
                                 </div>
 
+
                                 {{-- Second Prize --}}
                                 <div
                                     class="flex items-center justify-between rounded-2xl border border-brand-border bg-brand-dark p-4">
@@ -267,9 +300,7 @@
 
                                         <span
                                             class="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-sm font-bold text-orange-400">
-
                                             2
-
                                         </span>
 
                                         <span class="opacity-70">
@@ -287,6 +318,7 @@
 
                                 </div>
 
+
                                 {{-- Third Prize --}}
                                 <div
                                     class="flex items-center justify-between rounded-2xl border border-brand-border bg-brand-dark p-4">
@@ -295,9 +327,7 @@
 
                                         <span
                                             class="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-sm font-bold text-orange-400">
-
                                             3
-
                                         </span>
 
                                         <span class="opacity-70">
@@ -315,6 +345,7 @@
 
                                 </div>
 
+
                                 {{-- Fourth Prize --}}
                                 <div
                                     class="flex items-center justify-between rounded-2xl border border-brand-border bg-brand-dark p-4">
@@ -323,9 +354,7 @@
 
                                         <span
                                             class="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-sm font-bold text-orange-400">
-
                                             4
-
                                         </span>
 
                                         <span class="opacity-70">
@@ -343,6 +372,7 @@
 
                                 </div>
 
+
                                 {{-- Fifth Prize --}}
                                 <div
                                     class="flex items-center justify-between rounded-2xl border border-brand-border bg-brand-dark p-4">
@@ -351,9 +381,7 @@
 
                                         <span
                                             class="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500/10 text-sm font-bold text-orange-400">
-
                                             5
-
                                         </span>
 
                                         <span class="opacity-70">
@@ -379,62 +407,149 @@
 
                 </div>
 
-            </div>
 
-            {{-- Draw Results --}}
-            @if ($draws->count())
-                <div class="lg:col-span-2">
+                {{-- ================================================= --}}
+                {{-- DRAW HISTORY --}}
+                {{-- ================================================= --}}
+
+                @if ($draws->count())
+
                     <div class="mt-8 overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
                         <div class="h-1.5 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
                         <div class="p-5 md:p-8">
+
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
                                 <div>
-                                    <span class="sec_subtitle">Draw History</span>
-                                    <h2 class="mt-2 text-2xl font-bold">Lottery Results</h2>
+
+                                    <span class="sec_subtitle">
+                                        Draw History
+                                    </span>
+
+                                    <h2 class="mt-2 text-2xl font-bold">
+                                        Lottery Results
+                                    </h2>
+
                                     <p class="mt-2 text-sm opacity-60">
-                                        This lottery has {{ $draws->count() }} completed draw(s).
+
+                                        This lottery has
+                                        {{ $draws->count() }}
+                                        completed draw(s).
+
                                     </p>
+
                                 </div>
 
+
                                 @if ($latestDraw)
-                                    <span class="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400">
+
+                                    <span
+                                        class="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400">
+
                                         Latest: Draw #{{ $latestDraw->id }}
+
                                     </span>
+
                                 @endif
+
                             </div>
 
+
                             <div class="mt-6 space-y-3">
+
                                 @foreach ($draws as $resultDraw)
+
                                     <a
-                                        href="{{ route('lotteries.draws.show', [$lottery, $resultDraw]) }}"
-                                        class="flex items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-dark p-4 transition hover:border-green-500/30"
-                                    >
+                                        href="{{ route('lotteries.draws.show', [
+                                            'lottery' => $lottery,
+                                            'draw' => $resultDraw,
+                                        ]) }}"
+                                        class="flex items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-dark p-4 transition hover:border-green-500/30">
+
                                         <div>
-                                            <strong class="block">Draw #{{ $resultDraw->id }}</strong>
+
+                                            <strong class="block">
+                                                Draw #{{ $resultDraw->id }}
+                                            </strong>
+
                                             <span class="mt-1 block text-xs opacity-50">
+
                                                 {{ $resultDraw->completed_at?->format('d M Y h:i A') ?? '—' }}
-                                                · {{ $resultDraw->total_tickets }} tickets
+
+                                                ·
+
+                                                {{ $resultDraw->total_tickets }}
+                                                tickets
+
                                             </span>
+
                                         </div>
 
+
                                         <div class="text-right">
-                                            <span class="block text-sm font-semibold text-green-400">
-                                                {{ $resultDraw->total_winners }} winner(s)
+
+                                            <span
+                                                class="block text-sm font-semibold text-green-400">
+
+                                                {{ $resultDraw->total_winners }}
+                                                winner(s)
+
                                             </span>
+
                                             <span class="mt-1 block text-xs opacity-50">
                                                 View Results →
                                             </span>
-                                        </div>
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
 
-            {{-- Purchase Box --}}
+                                        </div>
+
+                                    </a>
+
+                                @endforeach
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                @else
+
+                    {{-- No Draws Yet --}}
+                    <div
+                        class="mt-8 rounded-3xl border border-brand-border bg-brand-surface p-6 md:p-8">
+
+                        <div class="text-center">
+
+                            <div
+                                class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-500/10">
+
+                                <i class="fa-solid fa-trophy text-xl text-orange-400"></i>
+
+                            </div>
+
+                            <h3 class="mt-4 text-xl font-bold">
+                                No Draw Results Yet
+                            </h3>
+
+                            <p class="mt-2 text-sm opacity-60">
+                                The lottery has not had a completed draw yet.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                @endif
+
+            </div>
+
+
+            {{-- ===================================================== --}}
+            {{-- RIGHT COLUMN - PURCHASE BOX --}}
+            {{-- ===================================================== --}}
+
             <div>
 
                 <div
@@ -448,6 +563,7 @@
                             Buy Tickets
                         </h3>
 
+
                         @auth
 
                             @if ($lottery->isSelling() && $maxQuantity > 0)
@@ -459,6 +575,7 @@
 
                                     @csrf
 
+
                                     <div>
 
                                         <label
@@ -468,6 +585,7 @@
                                             Number of Tickets
 
                                         </label>
+
 
                                         <input
                                             type="number"
@@ -479,6 +597,7 @@
                                             class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none transition focus:border-green-500"
                                             required>
 
+
                                         <p class="mt-2 text-xs opacity-50">
 
                                             Maximum:
@@ -488,6 +607,7 @@
                                         </p>
 
                                     </div>
+
 
                                     {{-- Total --}}
                                     <div
@@ -512,6 +632,7 @@
 
                                     </div>
 
+
                                     <button
                                         type="submit"
                                         class="mt-6 block w-full rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 py-4 text-center font-semibold text-white shadow-lg shadow-green-500/20 transition duration-300 hover:scale-[1.02] hover:shadow-orange-500/30">
@@ -524,6 +645,7 @@
 
                                 </form>
 
+
                             @elseif ($lottery->isSelling())
 
                                 <div
@@ -532,6 +654,7 @@
                                     You have reached your ticket purchase limit.
 
                                 </div>
+
 
                             @else
 
@@ -544,6 +667,7 @@
 
                             @endif
 
+
                         @else
 
                             <div
@@ -553,8 +677,9 @@
                                     Login to purchase lottery tickets.
                                 </p>
 
+
                                 <a
-                                    href="{{ route('login') }}"
+                                    href="{{ route('auth.login') }}"
                                     class="mt-4 block rounded-xl bg-gradient-to-r from-green-500 to-orange-500 py-3 font-semibold text-white">
 
                                     Login
@@ -575,116 +700,10 @@
 
     </div>
 
-
-    {{-- Draw Results --}}
-    @if ($draw)
-        @php
-            $resultWinners = $draw->winners->keyBy('prize_category');
-
-            $resultPrizes = [
-                'first' => ['label' => '1st Prize', 'amount' => $lottery->first_prize],
-                'second' => ['label' => '2nd Prize', 'amount' => $lottery->second_prize],
-                'third' => ['label' => '3rd Prize', 'amount' => $lottery->third_prize],
-                'fourth' => ['label' => '4th Prize', 'amount' => $lottery->fourth_prize],
-                'fifth' => ['label' => '5th Prize', 'amount' => $lottery->fifth_prize],
-            ];
-
-            $myWinner = auth()->check()
-                ? $draw->winners->firstWhere('user_id', auth()->id())
-                : null;
-        @endphp
-
-        <div class="mt-10 overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
-            <div class="h-1.5 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
-
-            <div class="p-5 md:p-8">
-                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <span class="sec_subtitle">Completed Draw</span>
-                        <h2 class="mt-3 text-2xl font-bold">Lottery Results</h2>
-                        <p class="mt-2 text-sm opacity-60">
-                            Draw completed on {{ $draw->completed_at?->format('d M Y h:i A') ?? '—' }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-2xl border border-green-500/20 bg-green-500/5 px-5 py-3 text-center">
-                        <span class="block text-xs uppercase tracking-wider opacity-50">Winners</span>
-                        <strong class="mt-1 block text-2xl text-green-500">
-                            {{ $draw->total_winners }} / 5
-                        </strong>
-                    </div>
-                </div>
-
-                @if ($myWinner)
-                    <div class="mt-6 rounded-2xl border border-green-500/20 bg-green-500/10 p-5">
-                        <div class="flex items-start gap-4">
-                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-500/20">
-                                <i class="fa-solid fa-trophy text-xl text-green-400"></i>
-                            </div>
-
-                            <div>
-                                <h3 class="font-bold text-green-400">Congratulations!</h3>
-                                <p class="mt-1 text-sm opacity-70">
-                                    Your ticket
-                                    <span class="font-mono text-green-400">{{ $myWinner->ticket?->ticket_number }}</span>
-                                    won the {{ $myWinner->prize_category === 'first' ? '1st' : ($myWinner->prize_category === 'second' ? '2nd' : ($myWinner->prize_category === 'third' ? '3rd' : ($myWinner->prize_category === 'fourth' ? '4th' : '5th'))) }} Prize.
-                                </p>
-                                <p class="mt-1 text-sm font-semibold text-orange-400">
-                                    Prize: {{ $lottery->currency }} {{ number_format((float) $myWinner->prize_amount, 2) }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <div class="mt-6 overflow-hidden rounded-2xl border border-brand-border">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="border-b border-brand-border bg-brand-dark">
-                                <tr>
-                                    <th class="px-5 py-4 text-sm">Prize</th>
-                                    <th class="px-5 py-4 text-sm">Winner</th>
-                                    <th class="px-5 py-4 text-sm">Ticket Number</th>
-                                    <th class="px-5 py-4 text-sm">Prize Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($resultPrizes as $category => $prize)
-                                    @php($winner = $resultWinners->get($category))
-                                    <tr class="border-b border-brand-border last:border-0">
-                                        <td class="px-5 py-4 font-semibold">{{ $prize['label'] }}</td>
-                                        <td class="px-5 py-4">
-                                            @if ($winner)
-                                                <span class="font-semibold">{{ $winner->user?->name ?? 'Winner' }}</span>
-                                            @else
-                                                <span class="opacity-40">No winner</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            @if ($winner?->ticket)
-                                                <span class="inline-flex rounded-xl border border-green-500/20 bg-green-500/10 px-3 py-2 font-mono text-sm text-green-400">
-                                                    {{ $winner->ticket->ticket_number }}
-                                                </span>
-                                            @else
-                                                <span class="opacity-40">—</span>
-                                            @endif
-                                        </td>
-                                        <td class="px-5 py-4 font-semibold text-orange-400">
-                                            {{ $lottery->currency }} {{ number_format((float) $prize['amount'], 2) }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
-
 </section>
 
 @endsection
+
 
 @push('scripts')
 
