@@ -52,6 +52,7 @@
                             Enter your account credentials below.
                         </p>
                         <form id="loginForm" action="{{ route('auth.login.post') }}" method="POST" class="mt-4 sm:mt-8">
+                            @csrf
                             <div>
                                 <label for="loginEmail" class="mb-2 block">
                                     Email Address
@@ -90,16 +91,12 @@
                                 <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
                                     Login
                                 </button>
-                                {{-- <a href="{{ route('forgot.password') }}"
-                                    class="block w-fit mt-2 mx-auto text-brand-primary hover:underline text-sm">
-                                    Forgot Password ?
-                                </a>
                                 <span>Or login with</span>
-                                <a href="#"
+                                <a href="{{ route('auth.google') }}"
                                     class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
                                     title="Login With Google">
                                     <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
-                                </a> --}}
+                                </a>
                             </div>
                         </form>
                         <p class="mt-3 sm:mt-6 text-center">

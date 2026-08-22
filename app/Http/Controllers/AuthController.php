@@ -17,11 +17,16 @@ use App\Mail\UserVerificationMail;
 use App\Models\Country;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\InvalidStateException;
+use Illuminate\Support\Facades\Log;
+use App\Services\Wallet\WalletService;
 
 class AuthController extends Controller
 {
     public function __construct(
-        protected RegisterUserAction $registerUserAction
+        protected RegisterUserAction $registerUserAction,
+        protected WalletService $walletService
     ) {}
     public function showLoginForm()
     {
@@ -192,5 +197,82 @@ class AuthController extends Controller
         return redirect()
             ->route('auth.login')
             ->with('success', 'Password changed successfully.');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Social Auth
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Redirect the user to Google's OAuth consent screen.
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')
+            ->stateless()
+            ->redirect();
+    }
+
+    /**
+     * Handle the callback from Google after the user grants consent.
+     */
+    public function handleGoogleCallback(Request $request)
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (InvalidStateException $e) {
+            return redirect()
+                ->route('auth.login')
+                ->with('error', 'Your Google sign-in session expired. Please try again.');
+        } catch (\Throwable $e) {
+            Log::error('Google OAuth callback failed: ' . $e->getMessage());
+            return redirect()
+                ->route('auth.login')
+                ->with('error', 'Unable to sign in with Google right now. Please try again.');
+        }
+
+        if (empty($googleUser->getEmail())) {
+            return redirect()
+                ->route('auth.login')
+                ->with('error', 'Your Google account has no accessible email address.');
+        }
+
+        $user = User::query()->where('google_id', $googleUser->getId())
+            ->orWhere('email', $googleUser->getEmail())
+            ->first();
+
+        if ($user) {
+            // Existing account (either already linked, or a local account
+            // that matches the Google email) - link/refresh Google details.
+            $user->google_id = $googleUser->getId();
+            $user->provider = $user->provider ?: 'google';
+            $user->avatar = $user->avatar ?: $googleUser->getAvatar();
+            // Google has already verified this email address for us.
+            $user->email_verified_at = $user->email_verified_at ?? now();
+            $user->save();
+
+            // Guard against pre-existing accounts that predate the wallet
+            // system - getOrCreate() is a no-op if a wallet already exists.
+            $this->walletService->wallet($user);
+        } else {
+            // Brand new account - run through the exact same registration
+            // pipeline as the normal sign-up form (wallet creation,
+            // referral code, welcome bonus, ledger transaction, etc).
+            $user = $this->registerUserAction->executeForSocial([
+                'name' => $googleUser->getName() ?: $googleUser->getNickname() ?: 'Google User',
+                'email' => $googleUser->getEmail(),
+                'provider' => 'google',
+                'google_id' => $googleUser->getId(),
+                'avatar' => $googleUser->getAvatar(),
+            ]);
+        }
+
+        Auth::login($user, true);
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'You have successfully signed in with Google.');
     }
 }

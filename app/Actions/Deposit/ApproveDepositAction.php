@@ -42,10 +42,13 @@ class ApproveDepositAction
 
             // Prevent double approval
             if (! $deposit->isPending()) {
-
                 throw new \RuntimeException(
                     'This deposit has already been processed.'
                 );
+            }
+            $amount = (float) $deposit->amount;
+            if ($deposit->bankAccount->conversion_rate > 0) {
+                $amount = number_format($deposit->amount / $deposit->bankAccount->conversion_rate, 2);
             }
             // Credit user's wallet
             try {
@@ -53,7 +56,7 @@ class ApproveDepositAction
                     user: $deposit->user,
                     balanceType: BalanceType::WITHDRAWABLE,
                     transactionType: WalletTransactionType::DEPOSIT,
-                    amount: (float) $deposit->amount,
+                    amount: $amount,
                     reference: $deposit,
                     meta: [
                         'deposit_id' => $deposit->id,
@@ -62,10 +65,10 @@ class ApproveDepositAction
                     ]
                 );
             } catch (\Throwable $e) {
-                return;
+                return $e->getMessage();
             }
             // Mark deposit approved
-            $result = $deposit->approve(
+            $deposit->approve(
                 adminId: $adminId,
                 remarks: $remarks
             );

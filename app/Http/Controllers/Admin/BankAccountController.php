@@ -17,11 +17,9 @@ class BankAccountController extends Controller
     public function index(Request $request)
     {
         $query = BankAccount::query();
-
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'LIKE', "%{$search}%")
                     ->orWhere('bank_name', 'LIKE', "%{$search}%")
@@ -29,7 +27,6 @@ class BankAccountController extends Controller
                     ->orWhere('account_number', 'LIKE', "%{$search}%");
             });
         }
-
         // Filter by status
         if ($request->filled('status')) {
             $query->where(
@@ -37,13 +34,10 @@ class BankAccountController extends Controller
                 $request->status === 'active'
             );
         }
-
         $bankAccounts = $query
             ->ordered()
             ->paginate(20)
             ->withQueryString();
-
-
         return view(
             'admin.bank_accounts.index',
             compact('bankAccounts')
@@ -68,12 +62,8 @@ class BankAccountController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateRequest($request);
-
-
         DB::beginTransaction();
-
         try {
-
             if ($request->hasFile('qr_code')) {
 
                 $validated['qr_code'] = $request
@@ -81,38 +71,23 @@ class BankAccountController extends Controller
                     ->store('bank_accounts', 'public');
             }
             if ($request->hasFile('picture')) {
-
                 $validated['picture'] = $request
                     ->file('picture')
                     ->store('bank_accounts', 'public');
             }
-
-
             $validated['is_active'] = $request
                 ->boolean('is_active');
-
-
             BankAccount::create($validated);
-
-
             DB::commit();
-
-
             return redirect()
                 ->route('admin.bank-accounts.index')
                 ->with(
                     'success',
                     'Bank account created successfully.'
                 );
-
-
         } catch (Throwable $e) {
-
             DB::rollBack();
-
             report($e);
-
-
             return back()
                 ->withInput()
                 ->with(
@@ -141,59 +116,40 @@ class BankAccountController extends Controller
     public function update(Request $request, BankAccount $bankAccount)
     {
         $validated = $this->validateRequest($request);
-
-
         DB::beginTransaction();
-
         try {
-
             if ($request->hasFile('qr_code')) {
-
-
                 if ($bankAccount->qr_code) {
-
-                    Storage::disk('public')
-                        ->delete($bankAccount->qr_code);
+                    Storage::disk('public')->delete($bankAccount->qr_code);
                 }
-
-
                 $validated['qr_code'] = $request
                     ->file('qr_code')
                     ->store('bank_accounts', 'public');
             }
-
-
-            $validated['is_active'] = $request
-                ->boolean('is_active');
-
-
+            if ($request->hasFile('picture')) {
+                if ($bankAccount->picture) {
+                    Storage::disk('public')->delete($bankAccount->picture);
+                }
+                $validated['picture'] = $request
+                    ->file('picture')
+                    ->store('bank_accounts', 'public');
+            } else {
+                // don't overwrite existing picture path with an unstored file
+                unset($validated['picture']);
+            }
+            $validated['is_active'] = $request->boolean('is_active');
             $bankAccount->update($validated);
-
-
             DB::commit();
-
-
             return redirect()
                 ->route('admin.bank-accounts.index')
-                ->with(
-                    'success',
-                    'Bank account updated successfully.'
-                );
-
+                ->with('success', 'Bank account updated successfully.');
 
         } catch (Throwable $e) {
-
             DB::rollBack();
-
             report($e);
-
-
             return back()
                 ->withInput()
-                ->with(
-                    'error',
-                    'Unable to update bank account.'
-                );
+                ->with('error', 'Unable to update bank account.');
         }
     }
 
@@ -204,40 +160,25 @@ class BankAccountController extends Controller
     public function destroy(BankAccount $bankAccount)
     {
         try {
-
-
             if (!$bankAccount->canDelete()) {
-
                 return back()
                     ->with(
                         'error',
                         'This bank account cannot be deleted because deposits already exist.'
                     );
             }
-
-
             if ($bankAccount->qr_code) {
-
                 Storage::disk('public')
                     ->delete($bankAccount->qr_code);
             }
-
-
             $bankAccount->delete();
-
-
             return back()
                 ->with(
                     'success',
                     'Bank account deleted successfully.'
                 );
-
-
         } catch (Throwable $e) {
-
             report($e);
-
-
             return back()
                 ->with(
                     'error',
@@ -254,61 +195,51 @@ class BankAccountController extends Controller
     private function validateRequest(Request $request): array
     {
         return $request->validate([
-
             'title' => [
                 'required',
                 'string',
                 'max:255'
             ],
-
             'bank_name' => [
                 'required',
                 'string',
                 'max:255'
             ],
-
             'account_title' => [
                 'required',
                 'string',
                 'max:255'
             ],
-
             'account_number' => [
                 'required',
                 'string',
                 'max:255'
             ],
-
             'iban' => [
                 'nullable',
                 'string',
                 'max:255'
             ],
-
             'swift_code' => [
                 'nullable',
                 'string',
                 'max:100'
             ],
-
             'branch_name' => [
                 'nullable',
                 'string',
                 'max:255'
             ],
-
             'branch_code' => [
                 'nullable',
                 'string',
                 'max:100'
             ],
-
             'currency' => [
                 'required',
                 'string',
                 'max:10'
             ],
-
             'type' => [
                 'required',
                 'in:bank,jazzcash,easypaisa,other'
@@ -316,7 +247,6 @@ class BankAccountController extends Controller
             'conversion_rate' => [
                 'required',
             ],
-
             'picture' => [
                 'image',
                 'mimes:jpg,jpeg,png,webp',
@@ -328,18 +258,15 @@ class BankAccountController extends Controller
                 'mimes:jpg,jpeg,png,webp',
                 'max:4096'
             ],
-
             'instructions' => [
                 'nullable',
                 'string'
             ],
-
             'sort_order' => [
                 'nullable',
                 'integer',
                 'min:0'
             ],
-
             'is_active' => [
                 'nullable'
             ],

@@ -146,7 +146,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-wallet text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Wallet Balance</p>
-                                <h3 class="mt-2">Rs. 2,500</h3>
+                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->withdrawable_balance, 2) }}</h3>
                             </div>
                             <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
@@ -161,7 +161,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-gift text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Bonus Balance</p>
-                                <h3 class="mt-2">Rs. 500</h3>
+                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->bonus_balance, 2) }}</h3>
                             </div>
                         </div>
 

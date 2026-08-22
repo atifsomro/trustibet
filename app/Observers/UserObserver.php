@@ -13,6 +13,13 @@ class UserObserver
      */
     public function created(User $user): void
     {
+        // Social sign-ups (Google, etc.) arrive already verified by the
+        // provider - there's nothing for the user to confirm, so don't
+        // send the verification email.
+        if ($user->isSocialAccount() || $user->email_verified_at !== null) {
+            return;
+        }
+
         Mail::to($user->email)
             ->send(new UserVerificationMail($user));
     }

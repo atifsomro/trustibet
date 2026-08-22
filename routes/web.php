@@ -95,6 +95,10 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('reset-password', 'resetPassword')
         ->name('auth.password.update');
     Route::get('logout', 'logout')->name('auth.logout');
+
+    // Google Social Auth
+    Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
+    Route::get('auth/google/callback', 'handleGoogleCallback')->name('auth.google.callback');
 });
 
 Route::middleware('auth')->prefix('wallet/deposits')->name('deposits.')->controller(DepositController::class)->group(function () {

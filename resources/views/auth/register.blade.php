@@ -175,11 +175,12 @@
                                 <button type="submit" class="btn-primary mt-4 sm:mt-8 w-full justify-center">
                                     Register
                                 </button>
-                                {{-- <span>Or login with</span>
-                                <a href="#" class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
-                                    title="Login With Google">
+                                <span>Or register with</span>
+                                <a href="{{ route('auth.google') }}"
+                                    class="w-10 h-10 p-1 bg-white flex rounded items-center justify-center mx-auto"
+                                    title="Register With Google">
                                     <img src="{{ asset('images/google/google.svg') }}" class="w-full" alt="google icon">
-                                </a> --}}
+                                </a>
                             </div>
                         </form>
                         <p class="mt-3 sm:mt-6 text-center">

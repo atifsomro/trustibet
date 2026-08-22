@@ -268,9 +268,9 @@
                     <h3>
                         Recent Deposits
                     </h3>
-                    <a href="#" class="text-brand-primary">
+                    {{-- <a href="#" class="text-brand-primary">
                         View All
-                    </a>
+                    </a> --}}
                 </div>
                 <div class="overflow-x-auto mt-8">
                     <table class="w-full min-w-[850px]">
@@ -279,6 +279,8 @@
                                 <th class="py-4 text-left">Date</th>
                                 <th class="py-4 text-left">Method</th>
                                 <th class="py-4 text-left">Amount</th>
+                                <th class="py-4 text-left">Conversion Rate</th>
+                                <th class="py-4 text-left">Net Amount</th>
                                 <th class="py-4 text-left">Transaction ID</th>
                                 <th class="py-4 text-left">Status</th>
                             </tr>
@@ -293,8 +295,20 @@
                                         {{ $deposit->bankAccount->bank_name }}
                                     </td>
                                     <td class="py-5">
-                                        {{ $deposit->bankAccount->currency }} {{ $deposit->amount }}
+                                        {{ $deposit->amount }}
                                     </td>
+                                    <td class="py-5">
+                                        {{ $deposit->bankAccount->conversion_rate }}
+                                    </td>
+                                    @if ($deposit->bankAccount->conversion_rate > 0)
+                                        <td class="py-5">
+                                            {{ number_format($deposit->amount / $deposit->bankAccount->conversion_rate, 2) }}
+                                        </td>
+                                    @else
+                                        <td class="py-5">
+                                            {{ $deposit->amount }}
+                                        </td>
+                                    @endif
                                     <td class="py-5">
                                         {{ $deposit->reference_number }}
                                     </td>
