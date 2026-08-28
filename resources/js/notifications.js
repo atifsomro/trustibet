@@ -67,6 +67,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const notificationList = document.getElementById("notificationList");
         const markAllBtn = document.getElementById("markAllReadPage");
         const pagination = document.getElementById("notificationPagination");
+
+        if (!pagination) {
+            return;
+        }
         const pageSize = 5;
         let currentPage = 1;
 

@@ -22,9 +22,9 @@ Route::get('/user-account', function () {
 })->middleware('auth')->name('user-account');
 
 
-Route::get('/notifications', function () {
-    return view('pages.notifications');
-})->name('notifications');
+Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])
+    ->middleware('auth')
+    ->name('notifications');
 
 // Route::view('/login', 'pages.login')->name('login');
 // Route::view('/register', 'pages.register')->name('register');
@@ -179,10 +179,29 @@ Route::middleware('auth')->group(function () {
     Route::get('/lotteries', [LotteryController::class, 'index'])
         ->name('lotteries.index');
 
+    Route::get('/my-lottery-history', [LotteryController::class, 'history'])
+        ->name('lotteries.history');
+
+    Route::post('/lotteries/draw-due', [LotteryController::class, 'drawDueAll'])
+        ->middleware('throttle:20,1')
+        ->name('lotteries.draw-due.all');
+
+    Route::post('/lotteries/{lottery}/draw-due', [LotteryController::class, 'drawDue'])
+        ->middleware('throttle:20,1')
+        ->name('lotteries.draw-due');
+
     Route::get('/lotteries/{lottery}', [LotteryController::class, 'show'])
         ->name('lotteries.show');
+
+    Route::get('/lotteries/{lottery}/results', [LotteryController::class, 'results'])
+        ->name('lotteries.results');
 
     Route::post('/lotteries/{lottery}/tickets', [LotteryController::class, 'buyTickets'])
         ->name('lotteries.tickets.buy');
     Route::get('/lotteries/{lottery}/draws/{draw}', [LotteryController::class, 'drawShow',])->name('lotteries.draws.show');
+
+    Route::post('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllRead'])
+        ->name('notifications.read-all');
+    Route::post('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markRead'])
+        ->name('notifications.read');
 });

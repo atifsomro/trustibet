@@ -13,9 +13,11 @@ use App\Models\LotteryDraw;
 use App\Models\LotteryTicket;
 use App\Models\LotteryWinner;
 use App\Models\User;
+use App\Notifications\LotteryNewRoundNotification;
+use App\Notifications\LotteryResultNotification;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
-use Throwable;
 
 class DrawLotteryAction
 {
@@ -25,498 +27,272 @@ class DrawLotteryAction
     }
 
     /**
-     * Draw winners for a lottery.
+     * Draw winners for a lottery round.
      *
-     * Business rules:
+     * Always executes at ends_at regardless of is_active.
      *
-     * - Lottery must be ended.
-     * - A lottery can be drawn repeatedly; each configured sales period is a separate round.
-     * - There are maximum 5 prize slots.
-     * - One user can win only once per draw round.
-     * - If there are fewer unique users than prize slots,
-     *   the remaining prize slots stay empty.
-     * - The winning ticket is selected randomly.
-     * - Prize is immediately credited to the user's withdrawable wallet.
+     * - is_active = true: announce winners, pay prizes, notify win/loss.
+     * - is_active = false: still select winners internally for audit,
+     *   but persist every participant as lost, skip payouts, notify lost.
      */
     public function execute(
         Lottery $lottery,
-        Admin $admin
+        ?Admin $admin = null
     ): LotteryDraw {
-        /*
-        |--------------------------------------------------------------------------
-        | Validate Lottery
-        |--------------------------------------------------------------------------
-        */
+        return DB::transaction(function () use ($lottery, $admin): LotteryDraw {
+            $lottery = Lottery::query()
+                ->lockForUpdate()
+                ->findOrFail($lottery->id);
 
-        if (!$lottery->isEnded()) {
-            throw new RuntimeException(
-                'This lottery cannot be drawn. The lottery must be ended first.'
-            );
-        }
+            $lottery->syncStatus();
+            $lottery->refresh();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Prevent duplicate draw for the CURRENT round only
-        |--------------------------------------------------------------------------
-        |
-        | Completed draws from previous rounds are historical records and do
-        | not prevent the next round from being drawn.
-        |
-        */
+            if (!$lottery->canDraw()) {
+                throw new RuntimeException(
+                    'This lottery cannot be drawn at this time.'
+                );
+            }
 
-        $existingDrawQuery = $lottery->draws()
-            ->whereIn('status', [
-                'pending',
-                'running',
-                'completed',
+            $tickets = $this->eligibleTickets($lottery);
+            $announceWinners = (bool) $lottery->is_active;
+
+            $lottery->startDrawing();
+
+            $draw = LotteryDraw::create([
+                'lottery_id' => $lottery->id,
+                'status' => 'running',
+                'total_tickets' => $tickets->count(),
+                'total_winners' => 0,
+                'winners_announced' => $announceWinners,
+                'drawn_by' => $admin?->id,
+                'sales_start_at' => $lottery->periodStart(),
+                'sales_end_at' => $lottery->periodEnd(),
+                'prize_snapshot' => $lottery->prizes(),
+                'started_at' => now(),
             ]);
 
-        if ($lottery->sales_start_at) {
-            $existingDrawQuery->where(
-                'sales_start_at',
-                $lottery->sales_start_at
-            );
-        } else {
-            $existingDrawQuery->whereNull('sales_start_at');
-        }
+            if ($tickets->isEmpty()) {
+                $this->finalizeDraw($lottery, $draw, 0);
 
-        $existingDrawQuery->where(
-            'sales_end_at',
-            $lottery->sales_end_at
-        );
+                return $draw->fresh([
+                    'lottery',
+                    'winners.ticket',
+                    'winners.user',
+                ]);
+            }
 
-        if ($existingDrawQuery->exists()) {
-            throw new RuntimeException(
-                'This lottery round has already been drawn.'
-            );
-        }
+            $prizeSlots = $this->getPrizeSlots($lottery);
+            $availableTickets = $tickets->shuffle();
+            $winnerUserIds = [];
+            $selectedWinners = [];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Get Eligible Tickets for CURRENT round
-        |--------------------------------------------------------------------------
-        |
-        | Tickets from earlier rounds remain in the database for history but
-        | do not participate in the new draw.
-        |
-        */
+            foreach ($prizeSlots as $slot) {
+                $eligibleTickets = $availableTickets
+                    ->filter(fn (LotteryTicket $ticket) => !in_array($ticket->user_id, $winnerUserIds, true))
+                    ->values();
 
-        $ticketsQuery = LotteryTicket::query()
-            ->where('lottery_id', $lottery->id)
-            ->where('status', 'active');
-
-        if ($lottery->sales_start_at) {
-            $ticketsQuery->where(
-                'purchased_at',
-                '>=',
-                $lottery->sales_start_at
-            );
-        }
-
-        $ticketsQuery->where(
-            'purchased_at',
-            '<=',
-            $lottery->sales_end_at
-        );
-
-        $tickets = $ticketsQuery->get();
-
-        $totalTickets = $tickets->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Check Tickets
-        |--------------------------------------------------------------------------
-        */
-
-        if ($totalTickets === 0) {
-            throw new RuntimeException(
-                'There are no eligible tickets for this lottery.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Count Unique Users
-        |--------------------------------------------------------------------------
-        |
-        | Important:
-        |
-        | We do NOT compare total tickets with total prize slots.
-        |
-        | Example:
-        |
-        | 100 tickets
-        | 3 unique users
-        | 5 prize slots
-        |
-        | Result:
-        |
-        | 3 winners
-        | 2 empty prize slots
-        |
-        */
-
-        $uniqueUserCount = $tickets
-            ->pluck('user_id')
-            ->unique()
-            ->count();
-
-        if ($uniqueUserCount === 0) {
-            throw new RuntimeException(
-                'There are no eligible users for this lottery.'
-            );
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Calculate Prize Slots
-        |--------------------------------------------------------------------------
-        */
-
-        $prizeSlots = $this->getPrizeSlots($lottery);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Number Of Winners
-        |--------------------------------------------------------------------------
-        |
-        | We can never have more winners than unique users.
-        |
-        */
-
-        $totalWinners = min(
-            count($prizeSlots),
-            $uniqueUserCount
-        );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Draw Record
-        |--------------------------------------------------------------------------
-        */
-
-        $draw = LotteryDraw::create([
-            'lottery_id'    => $lottery->id,
-            'status'        => 'pending',
-            'total_tickets' => $totalTickets,
-            'total_winners' => $totalWinners,
-            'drawn_by'       => $admin->id,
-            'sales_start_at' => $lottery->sales_start_at,
-            'sales_end_at'   => $lottery->sales_end_at,
-            'prize_snapshot' => $lottery->prizes(),
-        ]);
-
-        try {
-
-            DB::transaction(function () use (
-                $lottery,
-                $draw,
-                $tickets,
-                $prizeSlots
-            ): void {
-
-                /*
-                |--------------------------------------------------------------------------
-                | Lock Lottery
-                |--------------------------------------------------------------------------
-                */
-
-                $lockedLottery = Lottery::query()
-                    ->lockForUpdate()
-                    ->findOrFail($lottery->id);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Re-check Lottery Status
-                |--------------------------------------------------------------------------
-                */
-
-                if (!$lockedLottery->isEnded()) {
-                    throw new RuntimeException(
-                        'This lottery is no longer available for drawing.'
-                    );
+                if ($eligibleTickets->isEmpty()) {
+                    break;
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Re-check current round after locking
-                |--------------------------------------------------------------------------
-                */
+                /** @var LotteryTicket $ticket */
+                $ticket = $eligibleTickets->random();
+                $winnerUserIds[] = $ticket->user_id;
 
-                $duplicateDrawQuery = $lockedLottery->draws()
-                    ->whereIn('status', [
-                        'pending',
-                        'running',
-                        'completed',
-                    ]);
+                $availableTickets = $availableTickets
+                    ->reject(fn (LotteryTicket $availableTicket) => $availableTicket->id === $ticket->id)
+                    ->values();
 
-                if ($lockedLottery->sales_start_at) {
-                    $duplicateDrawQuery->where(
-                        'sales_start_at',
-                        $lockedLottery->sales_start_at
-                    );
-                } else {
-                    $duplicateDrawQuery->whereNull('sales_start_at');
-                }
+                $selectedWinners[] = [
+                    'ticket' => $ticket,
+                    'slot' => $slot,
+                ];
+            }
 
-                $duplicateDrawQuery->where(
-                    'sales_end_at',
-                    $lockedLottery->sales_end_at
+            foreach ($selectedWinners as $selected) {
+                $this->persistWinner(
+                    lottery: $lottery,
+                    draw: $draw,
+                    ticket: $selected['ticket'],
+                    prizeCategory: $selected['slot']['category'],
+                    prizePosition: $selected['slot']['position'],
+                    prizeAmount: $selected['slot']['amount'],
+                    announceAndPay: $announceWinners,
                 );
+            }
 
-                if ($duplicateDrawQuery->exists()) {
-                    throw new RuntimeException(
-                        'This lottery round has already been drawn.'
-                    );
-                }
+            $this->markRoundTicketsLost($lottery);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Start Draw
-                |--------------------------------------------------------------------------
-                */
+            $this->notifyParticipants(
+                lottery: $lottery,
+                draw: $draw,
+                tickets: $tickets,
+                selectedWinners: $selectedWinners,
+                announceWinners: $announceWinners,
+            );
 
-                $lockedLottery->status = 'drawing';
-                $lockedLottery->save();
+            $this->finalizeDraw($lottery, $draw, $announceWinners ? count($selectedWinners) : 0);
 
-                $draw->update([
-                    'status'     => 'running',
-                    'started_at' => now(),
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Randomize Tickets
-                |--------------------------------------------------------------------------
-                |
-                | Randomizing the entire collection first ensures that when
-                | a user has multiple tickets, any one of their tickets
-                | can potentially be selected.
-                |
-                */
-
-                $availableTickets = $tickets->shuffle();
-
-                /*
-                |--------------------------------------------------------------------------
-                | Track Users Who Already Won
-                |--------------------------------------------------------------------------
-                |
-                | This is the important part of the new requirement.
-                |
-                | Once a user wins, ALL of their remaining tickets in the current round become
-                | ineligible for the remaining prize slots.
-                |
-                */
-
-                $winnerUserIds = [];
-
-                /*
-                |--------------------------------------------------------------------------
-                | Select Winners
-                |--------------------------------------------------------------------------
-                */
-
-                foreach ($prizeSlots as $slot) {
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Find Tickets Belonging To Users Who Have Not Won
-                    |--------------------------------------------------------------------------
-                    */
-
-                    $eligibleTickets = $availableTickets
-                        ->filter(function (LotteryTicket $ticket) use (
-                            $winnerUserIds
-                        ) {
-                            return !in_array(
-                                $ticket->user_id,
-                                $winnerUserIds,
-                                true
-                            );
-                        })
-                        ->values();
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | No More Unique Users
-                    |--------------------------------------------------------------------------
-                    |
-                    | Remaining prize slots stay empty.
-                    |
-                    */
-
-                    if ($eligibleTickets->isEmpty()) {
-                        break;
-                    }
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Select Random Ticket
-                    |--------------------------------------------------------------------------
-                    */
-
-                    /** @var LotteryTicket $ticket */
-                    $ticket = $eligibleTickets->random();
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Mark User As Winner
-                    |--------------------------------------------------------------------------
-                    */
-
-                    $winnerUserIds[] = $ticket->user_id;
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Remove Selected Ticket
-                    |--------------------------------------------------------------------------
-                    |
-                    | The selected ticket should not be selected again.
-                    |
-                    */
-
-                    $availableTickets = $availableTickets
-                        ->reject(function (LotteryTicket $availableTicket) use (
-                            $ticket
-                        ) {
-                            return $availableTicket->id === $ticket->id;
-                        })
-                        ->values();
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Create Winner And Pay Prize
-                    |--------------------------------------------------------------------------
-                    */
-
-                    $this->createWinnerAndPayPrize(
-                        lottery: $lockedLottery,
-                        draw: $draw,
-                        ticket: $ticket,
-                        prizeCategory: $slot['category'],
-                        prizePosition: $slot['position'],
-                        prizeAmount: $slot['amount']
-                    );
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | Complete Draw
-                |--------------------------------------------------------------------------
-                */
-
-                $draw->update([
-                    'status'       => 'completed',
-                    'completed_at' => now(),
-                ]);
-
-                /*
-                |--------------------------------------------------------------------------
-                | Complete Lottery
-                |--------------------------------------------------------------------------
-                */
-
-                $lockedLottery->status = 'completed';
-                $lockedLottery->save();
-            });
+            $this->notifyNewRound($lottery, $draw, $tickets);
 
             return $draw->fresh([
                 'lottery',
                 'winners.ticket',
                 'winners.user',
             ]);
+        });
+    }
 
-        } catch (Throwable $exception) {
+    protected function eligibleTickets(Lottery $lottery): Collection
+    {
+        $query = LotteryTicket::query()
+            ->where('lottery_id', $lottery->id)
+            ->where('status', 'active');
 
-            /*
-            |--------------------------------------------------------------------------
-            | Mark Draw As Failed
-            |--------------------------------------------------------------------------
-            |
-            | The transaction has already rolled back.
-            |
-            | The draw record was created before the transaction,
-            | therefore we can safely mark it as failed.
-            |
-            */
+        if ($lottery->periodStart()) {
+            $query->where('purchased_at', '>=', $lottery->periodStart());
+        }
 
-            $draw->update([
-                'status'        => 'failed',
-                'error_message' => $exception->getMessage(),
-            ]);
+        if ($lottery->periodEnd()) {
+            $query->where('purchased_at', '<=', $lottery->periodEnd());
+        }
 
-            throw $exception;
+        return $query->get();
+    }
+
+    protected function finalizeDraw(Lottery $lottery, LotteryDraw $draw, int $totalWinners): void
+    {
+        $draw->update([
+            'status' => 'completed',
+            'total_winners' => $totalWinners,
+            'completed_at' => now(),
+        ]);
+
+        if ($lottery->isCancelled()) {
+            $lottery->markCompleted();
+
+            return;
+        }
+
+        $lottery->startNextRound();
+    }
+
+    /**
+     * Mark remaining current-round tickets as lost.
+     */
+    protected function markRoundTicketsLost(Lottery $lottery): void
+    {
+        $query = LotteryTicket::query()
+            ->where('lottery_id', $lottery->id)
+            ->where('status', 'active');
+
+        if ($lottery->periodStart()) {
+            $query->where('purchased_at', '>=', $lottery->periodStart());
+        }
+
+        if ($lottery->periodEnd()) {
+            $query->where('purchased_at', '<=', $lottery->periodEnd());
+        }
+
+        $query->update(['status' => 'lost']);
+    }
+
+    /**
+     * @param  Collection<int, LotteryTicket>  $tickets
+     * @param  array<int, array{ticket: LotteryTicket, slot: array{category: string, position: int, amount: float}}>  $selectedWinners
+     */
+    protected function notifyParticipants(
+        Lottery $lottery,
+        LotteryDraw $draw,
+        Collection $tickets,
+        array $selectedWinners,
+        bool $announceWinners
+    ): void {
+        $winnersByUserId = [];
+
+        foreach ($selectedWinners as $selected) {
+            $winnersByUserId[$selected['ticket']->user_id] = $selected;
+        }
+
+        $userIds = $tickets->pluck('user_id')->unique()->filter()->values();
+
+        $users = User::query()
+            ->whereIn('id', $userIds)
+            ->get()
+            ->keyBy('id');
+
+        foreach ($userIds as $userId) {
+            $user = $users->get($userId);
+
+            if (!$user) {
+                continue;
+            }
+
+            $winner = $announceWinners ? ($winnersByUserId[$userId] ?? null) : null;
+
+            $user->notify(new LotteryResultNotification(
+                lottery: $lottery,
+                draw: $draw,
+                result: $winner ? 'won' : 'lost',
+                prizeTier: $winner['slot']['category'] ?? null,
+                prizeAmount: isset($winner['slot']['amount']) ? (float) $winner['slot']['amount'] : null,
+            ));
         }
     }
 
     /**
-     * Build all prize slots.
-     *
-     * Current lottery structure:
-     *
-     * 1 × First
-     * 1 × Second
-     * 1 × Third
-     * 1 × Fourth
-     * 1 × Fifth
+     * @param  Collection<int, LotteryTicket>  $tickets
      */
-    protected function getPrizeSlots(
-        Lottery $lottery
-    ): array {
+    protected function notifyNewRound(Lottery $lottery, LotteryDraw $draw, Collection $tickets): void
+    {
+        if ($lottery->isCancelled() || $lottery->isCompleted()) {
+            return;
+        }
 
-        return [
-            [
-                'category' => 'first',
-                'position' => 1,
-                'amount'   => (float) $lottery->first_prize,
-            ],
+        $userIds = $tickets->pluck('user_id')->unique()->filter()->values();
 
-            [
-                'category' => 'second',
-                'position' => 1,
-                'amount'   => (float) $lottery->second_prize,
-            ],
+        if ($userIds->isEmpty()) {
+            return;
+        }
 
-            [
-                'category' => 'third',
-                'position' => 1,
-                'amount'   => (float) $lottery->third_prize,
-            ],
+        $users = User::query()
+            ->whereIn('id', $userIds)
+            ->get();
 
-            [
-                'category' => 'fourth',
-                'position' => 1,
-                'amount'   => (float) $lottery->fourth_prize,
-            ],
+        $roundNumber = $lottery->currentRoundNumber();
 
-            [
-                'category' => 'fifth',
-                'position' => 1,
-                'amount'   => (float) $lottery->fifth_prize,
-            ],
-        ];
+        foreach ($users as $user) {
+            $user->notify(new LotteryNewRoundNotification(
+                lottery: $lottery,
+                previousDraw: $draw,
+                roundNumber: $roundNumber,
+            ));
+        }
     }
 
     /**
-     * Create winner record and pay the prize.
+     * @return array<int, array{category: string, position: int, amount: float}>
      */
-    protected function createWinnerAndPayPrize(
+    protected function getPrizeSlots(Lottery $lottery): array
+    {
+        return [
+            ['category' => 'first', 'position' => 1, 'amount' => (float) $lottery->first_prize],
+            ['category' => 'second', 'position' => 1, 'amount' => (float) $lottery->second_prize],
+            ['category' => 'third', 'position' => 1, 'amount' => (float) $lottery->third_prize],
+            ['category' => 'fourth', 'position' => 1, 'amount' => (float) $lottery->fourth_prize],
+            ['category' => 'fifth', 'position' => 1, 'amount' => (float) $lottery->fifth_prize],
+        ];
+    }
+
+    protected function persistWinner(
         Lottery $lottery,
         LotteryDraw $draw,
         LotteryTicket $ticket,
         string $prizeCategory,
         int $prizePosition,
-        float $prizeAmount
+        float $prizeAmount,
+        bool $announceAndPay
     ): LotteryWinner {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get Ticket Owner
-        |--------------------------------------------------------------------------
-        */
-
         $user = $ticket->user;
 
         if (!$user) {
@@ -525,11 +301,20 @@ class DrawLotteryAction
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Get User Wallet
-        |--------------------------------------------------------------------------
-        */
+        $winner = LotteryWinner::create([
+            'lottery_id' => $lottery->id,
+            'draw_id' => $draw->id,
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'prize_category' => $prizeCategory,
+            'prize_position' => $prizePosition,
+            'prize_amount' => $prizeAmount,
+            'payout_status' => $announceAndPay ? 'pending' : 'suppressed',
+        ]);
+
+        if (!$announceAndPay) {
+            return $winner;
+        }
 
         $wallet = $user->wallet;
 
@@ -539,42 +324,9 @@ class DrawLotteryAction
             );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Create Winner Record
-        |--------------------------------------------------------------------------
-        */
-
-        $winner = LotteryWinner::create([
-            'lottery_id'     => $lottery->id,
-            'draw_id'        => $draw->id,
-            'ticket_id'      => $ticket->id,
-            'user_id'        => $user->id,
-            'prize_category' => $prizeCategory,
-            'prize_position' => $prizePosition,
-            'prize_amount'   => $prizeAmount,
-            'payout_status'  => 'pending',
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Mark Ticket As Winner
-        |--------------------------------------------------------------------------
-        |
-        | Do NOT set winner_id here because lottery_tickets does not
-        | contain a winner_id column.
-        |
-        */
-
         $ticket->update([
             'status' => 'winner',
         ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Credit Prize To Withdrawable Wallet
-        |--------------------------------------------------------------------------
-        */
 
         $idempotencyKey = 'lottery-prize:' . $winner->id;
 
@@ -586,40 +338,24 @@ class DrawLotteryAction
             reference: $winner,
             idempotencyKey: $idempotencyKey,
             meta: [
-                'lottery_id'     => $lottery->id,
-                'draw_id'        => $draw->id,
-                'ticket_id'      => $ticket->id,
-                'winner_id'      => $winner->id,
+                'lottery_id' => $lottery->id,
+                'draw_id' => $draw->id,
+                'ticket_id' => $ticket->id,
+                'winner_id' => $winner->id,
                 'prize_category' => $prizeCategory,
                 'prize_position' => $prizePosition,
             ],
         );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Get Wallet Transaction
-        |--------------------------------------------------------------------------
-        |
-        | CreditWalletAction returns the wallet rather than the transaction.
-        | Therefore retrieve the transaction using the idempotency key.
-        |
-        */
 
         $transaction = $wallet->transactions()
             ->where('idempotency_key', $idempotencyKey)
             ->latest('id')
             ->first();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Mark Payout As Paid
-        |--------------------------------------------------------------------------
-        */
-
         $winner->update([
-            'payout_status'         => 'paid',
+            'payout_status' => 'paid',
             'payout_transaction_id' => $transaction?->id,
-            'paid_at'               => now(),
+            'paid_at' => now(),
         ]);
 
         return $winner->fresh();

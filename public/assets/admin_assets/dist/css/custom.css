@@ -1,0 +1,10 @@
+/* Breathing room under the fixed topbar on pages that don't use .page-titles */
+.page-wrapper > .container-fluid {
+    padding-top: 25px;
+    padding-bottom: 25px;
+}
+
+/* Keep the dashboard title bar flush with the topbar */
+.page-wrapper .page-titles {
+    margin: -25px -25px 25px -25px;
+}

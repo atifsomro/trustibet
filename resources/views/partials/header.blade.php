@@ -27,7 +27,11 @@
                     @auth
                         <li>
                             <a class="hover:text-brand-primary"
-                                href="{{ auth()->check() ? route('user-account') : route('auth.login') }}">My Account</a>
+                                href="{{ route('user-account') }}">My Account</a>
+                        </li>
+                        <li>
+                            <a class="hover:text-brand-primary"
+                                href="{{ route('lotteries.history') }}">My History</a>
                         </li>
                     @endauth
                     <li>
@@ -124,6 +128,13 @@
                         class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-green-500 hover:bg-green-500/10">
                         <i class="fa-solid fa-user text-green-500 w-5"></i>
                         <span>My Account</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('lotteries.history') }}"
+                        class="flex items-center gap-4 rounded-2xl border border-transparent bg-brand-dark px-5 py-4 transition hover:border-green-500 hover:bg-green-500/10">
+                        <i class="fa-solid fa-clock-rotate-left text-green-500 w-5"></i>
+                        <span>My History</span>
                     </a>
                 </li>
             @endauth

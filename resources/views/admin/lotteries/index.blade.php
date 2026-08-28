@@ -13,12 +13,20 @@
             Lotteries
         </h4>
 
-        <a
-            href="{{ route('admin.lotteries.create') }}"
-            class="btn btn-primary"
-        >
-            Add Lottery
-        </a>
+        <div class="d-flex gap-2">
+            <a
+                href="{{ route('admin.lotteries.create') }}"
+                class="btn btn-primary"
+            >
+                Add Lottery
+            </a>
+            <a
+                href="{{ route('admin.lotteries.history') }}"
+                class="btn btn-outline-secondary"
+            >
+                Purchase & Draw History
+            </a>
+        </div>
 
     </div>
 
@@ -177,11 +185,7 @@
                             </th>
 
                             <th>
-                                Sales Close
-                            </th>
-
-                            <th>
-                                Draw
+                                Ends At
                             </th>
 
                             <th>
@@ -300,23 +304,10 @@
                             </td>
 
 
-                            {{-- ====================================================
-                                Sales Close
-                            ===================================================== --}}
+                            {{-- Ends At --}}
                             <td>
 
-                                {{ optional($lottery->sales_end_at)
-                                    ->format('d M Y h:i A') }}
-
-                            </td>
-
-
-                            {{-- ====================================================
-                                Draw Date
-                            ===================================================== --}}
-                            <td>
-
-                                {{ optional($lottery->draw_at)
+                                {{ optional($lottery->ends_at ?? $lottery->sales_end_at)
                                     ->format('d M Y h:i A') ?? '—' }}
 
                             </td>
@@ -393,42 +384,6 @@
                                         <i class="fas fa-trophy"></i>
                                         Results
                                     </a>
-
-                                @endif
-
-
-                                {{-- =================================================
-                                    Draw Winners
-
-                                    IMPORTANT:
-                                    Only show this button when the CURRENT
-                                    lottery round is in "ended" status.
-                                ================================================== --}}
-                                @if ($lottery->isEnded())
-
-                                    <form
-                                        action="{{ route(
-                                            'admin.lotteries.draw',
-                                            $lottery
-                                        ) }}"
-                                        method="POST"
-                                        class="d-inline"
-                                        onsubmit="return confirm(
-                                            'Are you sure you want to draw the winners? This action cannot be reversed.'
-                                        )"
-                                    >
-
-                                        @csrf
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-primary"
-                                        >
-                                            <i class="fas fa-trophy"></i>
-                                            Draw Winners
-                                        </button>
-
-                                    </form>
 
                                 @endif
 

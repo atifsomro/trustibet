@@ -34,7 +34,10 @@ Route::prefix('admin')
         // Lottery details
         Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
             ->name('lotteries.show');
-        // Draw lottery
+        // Purchase & draw history
+        Route::get('lottery-history', [LotteryController::class, 'history'])
+            ->name('lotteries.history');
+        // Draw lottery (kept as a fallback; primary path is the scheduler)
         Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
             ->name('lotteries.draw');
         // Individual draw results

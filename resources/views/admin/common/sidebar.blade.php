@@ -172,6 +172,7 @@
                     <i class="ti-settings"></i><span class="hide-menu">Management</span></a>
                     <ul aria-expanded="false" class="collapse">
                         <li class="{{ $active == 'lottery' ? 'active' : '' }}"><a href="{{ route('admin.lotteries.index') }}">Lottery</a></li>
+                        <li><a href="{{ route('admin.lotteries.history') }}">Lottery History</a></li>
                     </ul>
                 </li>
             </ul>

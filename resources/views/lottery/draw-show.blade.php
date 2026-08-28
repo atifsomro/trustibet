@@ -42,11 +42,11 @@
 
         <div class="mb-6">
             <a
-                href="{{ route('lotteries.show', $lottery) }}"
+                href="{{ route('lotteries.results', $lottery) }}#draw-{{ $draw->id }}"
                 class="inline-flex items-center gap-2 text-sm opacity-60 transition hover:text-green-500 hover:opacity-100"
             >
                 <i class="fa-solid fa-arrow-left"></i>
-                Back to Lottery
+                Back to Results
             </a>
         </div>
 

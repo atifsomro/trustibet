@@ -20,6 +20,7 @@ class LotteryDraw extends Model
         'total_tickets',
         'total_winners',
         'drawn_by',
+        'winners_announced',
         'started_at',
         'completed_at',
         'error_message',
@@ -28,6 +29,7 @@ class LotteryDraw extends Model
     protected $casts = [
         'total_tickets' => 'integer',
         'total_winners' => 'integer',
+        'winners_announced' => 'boolean',
 
         'drawn_by' => 'integer',
 

@@ -85,6 +85,14 @@ class LotteryTicket extends Model
     }
 
     /**
+     * Is this ticket a losing ticket after a draw?
+     */
+    public function isLost(): bool
+    {
+        return $this->status === 'lost';
+    }
+
+    /**
      * Is this ticket refunded?
      */
     public function isRefunded(): bool

@@ -4,41 +4,14 @@
 
 @php
     $remainingTickets = $lottery->remainingTickets();
-
-    $maxPerUser = (int) config(
-        'lottery.max_tickets_per_user',
-        10
-    );
-
-    /*
-     * Ticket limits are applied per draw round.
-     */
-    $userTickets = auth()->check()
+    $maxPerUser = $lottery->max_tickets_per_user;
+    $userTicketCount = auth()->check()
         ? $lottery->ticketsForCurrentRoundUser(auth()->id())
         : 0;
-
-    $remainingUserTickets = max(
-        0,
-        $maxPerUser - $userTickets
-    );
-
-    $maxQuantity = $remainingUserTickets;
-
-    if ($remainingTickets !== null) {
-        $maxQuantity = min(
-            $maxQuantity,
-            $remainingTickets
-        );
-    }
-
-    /*
-     * $draws is provided by LotteryController@show().
-     *
-     * There is NO $draw variable on this page.
-     * Individual draw results are available through
-     * lotteries.draws.show.
-     */
+    $maxQuantity = $lottery->maxPurchaseQuantityForUser(auth()->id());
+    $endsAt = $lottery->ends_at ?? $lottery->sales_end_at;
     $latestDraw = $draws->first();
+    $userTickets = $userTickets ?? collect();
 @endphp
 
 <section class="lottery_detail py-10">
@@ -60,6 +33,8 @@
 
         </div>
 
+
+        @include('lottery.partials.new-round-banner')
 
         {{-- Messages --}}
         @if (session('success'))
@@ -170,19 +145,27 @@
 
                         <div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-                            {{-- Sales End --}}
+                            {{-- Ends --}}
                             <div
                                 class="rounded-2xl border border-green-500/10 bg-gradient-to-b from-brand-dark to-[#07131b] p-5">
 
                                 <span class="text-xs uppercase tracking-wider opacity-50">
-                                    Sales Close
+                                    Ends
                                 </span>
 
                                 <div class="mt-2 text-lg font-bold text-orange-400">
-
-                                    {{ $lottery->sales_end_at?->format('d M Y h:i A') }}
-
+                                    {{ $endsAt?->format('d M Y h:i A') ?? '—' }}
                                 </div>
+
+                                @if ($endsAt && !$lottery->isCompleted() && !$lottery->isCancelled())
+                                    <span
+                                        class="lottery-countdown mt-2 block font-mono text-sm text-green-400"
+                                        data-end="{{ $endsAt->toIso8601String() }}"
+                                        data-draw-url="{{ route('lotteries.draw-due', $lottery) }}"
+                                    >
+                                        --:--:--
+                                    </span>
+                                @endif
 
                             </div>
 
@@ -196,10 +179,13 @@
                                 </span>
 
                                 <div class="mt-2 text-lg font-bold text-orange-400">
-
-                                    {{ $lottery->draw_at?->format('d M Y h:i A') ?? 'After sales close' }}
-
+                                    Automatic at countdown end
                                 </div>
+                                @if ($lottery->hasPreviousRounds())
+                                    <span class="mt-2 block text-xs font-semibold uppercase tracking-[2px] text-green-400">
+                                        New Round {{ $lottery->currentRoundNumber() }}
+                                    </span>
+                                @endif
 
                             </div>
 
@@ -408,6 +394,38 @@
                 </div>
 
 
+                @if ($userTickets->count())
+                    <div class="mt-8 overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+                        <div class="h-1.5 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+                        <div class="p-5 md:p-8">
+                            <h2 class="text-2xl font-bold">Your tickets</h2>
+                            <p class="mt-2 text-sm opacity-60">
+                                Your purchases and results for this lottery.
+                            </p>
+                            <div class="mt-5 space-y-3">
+                                @foreach ($userTickets as $ticket)
+                                    <div class="flex items-center justify-between rounded-2xl border border-brand-border bg-brand-dark p-4">
+                                        <div>
+                                            <span class="font-mono text-sm text-green-400">{{ $ticket->ticket_number }}</span>
+                                            <span class="mt-1 block text-xs opacity-50">
+                                                {{ $ticket->purchased_at?->format('d M Y h:i A') }}
+                                                · {{ $lottery->currency }} {{ number_format((float) $ticket->price, 2) }}
+                                            </span>
+                                        </div>
+                                        <span class="rounded-full border px-3 py-1 text-xs
+                                            @if ($ticket->status === 'winner') border-orange-500/20 bg-orange-500/10 text-orange-400
+                                            @elseif ($ticket->status === 'lost') border-gray-500/20 bg-gray-500/10 opacity-70
+                                            @else border-green-500/20 bg-green-500/10 text-green-400
+                                            @endif">
+                                            {{ ucfirst($ticket->status === 'active' ? 'pending' : $ticket->status) }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- ================================================= --}}
                 {{-- DRAW HISTORY --}}
                 {{-- ================================================= --}}
@@ -437,6 +455,7 @@
                                         This lottery has
                                         {{ $draws->count() }}
                                         completed draw(s).
+                                        Open the results page to see every round.
 
                                     </p>
 
@@ -445,12 +464,12 @@
 
                                 @if ($latestDraw)
 
-                                    <span
-                                        class="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400">
-
-                                        Latest: Draw #{{ $latestDraw->id }}
-
-                                    </span>
+                                    <a
+                                        href="{{ route('lotteries.results', $lottery) }}"
+                                        class="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400 transition hover:border-green-500/40"
+                                    >
+                                        View all results
+                                    </a>
 
                                 @endif
 
@@ -461,11 +480,21 @@
 
                                 @foreach ($draws as $resultDraw)
 
+                                    @if (!$resultDraw->winners_announced)
+                                        <div class="flex items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-dark p-4">
+                                            <div>
+                                                <strong class="block">Draw #{{ $resultDraw->id }}</strong>
+                                                <span class="mt-1 block text-xs opacity-50">
+                                                    {{ $resultDraw->completed_at?->format('d M Y h:i A') ?? '—' }}
+                                                </span>
+                                            </div>
+                                            <span class="text-sm opacity-50">No winner announced</span>
+                                        </div>
+                                        @continue
+                                    @endif
+
                                     <a
-                                        href="{{ route('lotteries.draws.show', [
-                                            'lottery' => $lottery,
-                                            'draw' => $resultDraw,
-                                        ]) }}"
+                                        href="{{ route('lotteries.results', $lottery) }}#draw-{{ $resultDraw->id }}"
                                         class="flex items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-dark p-4 transition hover:border-green-500/30">
 
                                         <div>
@@ -499,7 +528,7 @@
                                             </span>
 
                                             <span class="mt-1 block text-xs opacity-50">
-                                                View Results →
+                                                View on results page →
                                             </span>
 
                                         </div>
@@ -563,132 +592,7 @@
                             Buy Tickets
                         </h3>
 
-
-                        @auth
-
-                            @if ($lottery->isSelling() && $maxQuantity > 0)
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('lotteries.tickets.buy', $lottery) }}"
-                                    class="mt-6">
-
-                                    @csrf
-
-
-                                    <div>
-
-                                        <label
-                                            for="quantity"
-                                            class="mb-2 block text-sm font-medium">
-
-                                            Number of Tickets
-
-                                        </label>
-
-
-                                        <input
-                                            type="number"
-                                            id="quantity"
-                                            name="quantity"
-                                            value="1"
-                                            min="1"
-                                            max="{{ $maxQuantity }}"
-                                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none transition focus:border-green-500"
-                                            required>
-
-
-                                        <p class="mt-2 text-xs opacity-50">
-
-                                            Maximum:
-                                            {{ $maxQuantity }}
-                                            ticket(s)
-
-                                        </p>
-
-                                    </div>
-
-
-                                    {{-- Total --}}
-                                    <div
-                                        class="mt-6 rounded-2xl border border-green-500/10 bg-green-500/5 p-5">
-
-                                        <div class="flex items-center justify-between">
-
-                                            <span class="opacity-60">
-                                                Total
-                                            </span>
-
-                                            <strong
-                                                id="lottery-total"
-                                                class="text-2xl text-green-500">
-
-                                                {{ $lottery->currency }}
-                                                {{ number_format((float) $lottery->ticket_price, 2) }}
-
-                                            </strong>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <button
-                                        type="submit"
-                                        class="mt-6 block w-full rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 py-4 text-center font-semibold text-white shadow-lg shadow-green-500/20 transition duration-300 hover:scale-[1.02] hover:shadow-orange-500/30">
-
-                                        <i class="fa-solid fa-ticket mr-2"></i>
-
-                                        Buy Tickets
-
-                                    </button>
-
-                                </form>
-
-
-                            @elseif ($lottery->isSelling())
-
-                                <div
-                                    class="mt-6 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5 text-center text-sm text-orange-400">
-
-                                    You have reached your ticket purchase limit.
-
-                                </div>
-
-
-                            @else
-
-                                <div
-                                    class="mt-6 rounded-2xl border border-gray-500/20 bg-gray-500/10 p-5 text-center text-sm opacity-60">
-
-                                    Ticket sales are currently closed.
-
-                                </div>
-
-                            @endif
-
-
-                        @else
-
-                            <div
-                                class="mt-6 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5 text-center">
-
-                                <p class="text-sm opacity-70">
-                                    Login to purchase lottery tickets.
-                                </p>
-
-
-                                <a
-                                    href="{{ route('auth.login') }}"
-                                    class="mt-4 block rounded-xl bg-gradient-to-r from-green-500 to-orange-500 py-3 font-semibold text-white">
-
-                                    Login
-
-                                </a>
-
-                            </div>
-
-                        @endauth
+                        @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
 
                     </div>
 
@@ -706,51 +610,5 @@
 
 
 @push('scripts')
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    const quantityInput = document.getElementById('quantity');
-    const totalElement = document.getElementById('lottery-total');
-
-    if (!quantityInput || !totalElement) {
-        return;
-    }
-
-    const ticketPrice = {{ (float) $lottery->ticket_price }};
-    const currency = @json($lottery->currency);
-
-    function updateTotal() {
-
-        let quantity = parseInt(quantityInput.value) || 1;
-
-        const max = parseInt(quantityInput.max);
-
-        if (quantity < 1) {
-            quantity = 1;
-        }
-
-        if (max && quantity > max) {
-            quantity = max;
-            quantityInput.value = max;
-        }
-
-        const total = (
-            ticketPrice * quantity
-        ).toFixed(2);
-
-        totalElement.textContent =
-            currency + ' ' + total;
-    }
-
-    quantityInput.addEventListener(
-        'input',
-        updateTotal
-    );
-
-    updateTotal();
-
-});
-</script>
-
+    @include('lottery.partials.countdown-scripts')
 @endpush

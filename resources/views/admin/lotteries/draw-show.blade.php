@@ -17,6 +17,13 @@
         </a>
     </div>
 
+    @unless ($draw->winners_announced)
+        <div class="alert alert-warning">
+            Winners were selected internally for audit, but this lottery was
+            <strong>inactive</strong> so results were not announced and prizes were not paid.
+        </div>
+    @endunless
+
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card h-100">

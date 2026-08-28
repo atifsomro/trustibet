@@ -14,19 +14,6 @@
                 <i class="fas fa-arrow-left"></i> Back
             </a>
 
-            @if ($lottery->canDraw())
-                <form
-                    action="{{ route('admin.lotteries.draw', $lottery) }}"
-                    method="POST"
-                    onsubmit="return confirm('Are you sure you want to draw the current round?')"
-                >
-                    @csrf
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-trophy"></i> Draw Current Round
-                    </button>
-                </form>
-            @endif
-
             <a href="{{ route('admin.lotteries.edit', $lottery) }}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit / New Round
             </a>
@@ -34,10 +21,10 @@
     </div>
 
     <div class="alert alert-info">
-        <strong>Multiple Draws:</strong>
-        This lottery can be reused indefinitely. After a draw is completed,
-        edit the lottery, set a new sales start/end date and save it.
-        The lottery will automatically reopen for the new round.
+        <strong>Automatic draws:</strong>
+        When the countdown reaches zero, winners are drawn and a new round starts immediately.
+        Inactive lotteries still sell tickets and still draw, but winners are not announced or paid.
+        Cancel a lottery to stop the loop.
     </div>
 
     {{-- Current lottery summary --}}
@@ -70,10 +57,10 @@
         <div class="col-md-3">
             <div class="card h-100">
                 <div class="card-body">
-                    <small class="text-muted d-block">Sales Period</small>
-                    <strong>{{ $lottery->sales_start_at?->format('d M Y h:i A') ?? 'Any time' }}</strong>
+                    <small class="text-muted d-block">Countdown</small>
+                    <strong>{{ $lottery->ends_at?->format('d M Y h:i A') ?? '—' }}</strong>
                     <small class="d-block text-muted">
-                        to {{ $lottery->sales_end_at?->format('d M Y h:i A') }}
+                        Started {{ $lottery->starts_at?->format('d M Y h:i A') ?? '—' }}
                     </small>
                 </div>
             </div>
@@ -139,6 +126,9 @@
                                 <span class="badge bg-{{ $badge }}">
                                     {{ ucfirst($draw->status) }}
                                 </span>
+                                @if ($draw->status === 'completed' && !$draw->winners_announced)
+                                    <span class="badge bg-secondary">Winners suppressed</span>
+                                @endif
                             </td>
 
                             <td>{{ number_format($draw->total_tickets) }}</td>
@@ -179,6 +169,58 @@
         @if ($draws->hasPages())
             <div class="card-footer">
                 {{ $draws->links() }}
+            </div>
+        @endif
+    </div>
+
+    {{-- Ticket purchases --}}
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Ticket Purchases</h5>
+            <span class="text-muted">{{ $tickets->total() }} ticket(s)</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Ticket Number</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Purchased</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($tickets as $ticket)
+                        <tr>
+                            <td>
+                                <strong>{{ $ticket->user?->name ?? '—' }}</strong>
+                                <br>
+                                <small class="text-muted">{{ $ticket->user?->email }}</small>
+                            </td>
+                            <td><code>{{ $ticket->ticket_number }}</code></td>
+                            <td>
+                                {{ $lottery->currency }}
+                                {{ number_format((float) $ticket->price, 2) }}
+                            </td>
+                            <td>{{ ucfirst($ticket->status) }}</td>
+                            <td>{{ $ticket->purchased_at?->format('d M Y h:i A') ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                No tickets have been purchased yet.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if ($tickets->hasPages())
+            <div class="card-footer">
+                {{ $tickets->links() }}
             </div>
         @endif
     </div>
