@@ -187,9 +187,8 @@ class LotteryController extends Controller
     }
 
     /**
-     * Trigger a due draw from the frontend countdown (no cron required).
-     *
-     * Only executes if the lottery has actually ended and has not been drawn.
+     * Manual / fallback draw for a single due lottery.
+     * Primary draws run via `php artisan lottery:draw-due` (scheduler).
      */
     public function drawDue(\Illuminate\Http\Request $request, Lottery $lottery, \App\Actions\Lottery\DrawLotteryAction $action)
     {
@@ -200,6 +199,7 @@ class LotteryController extends Controller
             return response()->json([
                 'drawn' => false,
                 'already_drawn' => $lottery->isCompleted() || $lottery->currentRoundHasDraw(),
+                'ends_at' => $lottery->fresh()->ends_at?->toIso8601String(),
             ]);
         }
 
@@ -224,8 +224,8 @@ class LotteryController extends Controller
     }
 
     /**
-     * Draw every lottery whose countdown has already elapsed.
-     * Called once when a user opens the lottery listing.
+     * Manual / fallback draw for every due lottery.
+     * Primary draws run via the scheduler — do not rely on page visits.
      */
     public function drawDueAll(\App\Actions\Lottery\DrawLotteryAction $action)
     {

@@ -227,6 +227,32 @@
 
                 <div class="col-md-3 mb-3">
 
+                    <div class="card border-info">
+
+                        <div class="card-body text-center">
+
+                            <h6 class="text-muted">
+                                ROI Balance
+                            </h6>
+
+                            <h4 class="text-info">
+
+                                {{ number_format($wallet->roi_balance , 2) }}
+
+                            </h4>
+
+                            <small>
+                                {{ $wallet->currency }}
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-3 mb-3">
+
                     <div class="card border-dark">
 
                         <div class="card-body text-center">
@@ -237,7 +263,7 @@
 
                             <h4>
 
-                                {{ number_format(($wallet->withdrawable_balance + $wallet->bonus_balance + $wallet->locked_balance) , 2) }}
+                                {{ number_format(($wallet->withdrawable_balance + $wallet->bonus_balance + $wallet->locked_balance + $wallet->roi_balance) , 2) }}
 
                             </h4>
 

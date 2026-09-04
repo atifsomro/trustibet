@@ -208,9 +208,11 @@ class WalletService
             'withdrawable' => $wallet->withdrawable_balance,
             'bonus' => $wallet->bonus_balance,
             'locked' => $wallet->locked_balance,
+            'roi' => $wallet->roi_balance,
             'total' => $wallet->withdrawable_balance
                 + $wallet->bonus_balance
-                + $wallet->locked_balance,
+                + $wallet->locked_balance
+                + $wallet->roi_balance,
         ];
     }
 }

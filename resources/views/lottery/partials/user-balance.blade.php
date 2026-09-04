@@ -10,46 +10,46 @@
         $walletCurrency = $balanceWallet?->currency ?? 'USD';
     @endphp
 
-    <style>
-        .lottery-balance-bar {
-            position: fixed;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 60;
-            width: 176px;
-        }
+    <div
+        class="mx-auto mb-8 max-w-3xl overflow-hidden rounded-3xl border border-brand-border bg-brand-surface shadow-[0_0_28px_rgba(34,197,94,.12)]"
+        aria-label="Used and remaining balance"
+    >
+        <div class="h-1 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
-        @media (max-width: 767px) {
-            .lottery-balance-bar {
-                left: 12px;
-                right: 72px;
-                top: auto;
-                bottom: 80px;
-                transform: none;
-                width: auto;
-            }
-        }
-    </style>
+        <div class="relative grid grid-cols-1 divide-y divide-brand-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div
+                class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,.08),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(34,197,94,.08),transparent_42%)]">
+            </div>
 
-    <aside class="lottery-balance-bar" aria-label="Used and remaining balance">
-        <div class="overflow-hidden rounded-2xl border border-green-500/40 bg-[#0b1220] shadow-[0_0_24px_rgba(34,197,94,.25)]">
-            <div class="h-1 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
-
-            <div class="grid grid-cols-2 md:grid-cols-1">
-                <div class="border-r border-brand-border px-4 py-3 md:border-r-0 md:border-b">
-                    <span class="block text-[10px] uppercase tracking-wider opacity-50">Used</span>
-                    <strong class="mt-1 block text-base text-orange-400 md:text-lg">
+            <div class="relative z-10 flex items-center gap-4 px-5 py-5 sm:px-6">
+                <div
+                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-orange-500/25 bg-orange-500/10">
+                    <i class="fa-solid fa-ticket text-lg text-orange-400"></i>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-400/80">
+                        Used on tickets
+                    </span>
+                    <strong class="mt-1 block text-xl font-bold text-orange-400 sm:text-2xl">
                         {{ $walletCurrency }} {{ number_format($usedBalance, 2) }}
                     </strong>
                 </div>
-                <div class="px-4 py-3">
-                    <span class="block text-[10px] uppercase tracking-wider opacity-50">Remaining</span>
-                    <strong class="mt-1 block text-base text-green-400 md:text-lg">
+            </div>
+
+            <div class="relative z-10 flex items-center gap-4 px-5 py-5 sm:px-6">
+                <div
+                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-green-500/25 bg-green-500/10">
+                    <i class="fa-solid fa-wallet text-lg text-green-400"></i>
+                </div>
+                <div>
+                    <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-green-400/80">
+                        Remaining balance
+                    </span>
+                    <strong class="mt-1 block text-xl font-bold text-green-400 sm:text-2xl">
                         {{ $walletCurrency }} {{ number_format($remainingBalance, 2) }}
                     </strong>
                 </div>
             </div>
         </div>
-    </aside>
+    </div>
 @endauth

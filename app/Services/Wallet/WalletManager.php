@@ -71,6 +71,7 @@ class WalletManager
         $wallet->withdrawable_balance = 0;
         $wallet->bonus_balance = 0;
         $wallet->locked_balance = 0;
+        $wallet->roi_balance = 0;
         $wallet->currency = 'USD';
         $wallet->version = 1;
 
@@ -122,14 +123,23 @@ class WalletManager
     }
 
     /**
+     * Get the user's ROI balance.
+     */
+    public function roiBalance(User $user): float
+    {
+        return (float) $this->findByUser($user)->roi_balance;
+    }
+
+    /**
      * Get total balance.
      */
-    public function totalBalance(User $user): int
+    public function totalBalance(User $user): float
     {
         $wallet = $this->findByUser($user);
 
-        return $wallet->withdrawable_balance
-            + $wallet->bonus_balance
-            + $wallet->locked_balance;
+        return (float) $wallet->withdrawable_balance
+            + (float) $wallet->bonus_balance
+            + (float) $wallet->locked_balance
+            + (float) $wallet->roi_balance;
     }
 }

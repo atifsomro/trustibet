@@ -36,6 +36,11 @@ class WalletReconciliationService
             BalanceType::LOCKED
         );
 
+        $roi = $this->calculateBalance(
+            $wallet,
+            BalanceType::ROI
+        );
+
         return [
             'wallet_id' => $wallet->id,
             'user_id' => $user->id,
@@ -58,10 +63,17 @@ class WalletReconciliationService
                 'match' => $wallet->locked_balance === $locked,
             ],
 
+            'roi' => [
+                'wallet' => $wallet->roi_balance,
+                'ledger' => $roi,
+                'match' => $wallet->roi_balance === $roi,
+            ],
+
             'is_valid' => (
                 $wallet->withdrawable_balance === $withdrawable
                 && $wallet->bonus_balance === $bonus
                 && $wallet->locked_balance === $locked
+                && $wallet->roi_balance === $roi
             ),
         ];
     }

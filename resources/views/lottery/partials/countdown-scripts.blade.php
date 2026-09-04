@@ -1,8 +1,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    const triggered = {};
     const params = new URLSearchParams(window.location.search);
+    let reloadScheduled = false;
 
     if (params.get('new_round') === '1') {
         params.delete('new_round');
@@ -10,75 +9,120 @@ document.addEventListener('DOMContentLoaded', function () {
         window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
     }
 
-    function jsonHeaders() {
-        return {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': csrf || '',
-        };
+    function csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     }
 
-    function triggerDraw(url, reloadOnSuccess) {
-        if (!url || triggered[url]) {
+    function scheduleSoftReload(delayMs) {
+        if (reloadScheduled) {
             return;
         }
 
-        triggered[url] = true;
+        reloadScheduled = true;
 
-        fetch(url, {
-            method: 'POST',
-            headers: jsonHeaders(),
-            credentials: 'same-origin',
-        })
-            .then(function (response) {
-                return response.json().then(function (data) {
-                    return { ok: response.ok, data: data };
-                });
-            })
-            .then(function (result) {
-                if (result.data && result.data.drawn && reloadOnSuccess !== false) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('new_round', '1');
-                    window.location.href = url.toString();
-                }
-            })
-            .catch(function () {
-                triggered[url] = false;
-            });
+        setTimeout(function () {
+            const url = new URL(window.location.href);
+            url.searchParams.set('new_round', '1');
+            window.location.href = url.toString();
+        }, delayMs || 2000);
     }
 
-    const drawAllUrl = @json(route('lotteries.draw-due.all'));
-    triggerDraw(drawAllUrl, true);
+    function formatRemaining(difference) {
+        const hours = Math.floor(difference / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
-    document.querySelectorAll('.lottery-countdown').forEach(function (element) {
-        const endDate = new Date(element.dataset.end).getTime();
-        const drawUrl = element.dataset.drawUrl;
+        return String(hours).padStart(2, '0') + ':' +
+            String(minutes).padStart(2, '0') + ':' +
+            String(seconds).padStart(2, '0');
+    }
+
+    function startCountdown(element) {
+        let endDate = new Date(element.dataset.end).getTime();
         let intervalId = null;
+        let drawing = false;
+
+        function applyEnd(iso) {
+            if (!iso) {
+                return false;
+            }
+
+            element.dataset.end = iso;
+            endDate = new Date(iso).getTime();
+            drawing = false;
+            updateCountdown();
+
+            if (!intervalId) {
+                intervalId = setInterval(updateCountdown, 1000);
+            }
+
+            return true;
+        }
+
+        function requestDraw() {
+            const drawUrl = element.dataset.drawUrl;
+
+            if (!drawUrl) {
+                scheduleSoftReload(3000);
+                return;
+            }
+
+            fetch(drawUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+                .then(function (response) {
+                    return response.json().catch(function () {
+                        return {};
+                    });
+                })
+                .then(function (data) {
+                    if (data && data.ends_at && applyEnd(data.ends_at)) {
+                        // New round is live — refresh the rest of the page shortly.
+                        scheduleSoftReload(1500);
+                        return;
+                    }
+
+                    scheduleSoftReload(3000);
+                })
+                .catch(function () {
+                    scheduleSoftReload(5000);
+                });
+        }
 
         function updateCountdown() {
             const difference = endDate - new Date().getTime();
 
             if (difference <= 0) {
                 element.textContent = '00:00:00';
-                triggerDraw(drawUrl, true);
+
                 if (intervalId) {
                     clearInterval(intervalId);
+                    intervalId = null;
                 }
+
+                if (!drawing) {
+                    drawing = true;
+                    requestDraw();
+                }
+
                 return;
             }
 
-            const hours = Math.floor(difference / (1000 * 60 * 60));
-            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-            element.textContent =
-                String(hours).padStart(2, '0') + ':' +
-                String(minutes).padStart(2, '0') + ':' +
-                String(seconds).padStart(2, '0');
+            element.textContent = formatRemaining(difference);
         }
 
         updateCountdown();
-        intervalId = setInterval(updateCountdown, 1000);
-    });
+
+        if (endDate - new Date().getTime() > 0) {
+            intervalId = setInterval(updateCountdown, 1000);
+        }
+    }
+
+    document.querySelectorAll('.lottery-countdown').forEach(startCountdown);
 });
 </script>

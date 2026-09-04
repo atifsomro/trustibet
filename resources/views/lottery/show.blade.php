@@ -36,6 +36,8 @@
 
         @include('lottery.partials.new-round-banner')
 
+        @include('lottery.partials.user-balance')
+
         {{-- Messages --}}
         @if (session('success'))
 
@@ -179,7 +181,7 @@
                                 </span>
 
                                 <div class="mt-2 text-lg font-bold text-orange-400">
-                                    Automatic at countdown end
+                                    Automatic via scheduler
                                 </div>
                                 @if ($lottery->hasPreviousRounds())
                                     <span class="mt-2 block text-xs font-semibold uppercase tracking-[2px] text-green-400">

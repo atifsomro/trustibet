@@ -10,4 +10,8 @@ Artisan::command('inspire', function () {
 
 Schedule::command('lottery:draw-due')
     ->everyMinute()
+    ->withoutOverlapping(5);
+
+Schedule::command('investment:generate-daily-roi')
+    ->hourly()
     ->withoutOverlapping();

@@ -41,8 +41,6 @@
 
     @include('partials.header')
 
-    @include('lottery.partials.user-balance')
-
     <main>
         @yield('content')
     </main>

@@ -121,4 +121,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LotteryWinner::class);
     }
+
+    public function investments(): HasMany
+    {
+        return $this->hasMany(UserInvestment::class);
+    }
 }

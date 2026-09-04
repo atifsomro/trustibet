@@ -59,23 +59,28 @@ Route::get('/lottery', function () {
     return view('pages.lottery');
 })->name('lottery');
 
-Route::get('/investment', function () {
-    return view('pages.investment');
-})->name('investment');
-
 Route::get('/404', function () {
     return view('errors.404');
 })->name('404');
 
-
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\LotteryController;
+use App\Http\Controllers\User\InvestmentController;
 
 Route::get('/game/{slug}', [GameController::class, 'show'])->middleware('auth')->name('game.show');
 
 use App\Http\Controllers\ScratchCardController;
 Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
     ->name('scratch.reveal');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/investment', [InvestmentController::class, 'index'])->name('investment');
+    Route::post('/investments/{package}/buy', [InvestmentController::class, 'buy'])->name('investments.buy');
+    Route::get('/my-investments', [InvestmentController::class, 'mine'])->name('investments.mine');
+    Route::get('/my-investments/{investment}', [InvestmentController::class, 'show'])->name('investments.show');
+    Route::post('/investments/claim', [InvestmentController::class, 'claim'])->name('investments.claim');
+    Route::post('/investments/transfer-roi', [InvestmentController::class, 'transfer'])->name('investments.transfer');
+});
 
 ### FRONTEND AUTH ROUTE ###
 Route::controller(AuthController::class)->group(function () {

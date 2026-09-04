@@ -36,6 +36,8 @@
 
             @include('lottery.partials.new-round-banner')
 
+            @include('lottery.partials.user-balance')
+
             {{-- Success Message --}}
             @if (session('success'))
 
