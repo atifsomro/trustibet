@@ -195,6 +195,9 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:20,1')
         ->name('lotteries.draw-due');
 
+    Route::get('/lotteries/{lottery}/live-html', [LotteryController::class, 'liveHtml'])
+        ->name('lotteries.live-html');
+
     Route::get('/lotteries/{lottery}', [LotteryController::class, 'show'])
         ->name('lotteries.show');
 

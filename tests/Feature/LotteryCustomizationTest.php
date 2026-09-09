@@ -242,7 +242,71 @@ class LotteryCustomizationTest extends TestCase
         $response->assertSee('Results Page Lottery');
         $response->assertSee('Round 1');
         $response->assertSee('Round 2');
-        $response->assertSee('2 completed rounds');
+        $response->assertSee('Your draw history');
+        $response->assertSee('Search');
+        $response->assertSee('Latest');
+        $this->assertMatchesRegularExpression(
+            '/Rounds<\/span>\s*<strong[^>]*>\s*2\s*<\/strong>/s',
+            $response->getContent()
+        );
+    }
+
+    public function test_lottery_results_page_keeps_other_winners_private(): void
+    {
+        $user = $this->makeUserWithBalance(100);
+        $lottery = $this->makeLottery(['title' => 'Private Results Lottery']);
+
+        $firstDraw = $this->makeCompletedDraw($lottery, now()->subHours(2));
+        $secondDraw = $this->makeCompletedDraw($lottery, now()->subHour());
+
+        $winnerUser = $this->makeUserWithBalance(50);
+        $winnerUser->forceFill(['name' => 'Secret Winner Name'])->save();
+
+        \App\Models\LotteryWinner::query()->create([
+            'lottery_id' => $lottery->id,
+            'draw_id' => $secondDraw->id,
+            'ticket_id' => \App\Models\LotteryTicket::query()->create([
+                'lottery_id' => $lottery->id,
+                'user_id' => $winnerUser->id,
+                'ticket_number' => 'LT-PRIVATE-001',
+                'price' => 1,
+                'status' => 'winner',
+                'purchased_at' => now()->subHour(),
+            ])->id,
+            'user_id' => $winnerUser->id,
+            'prize_category' => 'first',
+            'prize_position' => 1,
+            'prize_amount' => 10,
+            'payout_status' => 'paid',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('lotteries.results', $lottery));
+        $response->assertOk();
+        $response->assertDontSee('Secret Winner Name');
+        $response->assertDontSee('LT-PRIVATE-001');
+        $response->assertSee('Not entered');
+
+        $byName = $this->actingAs($user)->get(route('lotteries.results', [
+            'lottery' => $lottery,
+            'q' => 'Secret Winner',
+        ]));
+        $byName->assertOk();
+        $byName->assertDontSee('Secret Winner Name');
+        $byName->assertSee('No rounds matched');
+
+        $byRound = $this->actingAs($user)->get(route('lotteries.results', [
+            'lottery' => $lottery,
+            'round' => 1,
+        ]));
+        $byRound->assertOk();
+        $byRound->assertSee('id="draw-'.$firstDraw->id.'"', false);
+        $byRound->assertDontSee('id="draw-'.$secondDraw->id.'"', false);
+
+        $winnerView = $this->actingAs($winnerUser)->get(route('lotteries.results', $lottery));
+        $winnerView->assertOk();
+        $winnerView->assertSee('You won');
+        $winnerView->assertSee('LT-PRIVATE-001');
+        $winnerView->assertDontSee('Secret Winner Name');
     }
 
     public function test_lottery_pages_show_used_and_remaining_balance(): void

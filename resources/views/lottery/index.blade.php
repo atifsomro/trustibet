@@ -127,7 +127,7 @@
                         </h2>
 
                         <p class="mx-auto mt-3 max-w-2xl opacity-70">
-                            View the latest winners for each lottery. Open a lottery to see every completed round.
+                            Check your private results for each lottery. Other players’ wins stay hidden.
                         </p>
                     </div>
 
@@ -177,22 +177,13 @@
                                                 'fourth' => ['label' => '4th Prize', 'amount' => $resultLottery->fourth_prize],
                                                 'fifth' => ['label' => '5th Prize', 'amount' => $resultLottery->fifth_prize],
                                             ];
-                                            $resultWinners = $latestDraw->winners?->keyBy('prize_category') ?? collect();
+                                            $personal = $latestDraw->personalResult(auth('web')->id());
                                         @endphp
 
                                         @foreach ($resultPrizes as $category => $prize)
-                                            @php($winner = $resultWinners->get($category))
-
                                             <div class="flex items-center justify-between rounded-xl border border-brand-border bg-brand-dark px-4 py-3">
                                                 <div>
                                                     <span class="block text-sm opacity-70">{{ $prize['label'] }}</span>
-                                                    @if ($winner)
-                                                        <span class="mt-1 block text-xs font-mono text-green-400">
-                                                            {{ $winner->ticket?->ticket_number ?? '—' }}
-                                                        </span>
-                                                    @else
-                                                        <span class="mt-1 block text-xs opacity-40">No winner</span>
-                                                    @endif
                                                 </div>
 
                                                 <strong class="text-orange-400">
@@ -200,10 +191,21 @@
                                                 </strong>
                                             </div>
                                         @endforeach
+
+                                        <div class="rounded-xl border {{ $personal['outcome'] === 'won' ? 'border-green-500/30 bg-green-500/10' : 'border-brand-border bg-brand-dark' }} px-4 py-3 text-center">
+                                            @if ($personal['outcome'] === 'won')
+                                                <span class="text-sm font-semibold text-green-400">You won in the latest round</span>
+                                            @elseif ($personal['outcome'] === 'lost')
+                                                <span class="text-sm font-semibold text-orange-400">No win in the latest round</span>
+                                            @else
+                                                <span class="text-sm opacity-50">You did not enter the latest round</span>
+                                            @endif
+                                            <span class="mt-1 block text-xs opacity-40">Results are private</span>
+                                        </div>
                                     </div>
 
                                     <p class="mt-4 text-center text-xs opacity-50">
-                                        Showing the latest round. Open results to see every draw.
+                                        Open results to see your private history for every draw.
                                     </p>
 
                                     <a

@@ -9,6 +9,7 @@
 @endphp
 
 <div
+    data-lottery-shell="{{ $lottery->id }}"
     class="group relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-2 hover:border-green-500 hover:shadow-[0_0_35px_rgba(34,197,94,.18)]">
 
     <div
@@ -45,6 +46,7 @@
                 <span
                     class="lottery-countdown font-mono text-xl font-bold tracking-[3px] text-orange-400"
                     data-end="{{ $endsAt->toIso8601String() }}"
+                    data-server-now="{{ now()->toIso8601String() }}"
                     data-draw-url="{{ route('lotteries.draw-due', $lottery) }}">
                     --:--:--
                 </span>

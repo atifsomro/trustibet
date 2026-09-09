@@ -48,7 +48,7 @@ class DepositController extends Controller
                 'user_id' => Auth::id(),
                 'bank_account_id' => $validated['bank_account_id'],
                 'amount' => $validated['amount'],
-                'currency' => 'PKR', // or config('app.currency')
+                'currency' => 'USD',
                 'reference_number' => $validated['transaction_id'] ?? null,
                 'payment_proof' => $path,
                 'remarks' => $validated['remarks'] ?? null,

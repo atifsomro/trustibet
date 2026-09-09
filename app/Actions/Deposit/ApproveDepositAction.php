@@ -46,10 +46,10 @@ class ApproveDepositAction
                     'This deposit has already been processed.'
                 );
             }
+            // Deposit amount is entered in USD; conversion_rate is only used
+            // on the deposit form to show the PKR amount the user must pay.
             $amount = (float) $deposit->amount;
-            if ($deposit->bankAccount->conversion_rate > 0) {
-                $amount = number_format($deposit->amount / $deposit->bankAccount->conversion_rate, 2);
-            }
+
             // Credit user's wallet
             try {
                 $this->walletService->credit(

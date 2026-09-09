@@ -163,7 +163,9 @@
                                     <span
                                         class="lottery-countdown mt-2 block font-mono text-sm text-green-400"
                                         data-end="{{ $endsAt->toIso8601String() }}"
+                                        data-server-now="{{ now()->toIso8601String() }}"
                                         data-draw-url="{{ route('lotteries.draw-due', $lottery) }}"
+                                        data-lottery-id="{{ $lottery->id }}"
                                     >
                                         --:--:--
                                     </span>
@@ -457,7 +459,7 @@
                                         This lottery has
                                         {{ $draws->count() }}
                                         completed draw(s).
-                                        Open the results page to see every round.
+                                        Open results to see your private win/lose history.
 
                                     </p>
 
@@ -470,7 +472,7 @@
                                         href="{{ route('lotteries.results', $lottery) }}"
                                         class="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400 transition hover:border-green-500/40"
                                     >
-                                        View all results
+                                        View my results
                                     </a>
 
                                 @endif
@@ -490,13 +492,17 @@
                                                     {{ $resultDraw->completed_at?->format('d M Y h:i A') ?? '—' }}
                                                 </span>
                                             </div>
-                                            <span class="text-sm opacity-50">No winner announced</span>
+                                            <span class="text-sm opacity-50">Pending</span>
                                         </div>
                                         @continue
                                     @endif
 
+                                    @php
+                                        $personal = $resultDraw->personalResult(auth('web')->id());
+                                    @endphp
+
                                     <a
-                                        href="{{ route('lotteries.results', $lottery) }}#draw-{{ $resultDraw->id }}"
+                                        href="{{ route('lotteries.results', ['lottery' => $lottery, 'draw' => $resultDraw->id]) }}"
                                         class="flex items-center justify-between gap-4 rounded-2xl border border-brand-border bg-brand-dark p-4 transition hover:border-green-500/30">
 
                                         <div>
@@ -521,16 +527,16 @@
 
                                         <div class="text-right">
 
-                                            <span
-                                                class="block text-sm font-semibold text-green-400">
-
-                                                {{ $resultDraw->total_winners }}
-                                                winner(s)
-
-                                            </span>
+                                            @if ($personal['outcome'] === 'won')
+                                                <span class="block text-sm font-semibold text-green-400">You won</span>
+                                            @elseif ($personal['outcome'] === 'lost')
+                                                <span class="block text-sm font-semibold text-orange-400">No win</span>
+                                            @else
+                                                <span class="block text-sm font-semibold opacity-50">Not entered</span>
+                                            @endif
 
                                             <span class="mt-1 block text-xs opacity-50">
-                                                View on results page →
+                                                Private result →
                                             </span>
 
                                         </div>
@@ -588,7 +594,7 @@
 
                     <div class="h-1.5 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
-                    <div class="p-5 md:p-6">
+                    <div class="p-5 md:p-6" data-lottery-show-actions="{{ $lottery->id }}">
 
                         <h3 class="text-xl font-bold">
                             Buy Tickets

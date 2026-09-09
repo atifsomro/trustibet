@@ -254,6 +254,10 @@ class Lottery extends Model
 
         $duration = max(1, (int) $this->duration_seconds);
 
+        // DATETIME columns store whole seconds. Snap to the second boundary
+        // so a 7s timer is stored as exactly 7s, not ~6.x after truncation.
+        $from = $from->copy()->startOfSecond();
+
         $this->starts_at = $from;
         $this->ends_at = $from->copy()->addSeconds($duration);
         $this->sales_start_at = $this->starts_at;
