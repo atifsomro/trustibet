@@ -24,8 +24,7 @@ class LotteryController extends Controller
 
         $lotteries = Lottery::query()
             ->whereNotIn('status', [
-                LotteryStatus::DRAFT->value,
-                LotteryStatus::CANCELLED->value,
+                ...LotteryStatus::hiddenFromPublic(),
                 LotteryStatus::COMPLETED->value,
             ])
             ->with([
@@ -47,6 +46,7 @@ class LotteryController extends Controller
             ->get();
 
         $resultLotteries = Lottery::query()
+            ->visible()
             ->whereHas('draws', function ($query) {
                 $query->where('status', 'completed')
                     ->where('winners_announced', true);
@@ -84,6 +84,8 @@ class LotteryController extends Controller
      */
     public function results(Request $request, Lottery $lottery): View|RedirectResponse
     {
+        abort_unless($lottery->isVisibleToPublic(), 404);
+
         $perPage = 10;
 
         $filters = $request->validate([
@@ -272,6 +274,8 @@ class LotteryController extends Controller
      */
     public function show(Lottery $lottery): View
     {
+        abort_unless($lottery->isVisibleToPublic(), 404);
+
         $userId = auth('web')->id();
 
         $draws = $lottery->draws()
@@ -307,6 +311,7 @@ class LotteryController extends Controller
      */
     public function drawShow(Lottery $lottery, LotteryDraw $draw): View
     {
+        abort_unless($lottery->isVisibleToPublic(), 404);
         abort_unless($draw->lottery_id === $lottery->id, 404);
 
         abort_unless($draw->status === 'completed', 404);
@@ -431,6 +436,8 @@ class LotteryController extends Controller
      */
     public function liveHtml(Request $request, Lottery $lottery)
     {
+        abort_unless($lottery->isVisibleToPublic(), 404);
+
         $lottery->refresh();
         $lottery->syncStatus();
         $lottery->refresh();
@@ -562,6 +569,8 @@ class LotteryController extends Controller
         Lottery $lottery,
         BuyLotteryTicketsAction $action
     ): RedirectResponse {
+        abort_unless($lottery->isVisibleToPublic(), 404);
+
         $action->execute(
             user: auth('web')->user(),
             lottery: $lottery,

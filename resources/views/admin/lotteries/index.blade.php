@@ -71,7 +71,8 @@
                         </option>
 
                         @foreach([
-                            'draft' => 'Draft',
+                            'active' => 'Active',
+                            'inactive' => 'Inactive',
                             'scheduled' => 'Scheduled',
                             'selling' => 'Selling',
                             'ended' => 'Ended',

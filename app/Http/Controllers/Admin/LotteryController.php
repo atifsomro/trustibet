@@ -30,7 +30,13 @@ class LotteryController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'active') {
+                $query->whereNotIn('status', LotteryStatus::hiddenFromPublic());
+            } elseif ($request->status === 'inactive') {
+                $query->where('status', LotteryStatus::INACTIVE->value);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('active')) {
@@ -175,13 +181,16 @@ class LotteryController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateRequest($request);
+        $visibility = $validated['status'];
+        unset($validated['status']);
 
         DB::beginTransaction();
 
         try {
             $lottery = new Lottery($validated);
 
-            if ($lottery->isDraft()) {
+            if ($visibility === 'inactive') {
+                $lottery->status = LotteryStatus::INACTIVE;
                 $lottery->sales_end_at = now()->addSeconds((int) $lottery->duration_seconds);
                 $lottery->draw_at = $lottery->sales_end_at;
             } else {
@@ -227,24 +236,32 @@ class LotteryController extends Controller
         Lottery $lottery
     ) {
         $validated = $this->validateRequest($request);
+        $visibility = $validated['status'];
+        unset($validated['status']);
+
         $startNewRound = $request->boolean('start_new_round');
         $previousDuration = (int) $lottery->duration_seconds;
         $wasCompleted = $lottery->isCompleted();
-        $wasDraft = $lottery->isDraft();
+        $wasHidden = $lottery->isDraft()
+            || $lottery->isCancelled()
+            || $lottery->isInactive();
 
         DB::beginTransaction();
 
         try {
             $lottery->fill($validated);
 
-            if (
-                $startNewRound
-                && !$lottery->isCancelled()
-                && ($wasCompleted || $lottery->hasEnded())
-            ) {
+            if ($visibility === 'inactive') {
+                $lottery->status = LotteryStatus::INACTIVE;
+            } elseif ($wasHidden) {
                 $lottery->applyCountdown();
                 $lottery->status = LotteryStatus::SELLING;
-            } elseif ($wasDraft && !$lottery->isDraft() && !$lottery->starts_at) {
+            } elseif (
+                $startNewRound
+                && !$lottery->isCancelled()
+                && !$lottery->isInactive()
+                && ($wasCompleted || $lottery->hasEnded())
+            ) {
                 $lottery->applyCountdown();
                 $lottery->status = LotteryStatus::SELLING;
             } elseif (
@@ -252,6 +269,7 @@ class LotteryController extends Controller
                 && (int) $lottery->duration_seconds !== $previousDuration
                 && !$wasCompleted
                 && !$lottery->isCancelled()
+                && !$lottery->isInactive()
             ) {
                 $lottery->recalculateEndsAt();
             }
@@ -441,7 +459,7 @@ class LotteryController extends Controller
 
             'status' => [
                 'required',
-                'in:draft,scheduled,selling,ended,drawing,completed,cancelled',
+                'in:active,inactive',
             ],
 
             'is_active' => [

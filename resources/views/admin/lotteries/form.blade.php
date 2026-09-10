@@ -1,11 +1,18 @@
 @php
     $isEdit = isset($lottery);
     $durationParts = $isEdit ? $lottery->durationParts() : ['hours' => 0, 'minutes' => 0, 'seconds' => 0];
+    $hiddenStatuses = ['draft', 'cancelled', 'inactive'];
     $currentStatus = old(
         'status',
-        isset($lottery->status)
-            ? $lottery->status->value
-            : 'draft'
+        $isEdit && in_array(
+            $lottery->status instanceof \App\Enums\LotteryStatus
+                ? $lottery->status->value
+                : (string) $lottery->status,
+            $hiddenStatuses,
+            true
+        )
+            ? 'inactive'
+            : 'active'
     );
 @endphp
 
@@ -40,19 +47,17 @@
                     class="form-control @error('status') is-invalid @enderror"
                 >
                     @foreach([
-                        'draft' => 'Draft',
-                        'scheduled' => 'Scheduled',
-                        'selling' => 'Selling',
-                        'ended' => 'Ended',
-                        'drawing' => 'Drawing',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'active' => 'Active',
+                        'inactive' => 'Inactive',
                     ] as $key => $label)
                         <option value="{{ $key }}" {{ $currentStatus === $key ? 'selected' : '' }}>
                             {{ $label }}
                         </option>
                     @endforeach
                 </select>
+                <small class="form-text text-muted">
+                    Inactive lotteries are hidden from the public site.
+                </small>
                 @error('status')
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror

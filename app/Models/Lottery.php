@@ -123,12 +123,18 @@ class Lottery extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', LotteryStatus::hiddenFromPublic());
+    }
+
     public function scopeSelling(Builder $query): Builder
     {
         return $query
             ->whereNotIn('status', [
                 LotteryStatus::DRAFT->value,
                 LotteryStatus::CANCELLED->value,
+                LotteryStatus::INACTIVE->value,
                 LotteryStatus::COMPLETED->value,
                 LotteryStatus::DRAWING->value,
                 LotteryStatus::ENDED->value,
@@ -159,6 +165,7 @@ class Lottery extends Model
             ->whereNotIn('status', [
                 LotteryStatus::DRAFT->value,
                 LotteryStatus::CANCELLED->value,
+                LotteryStatus::INACTIVE->value,
                 LotteryStatus::DRAWING->value,
                 LotteryStatus::COMPLETED->value,
             ]);
@@ -175,7 +182,7 @@ class Lottery extends Model
 
     public function isSalesOpen(): bool
     {
-        if ($this->isCancelled() || $this->isDraft() || $this->isCompleted() || $this->isDrawing()) {
+        if ($this->isCancelled() || $this->isInactive() || $this->isDraft() || $this->isCompleted() || $this->isDrawing()) {
             return false;
         }
 
@@ -203,7 +210,7 @@ class Lottery extends Model
 
     public function canDraw(): bool
     {
-        if (!$this->hasEnded() || $this->isCancelled() || $this->isDrawing() || $this->isDraft()) {
+        if (!$this->hasEnded() || $this->isCancelled() || $this->isInactive() || $this->isDrawing() || $this->isDraft()) {
             return false;
         }
 
@@ -308,7 +315,7 @@ class Lottery extends Model
             LotteryStatus::SELLING => 'success',
             LotteryStatus::COMPLETED => 'primary',
             LotteryStatus::ENDED => 'warning',
-            LotteryStatus::CANCELLED => 'danger',
+            LotteryStatus::CANCELLED, LotteryStatus::INACTIVE => 'danger',
             LotteryStatus::DRAWING => 'info',
             LotteryStatus::SCHEDULED => 'secondary',
             default => 'secondary',
@@ -318,6 +325,25 @@ class Lottery extends Model
     public function isDraft(): bool
     {
         return $this->status === LotteryStatus::DRAFT;
+    }
+
+    public function isInactive(): bool
+    {
+        return $this->status === LotteryStatus::INACTIVE;
+    }
+
+    /**
+     * Whether this lottery may appear on public pages.
+     */
+    public function isVisibleToPublic(): bool
+    {
+        return ! in_array(
+            $this->status instanceof LotteryStatus
+                ? $this->status->value
+                : (string) $this->status,
+            LotteryStatus::hiddenFromPublic(),
+            true
+        );
     }
 
     public function isScheduled(): bool
@@ -564,6 +590,7 @@ class Lottery extends Model
     {
         if (
             $this->isCancelled() ||
+            $this->isInactive() ||
             $this->isCompleted() ||
             $this->isDrawing()
         ) {
