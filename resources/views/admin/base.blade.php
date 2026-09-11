@@ -27,6 +27,7 @@
     <link href="{{ asset('assets/admin_assets/dist/css/style.min.css') }}" rel="stylesheet">
     <!-- Dashboard 1 Page CSS -->
     <link href="{{ asset('assets/admin_assets/dist/css/pages/dashboard1.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/admin_assets/dist/css/custom.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.26.25/sweetalert2.min.css" integrity="sha512-6/+HUJuCrUvBnvz1/099uvZ8kFmzGn1EPDfXBX9W2sNukWwduYJ2VkteUX/DARp8mtr845p97CxyVLpok8axRg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->

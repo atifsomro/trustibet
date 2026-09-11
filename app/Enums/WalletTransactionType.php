@@ -40,6 +40,14 @@ enum WalletTransactionType: string
     case LOTTERY_PRIZE = 'lottery_prize';
 
     /**
+     * Investment
+     */
+    case INVESTMENT_PURCHASE = 'investment_purchase';
+    case INVESTMENT_ROI_CLAIM = 'investment_roi_claim';
+    case INVESTMENT_ROI_TRANSFER = 'investment_roi_transfer';
+    case INVESTMENT_PRINCIPAL_RETURN = 'investment_principal_return';
+
+    /**
      * Admin
      */
     case ADMIN_CREDIT = 'admin_credit';
@@ -66,6 +74,10 @@ enum WalletTransactionType: string
             self::LOTTERY_TICKET_REFUND,
             self::LOTTERY_PRIZE,
 
+            self::INVESTMENT_ROI_CLAIM,
+            self::INVESTMENT_ROI_TRANSFER,
+            self::INVESTMENT_PRINCIPAL_RETURN,
+
             self::ADMIN_CREDIT,
         ], true);
     }
@@ -80,6 +92,9 @@ enum WalletTransactionType: string
             self::WITHDRAW_REQUEST,
 
             self::LOTTERY_TICKET_PURCHASE,
+
+            self::INVESTMENT_PURCHASE,
+            self::INVESTMENT_ROI_TRANSFER,
 
             self::ADMIN_DEBIT,
             self::BONUS_EXPIRED,
@@ -110,6 +125,11 @@ enum WalletTransactionType: string
             self::LOTTERY_TICKET_PURCHASE => 'Lottery Ticket Purchase',
             self::LOTTERY_TICKET_REFUND => 'Lottery Ticket Refund',
             self::LOTTERY_PRIZE => 'Lottery Prize',
+
+            self::INVESTMENT_PURCHASE => 'Investment Purchase',
+            self::INVESTMENT_ROI_CLAIM => 'Investment ROI Claim',
+            self::INVESTMENT_ROI_TRANSFER => 'Investment ROI Transfer',
+            self::INVESTMENT_PRINCIPAL_RETURN => 'Investment Principal Return',
 
             self::ADMIN_CREDIT => 'Admin Credit',
             self::ADMIN_DEBIT => 'Admin Debit',

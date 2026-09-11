@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Lottery\DrawLotteryAction;
+use App\Enums\LotteryStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Lottery;
 use App\Models\LotteryDraw;
+use App\Models\LotteryTicket;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class LotteryController extends Controller
@@ -27,7 +30,13 @@ class LotteryController extends Controller
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'active') {
+                $query->whereNotIn('status', LotteryStatus::hiddenFromPublic());
+            } elseif ($request->status === 'inactive') {
+                $query->where('status', LotteryStatus::INACTIVE->value);
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('active')) {
@@ -64,11 +73,85 @@ class LotteryController extends Controller
         $draws = $lottery->draws()
             ->withCount('winners')
             ->latest('id')
-            ->paginate(10);
+            ->paginate(10, ['*'], 'draws_page');
+
+        $tickets = $lottery->tickets()
+            ->with('user')
+            ->latest('purchased_at')
+            ->paginate(20, ['*'], 'tickets_page');
 
         return view(
             'admin.lotteries.show',
-            compact('lottery', 'draws')
+            compact('lottery', 'draws', 'tickets')
+        );
+    }
+
+    /**
+     * Cross-lottery purchase and draw history.
+     */
+    public function history(Request $request)
+    {
+        $tickets = LotteryTicket::query()
+            ->with(['user', 'lottery'])
+            ->when($request->filled('lottery_id'), function ($query) use ($request) {
+                $query->where('lottery_id', $request->integer('lottery_id'));
+            })
+            ->when($request->filled('user'), function ($query) use ($request) {
+                $search = trim((string) $request->input('user'));
+
+                $query->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery
+                        ->where('id', $search)
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request) {
+                $query->where('purchased_at', '>=', $request->date('date_from')->startOfDay());
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request) {
+                $query->where('purchased_at', '<=', $request->date('date_to')->endOfDay());
+            })
+            ->latest('purchased_at')
+            ->paginate(25, ['*'], 'tickets_page')
+            ->withQueryString();
+
+        $draws = LotteryDraw::query()
+            ->with(['lottery', 'winners.user', 'winners.ticket'])
+            ->when($request->filled('lottery_id'), function ($query) use ($request) {
+                $query->where('lottery_id', $request->integer('lottery_id'));
+            })
+            ->when($request->filled('date_from'), function ($query) use ($request) {
+                $query->where(function ($inner) use ($request) {
+                    $inner
+                        ->where('completed_at', '>=', $request->date('date_from')->startOfDay())
+                        ->orWhere(function ($or) use ($request) {
+                            $or->whereNull('completed_at')
+                                ->where('created_at', '>=', $request->date('date_from')->startOfDay());
+                        });
+                });
+            })
+            ->when($request->filled('date_to'), function ($query) use ($request) {
+                $query->where(function ($inner) use ($request) {
+                    $inner
+                        ->where('completed_at', '<=', $request->date('date_to')->endOfDay())
+                        ->orWhere(function ($or) use ($request) {
+                            $or->whereNull('completed_at')
+                                ->where('created_at', '<=', $request->date('date_to')->endOfDay());
+                        });
+                });
+            })
+            ->latest('id')
+            ->paginate(15, ['*'], 'draws_page')
+            ->withQueryString();
+
+        $lotteries = Lottery::query()
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        return view(
+            'admin.lotteries.history',
+            compact('tickets', 'draws', 'lotteries')
         );
     }
 
@@ -98,11 +181,24 @@ class LotteryController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateRequest($request);
+        $visibility = $validated['status'];
+        unset($validated['status']);
 
         DB::beginTransaction();
 
         try {
-            Lottery::create($validated);
+            $lottery = new Lottery($validated);
+
+            if ($visibility === 'inactive') {
+                $lottery->status = LotteryStatus::INACTIVE;
+                $lottery->sales_end_at = now()->addSeconds((int) $lottery->duration_seconds);
+                $lottery->draw_at = $lottery->sales_end_at;
+            } else {
+                $lottery->applyCountdown();
+                $lottery->status = LotteryStatus::SELLING;
+            }
+
+            $lottery->save();
 
             DB::commit();
 
@@ -140,49 +236,45 @@ class LotteryController extends Controller
         Lottery $lottery
     ) {
         $validated = $this->validateRequest($request);
+        $visibility = $validated['status'];
+        unset($validated['status']);
 
-        $previousStart = $lottery->sales_start_at?->copy();
-        $previousEnd = $lottery->sales_end_at?->copy();
-
-        $newStart = !empty($validated['sales_start_at'])
-            ? \Illuminate\Support\Carbon::parse($validated['sales_start_at'])
-            : null;
-
-        $newEnd = \Illuminate\Support\Carbon::parse($validated['sales_end_at']);
-
-        $startSame = $previousStart === null
-            ? $newStart === null
-            : $previousStart->equalTo($newStart);
-
-        $endSame = $previousEnd === null
-            ? false
-            : $previousEnd->equalTo($newEnd);
-
-        $periodChanged = !$startSame || !$endSame;
+        $startNewRound = $request->boolean('start_new_round');
+        $previousDuration = (int) $lottery->duration_seconds;
+        $wasCompleted = $lottery->isCompleted();
+        $wasHidden = $lottery->isDraft()
+            || $lottery->isCancelled()
+            || $lottery->isInactive();
 
         DB::beginTransaction();
 
         try {
-            $lottery->update($validated);
+            $lottery->fill($validated);
 
-            /*
-             * A completed lottery is reusable. When the admin changes the
-             * sales period for the next round, automatically reopen the
-             * lottery so the existing frontend can sell tickets again.
-             */
-            if (
-                $periodChanged
-                && $lottery->status === \App\Enums\LotteryStatus::COMPLETED
+            if ($visibility === 'inactive') {
+                $lottery->status = LotteryStatus::INACTIVE;
+            } elseif ($wasHidden) {
+                $lottery->applyCountdown();
+                $lottery->status = LotteryStatus::SELLING;
+            } elseif (
+                $startNewRound
                 && !$lottery->isCancelled()
-                && $newEnd->isFuture()
+                && !$lottery->isInactive()
+                && ($wasCompleted || $lottery->hasEnded())
             ) {
-                $lottery->update([
-                    'status' => $newStart && $newStart->isFuture()
-                        ? \App\Enums\LotteryStatus::SCHEDULED
-                        : \App\Enums\LotteryStatus::SELLING,
-                    'is_active' => true,
-                ]);
+                $lottery->applyCountdown();
+                $lottery->status = LotteryStatus::SELLING;
+            } elseif (
+                $lottery->starts_at
+                && (int) $lottery->duration_seconds !== $previousDuration
+                && !$wasCompleted
+                && !$lottery->isCancelled()
+                && !$lottery->isInactive()
+            ) {
+                $lottery->recalculateEndsAt();
             }
+
+            $lottery->save();
 
             DB::commit();
 
@@ -190,8 +282,8 @@ class LotteryController extends Controller
                 ->route('admin.lotteries.show', $lottery)
                 ->with(
                     'success',
-                    $periodChanged
-                        ? 'Lottery round updated successfully.'
+                    $startNewRound
+                        ? 'New lottery round started successfully.'
                         : 'Lottery updated successfully.'
                 );
 
@@ -284,7 +376,7 @@ class LotteryController extends Controller
     private function validateRequest(
         Request $request
     ): array {
-        return $request->validate([
+        $validated = $request->validate([
             'title' => [
                 'required',
                 'string',
@@ -297,28 +389,26 @@ class LotteryController extends Controller
                 'min:0.01',
             ],
 
-            'sales_start_at' => [
-                'nullable',
-                'date',
-            ],
-
-            'sales_end_at' => [
+            'duration_hours' => [
                 'required',
-                'date',
-                'after_or_equal:sales_start_at',
+                'integer',
+                'min:0',
+                'max:8760',
             ],
 
-            'draw_at' => [
-                'nullable',
-                'date',
-                'after_or_equal:sales_end_at',
+            'duration_minutes' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:59',
             ],
 
-            /*
-            |--------------------------------------------------------------------------
-            | Five prizes
-            |--------------------------------------------------------------------------
-            */
+            'duration_seconds' => [
+                'required',
+                'integer',
+                'min:0',
+                'max:59',
+            ],
 
             'first_prize' => [
                 'required',
@@ -356,10 +446,10 @@ class LotteryController extends Controller
                 'min:1',
             ],
 
-            'sort_order' => [
+            'max_tickets_per_user' => [
                 'nullable',
                 'integer',
-                'min:0',
+                'min:1',
             ],
 
             'description' => [
@@ -369,7 +459,7 @@ class LotteryController extends Controller
 
             'status' => [
                 'required',
-                'in:draft,scheduled,selling,ended,drawing,completed,cancelled',
+                'in:active,inactive',
             ],
 
             'is_active' => [
@@ -377,5 +467,33 @@ class LotteryController extends Controller
                 'boolean',
             ],
         ]);
+
+        $durationSeconds =
+            ((int) $validated['duration_hours'] * 3600)
+            + ((int) $validated['duration_minutes'] * 60)
+            + ((int) $validated['duration_seconds']);
+
+        if ($durationSeconds < 1) {
+            throw ValidationException::withMessages([
+                'duration_hours' => 'Duration must be at least 1 second.',
+            ]);
+        }
+
+        unset(
+            $validated['duration_hours'],
+            $validated['duration_minutes'],
+            $validated['duration_seconds']
+        );
+
+        $validated['duration_seconds'] = $durationSeconds;
+        $validated['is_active'] = $request->boolean('is_active');
+        $validated['max_tickets'] = $request->filled('max_tickets')
+            ? (int) $request->input('max_tickets')
+            : null;
+        $validated['max_tickets_per_user'] = $request->filled('max_tickets_per_user')
+            ? (int) $request->input('max_tickets_per_user')
+            : null;
+
+        return $validated;
     }
 }

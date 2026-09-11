@@ -237,13 +237,18 @@
     <div class="col-md-4 mb-3">
 
         <label class="form-label">
-            Conversion Rate
+            Conversion Rate (PKR per 1 USD)
         </label>
 
         <input type="number"
                name="conversion_rate"
                class="form-control"
+               step="0.01"
+               min="0"
                value="{{ old('conversion_rate', $bankAccount->conversion_rate ?? 0) }}">
+        <small class="text-muted">
+            Used to show how much PKR the user must pay for the USD deposit amount.
+        </small>
 
     </div>
 

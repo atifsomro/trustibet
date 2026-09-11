@@ -50,7 +50,9 @@
                                     <label
                                         class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300"
                                         data-name="{{ $bank->bank_name }}" data-account_name="{{ $bank->account_title }}" data-number="{{ $bank->account_number }}"
-                                        data-network="{{ $bank->bank_name }}" data-qr="{{ $bank->qr_code ? Storage::url($bank->qr_code) : asset('images/placeholder/placeholder.webp') }}">
+                                        data-network="{{ $bank->bank_name }}" data-currency="{{ $bank->currency }}"
+                                        data-rate="{{ $bank->conversion_rate }}"
+                                        data-qr="{{ $bank->qr_code ? Storage::url($bank->qr_code) : asset('images/placeholder/placeholder.webp') }}">
                                         <input type="radio" name="bank_account_id" value="{{ $bank->id }}"
                                             @checked($key == 0) class="hidden">
                                         <div
@@ -65,11 +67,20 @@
                             </div>
                             {{-- Amount --}}
                             <div class="mt-8">
-                                <label class="block mb-2">
-                                    Deposit Amount
-                                </label>
-                                <input id="depositAmount" type="number" name="amount" placeholder="Enter Deposit Amount"
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <label for="depositAmount" class="block">
+                                        Deposit Amount (USD)
+                                    </label>
+                                    <span id="pkrEquivalent" class="text-red-500 font-semibold">
+                                        Pay: Rs. 0
+                                    </span>
+                                </div>
+                                <input id="depositAmount" type="number" name="amount" min="1" step="0.01"
+                                    placeholder="Enter amount in USD"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
+                                <small class="opacity-60 mt-2 block">
+                                    Enter how many dollars you want credited. Pay the PKR amount shown above via your selected method.
+                                </small>
                             </div>
                             {{-- Payment Details --}}
                             <div class="rounded-2xl bg-brand-dark p-6 mt-8">
@@ -168,7 +179,15 @@
                                     Deposit Amount
                                 </span>
                                 <span id="summaryAmount">
-                                    Rs.0
+                                    $0
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>
+                                    Amount to Pay
+                                </span>
+                                <span id="summaryPay" class="text-red-500 font-semibold">
+                                    Rs. 0
                                 </span>
                             </div>
                             <div class="flex items-center justify-between">
@@ -176,7 +195,7 @@
                                     Processing Fee
                                 </span>
                                 <span>
-                                    Rs.0
+                                    $0
                                 </span>
                             </div>
                             <hr class="border-brand-border">
@@ -185,7 +204,7 @@
                                     You'll Receive
                                 </span>
                                 <span id="summaryReceive" class="text-brand-primary font-bold text-xl">
-                                    Rs.0
+                                    $0
                                 </span>
                             </div>
                         </div>
@@ -237,7 +256,13 @@
                             <li class="flex gap-3">
                                 <i class="fa-solid fa-circle-check text-brand-primary mt-1"></i>
                                 <span>
-                                    Send payment to the provided account.
+                                    Enter the USD amount you want credited.
+                                </span>
+                            </li>
+                            <li class="flex gap-3">
+                                <i class="fa-solid fa-circle-check text-brand-primary mt-1"></i>
+                                <span>
+                                    Send the shown PKR amount to the provided account.
                                 </span>
                             </li>
                             <li class="flex gap-3">
@@ -278,9 +303,9 @@
                             <tr class="border-b border-brand-border">
                                 <th class="py-4 text-left">Date</th>
                                 <th class="py-4 text-left">Method</th>
-                                <th class="py-4 text-left">Amount</th>
+                                <th class="py-4 text-left">Amount (USD)</th>
                                 <th class="py-4 text-left">Conversion Rate</th>
-                                <th class="py-4 text-left">Net Amount</th>
+                                <th class="py-4 text-left">Paid (PKR)</th>
                                 <th class="py-4 text-left">Transaction ID</th>
                                 <th class="py-4 text-left">Status</th>
                             </tr>
@@ -295,20 +320,18 @@
                                         {{ $deposit->bankAccount->bank_name }}
                                     </td>
                                     <td class="py-5">
-                                        {{ $deposit->amount }}
+                                        ${{ number_format((float) $deposit->amount, 2) }}
                                     </td>
                                     <td class="py-5">
                                         {{ $deposit->bankAccount->conversion_rate }}
                                     </td>
-                                    @if ($deposit->bankAccount->conversion_rate > 0)
-                                        <td class="py-5">
-                                            {{ number_format($deposit->amount / $deposit->bankAccount->conversion_rate, 2) }}
-                                        </td>
-                                    @else
-                                        <td class="py-5">
-                                            {{ $deposit->amount }}
-                                        </td>
-                                    @endif
+                                    <td class="py-5 text-red-500">
+                                        @if ($deposit->bankAccount->conversion_rate > 0)
+                                            Rs. {{ number_format((float) $deposit->amount * (float) $deposit->bankAccount->conversion_rate, 2) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td class="py-5">
                                         {{ $deposit->reference_number }}
                                     </td>
@@ -340,13 +363,49 @@
     const summaryMethod = document.getElementById("summaryMethod");
     const depositAmount = document.getElementById("depositAmount");
     const summaryAmount = document.getElementById("summaryAmount");
+    const summaryPay = document.getElementById("summaryPay");
     const summaryReceive = document.getElementById("summaryReceive");
+    const pkrEquivalent = document.getElementById("pkrEquivalent");
 
     const copyAccount = document.getElementById("copyAccount");
     const paymentProof = document.getElementById("paymentProof");
     const paymentPreview = document.getElementById("paymentPreview");
 
     const placeholderQR = "{{ asset('images/placeholder/placeholder.webp') }}";
+
+    let currentRate = 0;
+
+    function formatMoney(value) {
+        return Number(value || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function updateAmountSummary() {
+        const usd = parseFloat(depositAmount?.value) || 0;
+        const pkr = currentRate > 0 ? usd * currentRate : 0;
+
+        if (summaryAmount) {
+            summaryAmount.textContent = "$" + formatMoney(usd);
+        }
+
+        if (summaryReceive) {
+            summaryReceive.textContent = "$" + formatMoney(usd);
+        }
+
+        const pkrText = "Rs. " + formatMoney(pkr);
+
+        if (summaryPay) {
+            summaryPay.textContent = pkrText;
+        }
+
+        if (pkrEquivalent) {
+            pkrEquivalent.textContent = currentRate > 0
+                ? "Pay: " + pkrText
+                : "Pay: Rs. 0";
+        }
+    }
 
     // Update selected payment method
     function updateSelection(input) {
@@ -372,12 +431,13 @@
             "shadow-lg",
             "shadow-brand-primary/20"
         );
-        console.log(card.dataset);
+
         // Update payment details
         accountName.textContent = card.dataset.account_name || "-";
         accountNumber.textContent = card.dataset.number || "-";
         networkName.textContent = card.dataset.network || "-";
         summaryMethod.textContent = card.dataset.network || "-";
+        currentRate = parseFloat(card.dataset.rate) || 0;
 
         // Update QR
         paymentQR.src = card.dataset.qr || placeholderQR;
@@ -386,6 +446,8 @@
             this.onerror = null;
             this.src = placeholderQR;
         };
+
+        updateAmountSummary();
     }
 
     // Payment method change
@@ -403,14 +465,7 @@
     });
 
     // Amount summary
-    depositAmount?.addEventListener("input", function () {
-
-        const amount = parseFloat(this.value) || 0;
-
-        summaryAmount.textContent = "Rs. " + amount.toLocaleString();
-        summaryReceive.textContent = "Rs. " + amount.toLocaleString();
-
-    });
+    depositAmount?.addEventListener("input", updateAmountSummary);
 
     // Copy account number
     copyAccount?.addEventListener("click", function () {

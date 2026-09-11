@@ -70,10 +70,6 @@ class TransferWalletBalanceAction
      */
     protected function getColumn(BalanceType $balanceType): string
     {
-        return match ($balanceType) {
-            BalanceType::WITHDRAWABLE => 'withdrawable_balance',
-            BalanceType::BONUS => 'bonus_balance',
-            BalanceType::LOCKED => 'locked_balance',
-        };
+        return $balanceType->column();
     }
 }

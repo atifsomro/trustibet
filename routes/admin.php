@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\WalletController;
 use App\Http\Controllers\Admin\WithdrawalController;
 use App\Http\Controllers\Admin\KycController;
 use App\Http\Controllers\Admin\LotteryController;
+use App\Http\Controllers\Admin\InvestmentPackageController;
+use App\Http\Controllers\Admin\UserInvestmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -34,7 +36,10 @@ Route::prefix('admin')
         // Lottery details
         Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
             ->name('lotteries.show');
-        // Draw lottery
+        // Purchase & draw history
+        Route::get('lottery-history', [LotteryController::class, 'history'])
+            ->name('lotteries.history');
+        // Draw lottery (kept as a fallback; primary path is the scheduler)
         Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])
             ->name('lotteries.draw');
         // Individual draw results
@@ -42,6 +47,20 @@ Route::prefix('admin')
                 'lotteries/{lottery}/draws/{draw}',
                 [LotteryController::class, 'drawShow']
             )->name('lotteries.draws.show');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Investment Management
+        |--------------------------------------------------------------------------
+        */
+        Route::resource('investment-packages', InvestmentPackageController::class)
+            ->except(['show']);
+        Route::get('user-investments', [UserInvestmentController::class, 'index'])
+            ->name('user-investments.index');
+        Route::get('user-investments/{userInvestment}', [UserInvestmentController::class, 'show'])
+            ->name('user-investments.show');
+        Route::put('user-investments/{userInvestment}/daily-roi', [UserInvestmentController::class, 'updateDailyRoi'])
+            ->name('user-investments.update-daily-roi');
         });
         Route::resource('bank-accounts', BankAccountController::class);
         Route::controller(DepositController::class)->group(function () {

@@ -11,6 +11,7 @@ enum LotteryStatus: string
     case DRAWING = 'drawing';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
+    case INACTIVE = 'inactive';
 
     public function label(): string
     {
@@ -22,6 +23,21 @@ enum LotteryStatus: string
             self::DRAWING => 'Drawing',
             self::COMPLETED => 'Completed',
             self::CANCELLED => 'Cancelled',
+            self::INACTIVE => 'Inactive',
         };
+    }
+
+    /**
+     * Statuses that must never appear on the public site.
+     *
+     * @return list<string>
+     */
+    public static function hiddenFromPublic(): array
+    {
+        return [
+            self::DRAFT->value,
+            self::CANCELLED->value,
+            self::INACTIVE->value,
+        ];
     }
 }

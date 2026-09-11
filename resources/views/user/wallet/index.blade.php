@@ -38,7 +38,7 @@
     </div>
 
     {{-- Wallet Summary --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
         {{-- Withdrawable --}}
         <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
@@ -130,6 +130,36 @@
 
         </div>
 
+        {{-- ROI --}}
+        <div class="bg-brand-dark rounded-3xl shadow-sm border border-gray-100 p-6">
+
+            <div class="flex justify-between items-center">
+
+                <div>
+
+                    <p class="text-sm text-gray-500">
+                        ROI Balance
+                    </p>
+
+                    <h2 class="text-3xl font-bold text-yellow-500 mt-2">
+                        {{ number_format($wallet->roi_balance , 2) }}
+                        <span class="text-base text-gray-500">
+                            {{ $wallet->currency }}
+                        </span>
+                    </h2>
+
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-yellow-100 flex items-center justify-center">
+
+                    <i class="fas fa-chart-line text-2xl text-yellow-600"></i>
+
+                </div>
+
+            </div>
+
+        </div>
+
         {{-- Total --}}
         <div class="bg-gradient-to-r from-brand-primary to-indigo-600 rounded-3xl shadow-sm p-6 text-white">
 
@@ -143,7 +173,7 @@
 
                     <h2 class="text-3xl font-bold mt-2">
 
-                        {{ number_format(($wallet->withdrawable_balance + $wallet->bonus_balance + $wallet->locked_balance) , 2) }}
+                        {{ number_format(($wallet->withdrawable_balance + $wallet->bonus_balance + $wallet->locked_balance + $wallet->roi_balance) , 2) }}
 
                         <span class="text-base">
                             {{ $wallet->currency }}

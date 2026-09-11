@@ -1,4 +1,9 @@
 <div class="entries">
+            <a href="{{ route('lotteries.history') }}" class="mb-6 inline-flex items-center gap-2 text-sm text-green-400 hover:underline">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                View lottery purchase history
+            </a>
+
     <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-3xl border border-brand-border bg-brand-surface p-6">
             <div class="flex  flex-col items-center justify-between text-center">

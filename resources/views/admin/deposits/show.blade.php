@@ -89,6 +89,30 @@
 
                         </tr>
 
+                        <tr>
+
+                            <th>
+                                Expected PKR Payment
+                            </th>
+
+                            <td>
+
+                                @if ($deposit->bankAccount && $deposit->bankAccount->conversion_rate > 0)
+                                    <strong class="text-danger">
+                                        Rs. {{ number_format((float) $deposit->amount * (float) $deposit->bankAccount->conversion_rate, 2) }}
+                                    </strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        Rate: {{ $deposit->bankAccount->conversion_rate }}
+                                    </small>
+                                @else
+                                    —
+                                @endif
+
+                            </td>
+
+                        </tr>
+
 
 
                         <tr>

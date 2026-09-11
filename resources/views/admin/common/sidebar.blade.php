@@ -172,6 +172,13 @@
                     <i class="ti-settings"></i><span class="hide-menu">Management</span></a>
                     <ul aria-expanded="false" class="collapse">
                         <li class="{{ $active == 'lottery' ? 'active' : '' }}"><a href="{{ route('admin.lotteries.index') }}">Lottery</a></li>
+                        <li><a href="{{ route('admin.lotteries.history') }}">Lottery History</a></li>
+                        <li class="{{ $active == 'investment-packages' ? 'active' : '' }}">
+                            <a href="{{ route('admin.investment-packages.index') }}">Investment Packages</a>
+                        </li>
+                        <li class="{{ $active == 'user-investments' ? 'active' : '' }}">
+                            <a href="{{ route('admin.user-investments.index') }}">Purchased Packages</a>
+                        </li>
                     </ul>
                 </li>
             </ul>

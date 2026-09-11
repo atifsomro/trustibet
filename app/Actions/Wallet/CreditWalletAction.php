@@ -78,11 +78,7 @@ class CreditWalletAction
              * ----------------------------------------------------------
              */
 
-            $balanceColumn = match ($balanceType) {
-                BalanceType::WITHDRAWABLE => 'withdrawable_balance',
-                BalanceType::BONUS => 'bonus_balance',
-                BalanceType::LOCKED => 'locked_balance',
-            };
+            $balanceColumn = $balanceType->column();
 
             /*
              * ----------------------------------------------------------

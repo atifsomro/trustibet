@@ -22,7 +22,21 @@
                     to win exciting prizes.
                 </p>
 
+                @auth
+                    <a
+                        href="{{ route('lotteries.history') }}"
+                        class="mt-4 inline-flex items-center gap-2 text-sm text-green-400 hover:underline"
+                    >
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        My Lottery History
+                    </a>
+                @endauth
+
             </div>
+
+            @include('lottery.partials.new-round-banner')
+
+            @include('lottery.partials.user-balance')
 
             {{-- Success Message --}}
             @if (session('success'))
@@ -61,7 +75,7 @@
             @if ($lotteries->count())
 
                 <div
-                    class="mt-8 grid grid-cols-1 gap-7 md:grid-cols-2 lg:grid-cols-3 md:mt-12">
+                    class="mt-8 grid grid-cols-1 gap-7 md:mt-12 {{ $lotteries->count() === 1 ? 'mx-auto max-w-md' : ($lotteries->count() === 2 ? 'mx-auto max-w-4xl md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3') }}">
 
                     @foreach ($lotteries as $lottery)
 
@@ -98,8 +112,8 @@
 
             @endif
 
-            {{-- Completed Lottery Results --}}
-            @if ($completedLotteries->count())
+            {{-- Previous Draw Results (one card per lottery) --}}
+            @if (($resultLotteries ?? collect())->count())
 
                 <div class="mt-16">
 
@@ -113,17 +127,23 @@
                         </h2>
 
                         <p class="mx-auto mt-3 max-w-2xl opacity-70">
-                            View the winners and prize results of completed lotteries.
+                            Check your private results for each lottery. Other players’ wins stay hidden.
                         </p>
                     </div>
 
-                    <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    <div
+                        class="mt-8 grid grid-cols-1 gap-6 {{ $resultLotteries->count() === 1 ? 'mx-auto max-w-md' : ($resultLotteries->count() === 2 ? 'mx-auto max-w-4xl md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3') }}">
 
-                        @foreach ($completedLotteries as $completedLottery)
+                        @foreach ($resultLotteries as $resultLottery)
 
                             @php
-                                $completedDraw = $completedLottery->latestCompletedDraw;
+                                $latestDraw = $resultLottery->latestAnnouncedDraw;
+                                $roundCount = (int) ($resultLottery->announced_draws_count ?? 0);
                             @endphp
+
+                            @if (!$latestDraw)
+                                @continue
+                            @endif
 
                             <div class="overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
 
@@ -134,59 +154,65 @@
                                     <div class="flex items-start justify-between gap-4">
                                         <div>
                                             <h3 class="text-xl font-bold">
-                                                {{ $completedLottery->title }}
+                                                {{ $resultLottery->title }}
                                             </h3>
 
                                             <p class="mt-1 text-xs opacity-50">
-                                                Draw #{{ $completedDraw?->id ?? '—' }}
-                                                · Drawn {{ $completedDraw?->completed_at?->format('d M Y h:i A') ?? '—' }}
+                                                {{ $roundCount }} {{ \Illuminate\Support\Str::plural('round', $roundCount) }} completed
+                                                · Latest {{ $latestDraw->completed_at?->format('d M Y h:i A') ?? '—' }}
                                             </p>
                                         </div>
 
                                         <span class="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-semibold text-green-400">
-                                            Completed
+                                            Drawn
                                         </span>
                                     </div>
 
                                     <div class="mt-5 space-y-3">
                                         @php
                                             $resultPrizes = [
-                                                'first' => ['label' => '1st Prize', 'amount' => $completedLottery->first_prize],
-                                                'second' => ['label' => '2nd Prize', 'amount' => $completedLottery->second_prize],
-                                                'third' => ['label' => '3rd Prize', 'amount' => $completedLottery->third_prize],
-                                                'fourth' => ['label' => '4th Prize', 'amount' => $completedLottery->fourth_prize],
-                                                'fifth' => ['label' => '5th Prize', 'amount' => $completedLottery->fifth_prize],
+                                                'first' => ['label' => '1st Prize', 'amount' => $resultLottery->first_prize],
+                                                'second' => ['label' => '2nd Prize', 'amount' => $resultLottery->second_prize],
+                                                'third' => ['label' => '3rd Prize', 'amount' => $resultLottery->third_prize],
+                                                'fourth' => ['label' => '4th Prize', 'amount' => $resultLottery->fourth_prize],
+                                                'fifth' => ['label' => '5th Prize', 'amount' => $resultLottery->fifth_prize],
                                             ];
-                                            $resultWinners = $completedDraw?->winners?->keyBy('prize_category') ?? collect();
+                                            $personal = $latestDraw->personalResult(auth('web')->id());
                                         @endphp
 
                                         @foreach ($resultPrizes as $category => $prize)
-                                            @php($winner = $resultWinners->get($category))
-
                                             <div class="flex items-center justify-between rounded-xl border border-brand-border bg-brand-dark px-4 py-3">
                                                 <div>
                                                     <span class="block text-sm opacity-70">{{ $prize['label'] }}</span>
-                                                    @if ($winner)
-                                                        <span class="mt-1 block text-xs font-mono text-green-400">
-                                                            {{ $winner->ticket?->ticket_number ?? '—' }}
-                                                        </span>
-                                                    @else
-                                                        <span class="mt-1 block text-xs opacity-40">No winner</span>
-                                                    @endif
                                                 </div>
 
                                                 <strong class="text-orange-400">
-                                                    {{ $completedLottery->currency }} {{ number_format((float) $prize['amount'], 2) }}
+                                                    {{ $resultLottery->currency }} {{ number_format((float) $prize['amount'], 2) }}
                                                 </strong>
                                             </div>
                                         @endforeach
+
+                                        <div class="rounded-xl border {{ $personal['outcome'] === 'won' ? 'border-green-500/30 bg-green-500/10' : 'border-brand-border bg-brand-dark' }} px-4 py-3 text-center">
+                                            @if ($personal['outcome'] === 'won')
+                                                <span class="text-sm font-semibold text-green-400">You won in the latest round</span>
+                                            @elseif ($personal['outcome'] === 'lost')
+                                                <span class="text-sm font-semibold text-orange-400">No win in the latest round</span>
+                                            @else
+                                                <span class="text-sm opacity-50">You did not enter the latest round</span>
+                                            @endif
+                                            <span class="mt-1 block text-xs opacity-40">Results are private</span>
+                                        </div>
                                     </div>
 
+                                    <p class="mt-4 text-center text-xs opacity-50">
+                                        Open results to see your private history for every draw.
+                                    </p>
+
                                     <a
-                                        href="{{ route('lotteries.show', $completedLottery) }}"
+                                        href="{{ route('lotteries.results', $resultLottery) }}"
                                         class="mt-5 block rounded-2xl bg-gradient-to-r from-green-500 to-orange-500 py-3 text-center font-semibold text-white transition hover:scale-[1.01]">
                                         <i class="fa-solid fa-trophy mr-2"></i>
-                                        View Full Results
+                                        View Results
                                     </a>
 
                                 </div>
@@ -199,71 +225,12 @@
 
             @endif
 
-        </div>
+        <div>
 
     </section>
 
 @endsection
 
 @push('scripts')
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    const countdowns = document.querySelectorAll(
-        '.lottery-countdown'
-    );
-
-    countdowns.forEach(function (element) {
-
-        const endDate = new Date(
-            element.dataset.end
-        ).getTime();
-
-        function updateCountdown() {
-
-            const now = new Date().getTime();
-
-            const difference = endDate - now;
-
-            if (difference <= 0) {
-
-                element.textContent = '00:00:00';
-
-                return;
-            }
-
-            const hours = Math.floor(
-                difference / (1000 * 60 * 60)
-            );
-
-            const minutes = Math.floor(
-                (difference % (1000 * 60 * 60))
-                / (1000 * 60)
-            );
-
-            const seconds = Math.floor(
-                (difference % (1000 * 60))
-                / 1000
-            );
-
-            element.textContent =
-                String(hours).padStart(2, '0') +
-                ':' +
-                String(minutes).padStart(2, '0') +
-                ':' +
-                String(seconds).padStart(2, '0');
-        }
-
-        updateCountdown();
-
-        setInterval(
-            updateCountdown,
-            1000
-        );
-
-    });
-
-});
-</script>
+    @include('lottery.partials.countdown-scripts')
 @endpush

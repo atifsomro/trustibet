@@ -59,6 +59,12 @@ class BuyLotteryTicketsAction
             /*
              * Make sure the lottery is currently selling tickets.
              */
+            if ($lottery->hasEnded()) {
+                throw ValidationException::withMessages([
+                    'lottery' => 'This lottery has ended. Ticket sales are closed.',
+                ]);
+            }
+
             if (!$lottery->canBuyTickets()) {
                 throw ValidationException::withMessages([
                     'lottery' => 'Tickets are not currently available for this lottery.',
@@ -66,36 +72,29 @@ class BuyLotteryTicketsAction
             }
 
             /*
-             * Maximum tickets a single user can purchase
-             * for this lottery.
+             * Per-lottery maximum tickets a single user can purchase.
+             * null means unlimited for that user.
              */
-            $maxTicketsPerUser = (int) config(
-                'lottery.max_tickets_per_user',
-                10
-            );
+            $maxTicketsPerUser = $lottery->max_tickets_per_user;
 
-            /*
-             * Count tickets already purchased by this user.
-             */
-            $existingTickets = $lottery->ticketsForCurrentRoundUser(
-                $user->id
-            );
+            if ($maxTicketsPerUser !== null) {
+                $existingTickets = $lottery->ticketsForCurrentRoundUser(
+                    $user->id
+                );
 
-            /*
-             * Calculate remaining user allowance.
-             */
-            $remainingUserTickets = max(
-                0,
-                $maxTicketsPerUser - $existingTickets
-            );
+                $remainingUserTickets = max(
+                    0,
+                    (int) $maxTicketsPerUser - $existingTickets
+                );
 
-            if ($quantity > $remainingUserTickets) {
-                throw ValidationException::withMessages([
-                    'quantity' => sprintf(
-                        'You can purchase only %d more ticket(s) for this lottery.',
-                        $remainingUserTickets
-                    ),
-                ]);
+                if ($quantity > $remainingUserTickets) {
+                    throw ValidationException::withMessages([
+                        'quantity' => sprintf(
+                            'You can purchase only %d more ticket(s) for this lottery.',
+                            $remainingUserTickets
+                        ),
+                    ]);
+                }
             }
 
             /*

@@ -15,6 +15,7 @@ class Wallet extends Model
         'withdrawable_balance',
         'bonus_balance',
         'locked_balance',
+        'roi_balance',
         'currency',
         'version',
     ];
@@ -23,6 +24,7 @@ class Wallet extends Model
         'withdrawable_balance' => 'float',
         'bonus_balance' => 'float',
         'locked_balance' => 'float',
+        'roi_balance' => 'float',
         'version' => 'integer',
     ];
 
@@ -63,12 +65,14 @@ class Wallet extends Model
     |--------------------------------------------------------------------------
     */
 
-    public function getBalance(string $balanceType): int
+    public function getBalance(string $balanceType): float
     {
         return match ($balanceType) {
-            'withdrawable' => $this->withdrawable_balance,
-            'bonus' => $this->bonus_balance,
-            default => 0,
+            'withdrawable' => (float) $this->withdrawable_balance,
+            'bonus' => (float) $this->bonus_balance,
+            'locked' => (float) $this->locked_balance,
+            'roi' => (float) $this->roi_balance,
+            default => 0.0,
         };
     }
 }

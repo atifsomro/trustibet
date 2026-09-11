@@ -20,6 +20,9 @@ class Lottery extends Model
         'sales_start_at',
         'sales_end_at',
         'draw_at',
+        'duration_seconds',
+        'starts_at',
+        'ends_at',
 
         'first_prize',
         'second_prize',
@@ -28,6 +31,7 @@ class Lottery extends Model
         'fifth_prize',
 
         'max_tickets',
+        'max_tickets_per_user',
         'sort_order',
         'description',
         'status',
@@ -40,6 +44,9 @@ class Lottery extends Model
         'sales_start_at' => 'datetime',
         'sales_end_at' => 'datetime',
         'draw_at' => 'datetime',
+        'duration_seconds' => 'integer',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
 
         'first_prize' => 'decimal:2',
         'second_prize' => 'decimal:2',
@@ -48,6 +55,7 @@ class Lottery extends Model
         'fifth_prize' => 'decimal:2',
 
         'max_tickets' => 'integer',
+        'max_tickets_per_user' => 'integer',
         'sort_order' => 'integer',
 
         'is_active' => 'boolean',
@@ -83,6 +91,14 @@ class Lottery extends Model
             ->latestOfMany('id');
     }
 
+    public function latestAnnouncedDraw(): HasOne
+    {
+        return $this->hasOne(LotteryDraw::class)
+            ->where('status', 'completed')
+            ->where('winners_announced', true)
+            ->latestOfMany('id');
+    }
+
     public function winners(): HasMany
     {
         return $this->hasMany(LotteryWinner::class);
@@ -107,17 +123,52 @@ class Lottery extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeVisible(Builder $query): Builder
+    {
+        return $query->whereNotIn('status', LotteryStatus::hiddenFromPublic());
+    }
+
     public function scopeSelling(Builder $query): Builder
     {
         return $query
-            ->where('is_active', true)
-            ->where('status', LotteryStatus::SELLING->value)
+            ->whereNotIn('status', [
+                LotteryStatus::DRAFT->value,
+                LotteryStatus::CANCELLED->value,
+                LotteryStatus::INACTIVE->value,
+                LotteryStatus::COMPLETED->value,
+                LotteryStatus::DRAWING->value,
+                LotteryStatus::ENDED->value,
+            ])
             ->where(function ($query) {
                 $query
-                    ->whereNull('sales_start_at')
-                    ->orWhere('sales_start_at', '<=', now());
+                    ->whereNull('starts_at')
+                    ->orWhere('starts_at', '<=', now());
             })
-            ->where('sales_end_at', '>', now());
+            ->where(function ($query) {
+                $query
+                    ->where(function ($inner) {
+                        $inner->whereNotNull('ends_at')
+                            ->where('ends_at', '>', now());
+                    })
+                    ->orWhere(function ($inner) {
+                        $inner->whereNull('ends_at')
+                            ->where('sales_end_at', '>', now());
+                    });
+            });
+    }
+
+    public function scopeDueForDraw(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', now())
+            ->whereNotIn('status', [
+                LotteryStatus::DRAFT->value,
+                LotteryStatus::CANCELLED->value,
+                LotteryStatus::INACTIVE->value,
+                LotteryStatus::DRAWING->value,
+                LotteryStatus::COMPLETED->value,
+            ]);
     }
     public function scopeOrdered($query)
     {
@@ -131,19 +182,15 @@ class Lottery extends Model
 
     public function isSalesOpen(): bool
     {
-        if (!$this->is_active) {
+        if ($this->isCancelled() || $this->isInactive() || $this->isDraft() || $this->isCompleted() || $this->isDrawing()) {
             return false;
         }
 
-        if (!$this->isSelling()) {
+        if ($this->periodStart() && now()->lt($this->periodStart())) {
             return false;
         }
 
-        if ($this->sales_start_at && now()->lt($this->sales_start_at)) {
-            return false;
-        }
-
-        if (now()->gte($this->sales_end_at)) {
+        if ($this->hasEnded()) {
             return false;
         }
 
@@ -152,36 +199,151 @@ class Lottery extends Model
 
     public function hasEnded(): bool
     {
-        return now()->gte($this->sales_end_at);
+        $endsAt = $this->periodEnd();
+
+        if ($endsAt === null) {
+            return false;
+        }
+
+        return now()->gte($endsAt);
     }
 
     public function canDraw(): bool
     {
-        if (!$this->hasEnded() || !$this->is_active || $this->isCancelled() || $this->isDrawing()) {
+        if (!$this->hasEnded() || $this->isCancelled() || $this->isInactive() || $this->isDrawing() || $this->isDraft()) {
             return false;
         }
 
-        /*
-         * A completed draw from a previous round is allowed.
-         * Only the currently configured sales period can block another draw.
-         */
+        return !$this->currentRoundHasDraw();
+    }
+
+    public function currentRoundHasDraw(): bool
+    {
         $query = $this->draws()
             ->whereIn('status', ['pending', 'running', 'completed']);
 
-        if ($this->sales_start_at) {
-            $query->where('sales_start_at', $this->sales_start_at);
+        $periodStart = $this->periodStart();
+        $periodEnd = $this->periodEnd();
+
+        if ($periodStart) {
+            $query->where('sales_start_at', $periodStart);
         } else {
             $query->whereNull('sales_start_at');
         }
 
-        $query->where('sales_end_at', $this->sales_end_at);
+        if ($periodEnd) {
+            $query->where('sales_end_at', $periodEnd);
+        }
 
-        return !$query->exists();
+        return $query->exists();
+    }
+
+    public function periodStart(): mixed
+    {
+        return $this->starts_at ?? $this->sales_start_at;
+    }
+
+    public function periodEnd(): mixed
+    {
+        return $this->ends_at ?? $this->sales_end_at;
+    }
+
+    /**
+     * Apply the countdown window from now (or a given start).
+     * Also keeps the legacy sales_* columns in sync so existing
+     * round-scoped ticket/draw queries keep working.
+     */
+    public function applyCountdown(?\DateTimeInterface $from = null): void
+    {
+        $from = $from
+            ? \Illuminate\Support\Carbon::parse($from)
+            : now();
+
+        $duration = max(1, (int) $this->duration_seconds);
+
+        // DATETIME columns store whole seconds. Snap to the second boundary
+        // so a 7s timer is stored as exactly 7s, not ~6.x after truncation.
+        $from = $from->copy()->startOfSecond();
+
+        $this->starts_at = $from;
+        $this->ends_at = $from->copy()->addSeconds($duration);
+        $this->sales_start_at = $this->starts_at;
+        $this->sales_end_at = $this->ends_at;
+        $this->draw_at = $this->ends_at;
+    }
+
+    public function recalculateEndsAt(): void
+    {
+        if (!$this->starts_at || !$this->duration_seconds) {
+            return;
+        }
+
+        $this->ends_at = $this->starts_at->copy()->addSeconds((int) $this->duration_seconds);
+        $this->sales_start_at = $this->starts_at;
+        $this->sales_end_at = $this->ends_at;
+        $this->draw_at = $this->ends_at;
+    }
+
+    /**
+     * @return array{hours: int, minutes: int, seconds: int}
+     */
+    public function durationParts(): array
+    {
+        $total = max(0, (int) ($this->duration_seconds ?? 0));
+
+        return [
+            'hours' => intdiv($total, 3600),
+            'minutes' => intdiv($total % 3600, 60),
+            'seconds' => $total % 60,
+        ];
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return $this->status instanceof LotteryStatus
+            ? $this->status->label()
+            : ucfirst((string) $this->status);
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
+        $status = $this->status instanceof LotteryStatus
+            ? $this->status
+            : LotteryStatus::tryFrom((string) $this->status);
+
+        return match ($status) {
+            LotteryStatus::SELLING => 'success',
+            LotteryStatus::COMPLETED => 'primary',
+            LotteryStatus::ENDED => 'warning',
+            LotteryStatus::CANCELLED, LotteryStatus::INACTIVE => 'danger',
+            LotteryStatus::DRAWING => 'info',
+            LotteryStatus::SCHEDULED => 'secondary',
+            default => 'secondary',
+        };
     }
 
     public function isDraft(): bool
     {
         return $this->status === LotteryStatus::DRAFT;
+    }
+
+    public function isInactive(): bool
+    {
+        return $this->status === LotteryStatus::INACTIVE;
+    }
+
+    /**
+     * Whether this lottery may appear on public pages.
+     */
+    public function isVisibleToPublic(): bool
+    {
+        return ! in_array(
+            $this->status instanceof LotteryStatus
+                ? $this->status->value
+                : (string) $this->status,
+            LotteryStatus::hiddenFromPublic(),
+            true
+        );
     }
 
     public function isScheduled(): bool
@@ -283,6 +445,30 @@ class Lottery extends Model
         ]);
     }
 
+    /**
+     * Begin the next sales window using the configured duration.
+     */
+    public function startNextRound(?\DateTimeInterface $from = null): void
+    {
+        $this->applyCountdown($from);
+        $this->status = LotteryStatus::SELLING;
+        $this->save();
+    }
+
+    public function currentRoundNumber(): int
+    {
+        $completed = array_key_exists('completed_draws_count', $this->attributes)
+            ? (int) $this->completed_draws_count
+            : $this->draws()->where('status', 'completed')->count();
+
+        return $completed + 1;
+    }
+
+    public function hasPreviousRounds(): bool
+    {
+        return $this->currentRoundNumber() > 1;
+    }
+
     public function cancel(): void
     {
         $this->update([
@@ -310,14 +496,17 @@ class Lottery extends Model
     public function currentRoundTickets()
     {
         $query = $this->tickets()
-            ->whereIn('status', ['active', 'winner']);
+            ->where('status', 'active');
 
-        if ($this->sales_start_at) {
-            $query->where('purchased_at', '>=', $this->sales_start_at);
+        $periodStart = $this->periodStart();
+        $periodEnd = $this->periodEnd();
+
+        if ($periodStart) {
+            $query->where('purchased_at', '>=', $periodStart);
         }
 
-        if ($this->sales_end_at) {
-            $query->where('purchased_at', '<=', $this->sales_end_at);
+        if ($periodEnd) {
+            $query->where('purchased_at', '<=', $periodEnd);
         }
 
         return $query;
@@ -347,6 +536,50 @@ class Lottery extends Model
         );
     }
 
+    /**
+     * Remaining tickets this user may buy in the current round.
+     * null means unlimited (aside from the lottery-wide cap).
+     */
+    public function remainingTicketsForUser(?int $userId): ?int
+    {
+        $lotteryRemaining = $this->remainingTickets();
+
+        $userRemaining = null;
+
+        if ($this->max_tickets_per_user !== null) {
+            $owned = $userId
+                ? $this->ticketsForCurrentRoundUser($userId)
+                : 0;
+
+            $userRemaining = max(0, (int) $this->max_tickets_per_user - $owned);
+        }
+
+        if ($lotteryRemaining === null && $userRemaining === null) {
+            return null;
+        }
+
+        if ($lotteryRemaining === null) {
+            return $userRemaining;
+        }
+
+        if ($userRemaining === null) {
+            return $lotteryRemaining;
+        }
+
+        return min($lotteryRemaining, $userRemaining);
+    }
+
+    public function maxPurchaseQuantityForUser(?int $userId): int
+    {
+        $remaining = $this->remainingTicketsForUser($userId);
+
+        if ($remaining === null) {
+            return 99;
+        }
+
+        return max(0, $remaining);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Status Synchronization
@@ -357,6 +590,7 @@ class Lottery extends Model
     {
         if (
             $this->isCancelled() ||
+            $this->isInactive() ||
             $this->isCompleted() ||
             $this->isDrawing()
         ) {
@@ -364,11 +598,10 @@ class Lottery extends Model
         }
 
         $now = now();
+        $startsAt = $this->periodStart();
+        $endsAt = $this->periodEnd();
 
-        if (
-            $this->sales_start_at &&
-            $now->lt($this->sales_start_at)
-        ) {
+        if ($startsAt && $now->lt($startsAt)) {
             if (!$this->isScheduled()) {
                 $this->update([
                     'status' => LotteryStatus::SCHEDULED,
@@ -378,13 +611,17 @@ class Lottery extends Model
             return;
         }
 
-        if ($now->lt($this->sales_end_at)) {
+        if ($endsAt && $now->lt($endsAt)) {
             if (!$this->isSelling()) {
                 $this->update([
                     'status' => LotteryStatus::SELLING,
                 ]);
             }
 
+            return;
+        }
+
+        if (!$endsAt) {
             return;
         }
 
