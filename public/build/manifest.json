@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-C_TiHo60.css",
+    "file": "assets/app-CuJps800.css",
     "name": "app",
     "names": [
       "app.css"
@@ -9,12 +9,12 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-50qrhvWE.js",
+    "file": "assets/app-Dt_KY7NT.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
     "css": [
-      "assets/app-C_TiHo60.css"
+      "assets/app-CuJps800.css"
     ]
   },
   "resources/js/notifications.js": {
