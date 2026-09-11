@@ -87,21 +87,13 @@
             @endif
 
             {{-- Previous Draw Results (one card per lottery) --}}
-            @if (($resultLotteries ?? collect())->count())
+            {{-- @if (($resultLotteries ?? collect())->count())
                 <div class="mt-10">
 
                     <div class="sec_heading text-center">
                         <span class="sec_subtitle">
                             Lottery Results Previous Draws
                         </span>
-
-                        {{-- <h2 class="mt-4">
-                            Lottery Results
-                        </h2>
-
-                        <p class="mx-auto mt-3 max-w-2xl opacity-70">
-                            Check your private results for each lottery. Other players’ wins stay hidden.
-                        </p> --}}
                     </div>
 
                     <div
@@ -215,7 +207,7 @@
 
                     </div>
                 </div>
-            @endif
+            @endif --}}
 
             <div>
 
