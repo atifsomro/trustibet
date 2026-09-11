@@ -67,7 +67,7 @@ class LotteryController extends Controller
                 },
             ])
             ->get()
-            ->sortByDesc(fn (Lottery $lottery) => $lottery->latestAnnouncedDraw?->id ?? 0)
+            ->sortByDesc(fn(Lottery $lottery) => $lottery->latestAnnouncedDraw?->id ?? 0)
             ->values();
 
         return view(
@@ -112,7 +112,7 @@ class LotteryController extends Controller
             ->orderBy('id')
             ->pluck('id')
             ->values()
-            ->mapWithKeys(fn ($id, $index) => [(int) $id => $index + 1]);
+            ->mapWithKeys(fn($id, $index) => [(int) $id => $index + 1]);
 
         $latestDrawId = (clone $baseQuery)->latest('id')->value('id');
 
@@ -160,7 +160,7 @@ class LotteryController extends Controller
 
         $hasActiveFilters = collect($filters)
             ->except(['draw', 'page', 'sort'])
-            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->filter(fn($value) => $value !== null && $value !== '')
             ->isNotEmpty()
             || (($filters['sort'] ?? 'newest') !== 'newest');
 
@@ -228,7 +228,7 @@ class LotteryController extends Controller
             }
         }
 
-        if (! empty($filters['round'])) {
+        if (!empty($filters['round'])) {
             $drawId = $roundNumbers->search((int) $filters['round']);
 
             if ($drawId === false) {
@@ -238,7 +238,7 @@ class LotteryController extends Controller
             }
         }
 
-        if (! empty($filters['prize'])) {
+        if (!empty($filters['prize'])) {
             $query->whereHas('winners', function ($winnerQuery) use ($filters, $userId) {
                 $winnerQuery->where('prize_category', $filters['prize']);
 
@@ -250,15 +250,15 @@ class LotteryController extends Controller
             });
         }
 
-        if (! empty($filters['from'])) {
+        if (!empty($filters['from'])) {
             $query->whereDate('completed_at', '>=', $filters['from']);
         }
 
-        if (! empty($filters['to'])) {
+        if (!empty($filters['to'])) {
             $query->whereDate('completed_at', '<=', $filters['to']);
         }
 
-        if (! empty($filters['my_wins'])) {
+        if (!empty($filters['my_wins'])) {
             $query->whereHas('winners', function ($winnerQuery) use ($userId) {
                 if ($userId) {
                     $winnerQuery->where('user_id', $userId);
@@ -290,7 +290,7 @@ class LotteryController extends Controller
                 },
             ])
             ->latest('id')
-            ->get();
+            ->paginate(10);
 
         $userTickets = $userId
             ? $lottery->tickets()
@@ -305,6 +305,39 @@ class LotteryController extends Controller
             'userTickets' => $userTickets,
         ], $this->lotteryWalletSummary()));
     }
+    // public function show(Lottery $lottery): View
+    // {
+    //     abort_unless($lottery->isVisibleToPublic(), 404);
+
+    //     $userId = auth('web')->id();
+
+    //     $draws = $lottery->draws()
+    //         ->where('status', 'completed')
+    //         ->with([
+    //             'winners' => function ($query) use ($userId) {
+    //                 if ($userId) {
+    //                     $query->where('user_id', $userId)->with('ticket');
+    //                 } else {
+    //                     $query->whereRaw('1 = 0');
+    //                 }
+    //             },
+    //         ])
+    //         ->latest('id')
+    //         ->get();
+
+    //     $userTickets = $userId
+    //         ? $lottery->tickets()
+    //             ->where('user_id', $userId)
+    //             ->latest('purchased_at')
+    //             ->get()
+    //         : collect();
+
+    //     return view('lottery.show', array_merge([
+    //         'lottery' => $lottery,
+    //         'draws' => $draws,
+    //         'userTickets' => $userTickets,
+    //     ], $this->lotteryWalletSummary()));
+    // }
 
     /**
      * Display one specific historical draw (private to the viewer).
@@ -353,9 +386,9 @@ class LotteryController extends Controller
                 $first = $lotteryTickets->first();
                 $lottery = $first->lottery;
 
-                $amount = $lotteryTickets->sum(fn (LotteryTicket $ticket) => (float) $ticket->price);
-                $hasWinner = $lotteryTickets->contains(fn (LotteryTicket $ticket) => $ticket->isWinner());
-                $allResolved = $lotteryTickets->every(fn (LotteryTicket $ticket) => in_array($ticket->status, ['winner', 'lost', 'refunded', 'cancelled'], true));
+                $amount = $lotteryTickets->sum(fn(LotteryTicket $ticket) => (float) $ticket->price);
+                $hasWinner = $lotteryTickets->contains(fn(LotteryTicket $ticket) => $ticket->isWinner());
+                $allResolved = $lotteryTickets->every(fn(LotteryTicket $ticket) => in_array($ticket->status, ['winner', 'lost', 'refunded', 'cancelled'], true));
 
                 $drawStatus = 'pending';
                 $outcome = 'not_yet_drawn';
