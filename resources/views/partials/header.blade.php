@@ -32,11 +32,30 @@
                             </a>
                         </li>
                     @endauth
-
+                    <li>
+                        <a href="{{ auth()->check() ? route('investment') : route('auth.login') }}"
+                            class="{{ request()->routeIs('investment') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
+                            Investment
+                        </a>
+                    </li>
+                    {{-- @auth
+                        <li>
+                            <a href="{{ route('lotteries.history') }}"
+                                class="{{ request()->routeIs('lotteries.history') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
+                                My History
+                            </a>
+                        </li>
+                    @endauth --}}
+                    <li>
+                        <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
+                            class="{{ request()->routeIs('winner.history') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
+                            Leader Board
+                        </a>
+                    </li>
                     <li class="relative">
                         <button type="button" onclick="togglePagesDropdown()"
                             class="flex items-center gap-2 transition hover:text-brand-primary {{ request()->routeIs('lotteries.index', 'lotteries.history', 'investment', 'winner.history') ? 'text-brand-primary' : '' }}">
-                            Pages
+                            Lottery
                             <i id="pagesArrow"
                                 class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
                         </button>
@@ -50,38 +69,16 @@
                                     class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
                                     <i class="fa-solid fa-ticket text-xs"></i>
                                 </span>
-                                <span class="text-sm">Lottery</span>
+                                <span class="text-sm">All Lotteries</span>
                             </a>
-
-                            <a href="{{ auth()->check() ? route('investment') : route('auth.login') }}"
-                                class="flex items-center gap-3 rounded-xl p-3 transition hover:bg-orange-500/10 {{ request()->routeIs('investment') ? 'bg-orange-500/10 text-orange-500' : '' }}">
+                            <a href="{{ route('lotteries.history') }}"
+                                class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+                                {{ request()->routeIs('lotteries.history') ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-orange-500/10' }}">
                                 <span
                                     class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
-                                    <i class="fa-solid fa-chart-line text-xs"></i>
-                                </span>
-                                <span class="text-sm">Investment</span>
+                                    <i class="fa-solid fa-clock-rotate-left w-5 text-xs text-orange-500"></i></span>
+                                <span class="text-sm">Lottery History</span>
                             </a>
-
-                            @auth
-                                <a href="{{ route('lotteries.history') }}"
-                                    class="flex items-center gap-3 rounded-xl p-3 transition hover:bg-green-500/10 {{ request()->routeIs('lotteries.history') ? 'bg-green-500/10 text-green-500' : '' }}">
-                                    <span
-                                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
-                                        <i class="fa-solid fa-clock-rotate-left text-xs"></i>
-                                    </span>
-                                    <span class="text-sm">My History</span>
-                                </a>
-                            @endauth
-
-                            <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
-                                class="flex items-center gap-3 rounded-xl p-3 transition hover:bg-orange-500/10 {{ request()->routeIs('winner.history') ? 'bg-orange-500/10 text-orange-500' : '' }}">
-                                <span
-                                    class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
-                                    <i class="fa-solid fa-trophy text-xs"></i>
-                                </span>
-                                <span class="text-sm">Leader Board</span>
-                            </a>
-
                         </div>
                     </li>
 
@@ -168,15 +165,40 @@
                     </a>
                 </li>
             @endauth
-
+            <li>
+                <a href="{{ auth()->check() ? route('investment') : route('auth.login') }}"
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+                            {{ request()->routeIs('investment') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Investment</span>
+                </a>
+            </li>
+            {{-- @auth
+                <li>
+                    <a href="{{ route('lotteries.history') }}"
+                        class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+                {{ request()->routeIs('lotteries.history') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>My History</span>
+                    </a>
+                </li>
+            @endauth 
+            <li> --}}
+            <li>
+                <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+                            {{ request()->routeIs('winner.history') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
+                    <i class="fa-solid fa-trophy"></i>
+                    <span> Leader Board</span>
+                </a>
+            </li>
             <li>
                 <button type="button" onclick="toggleMobilePages()"
                     class="flex w-full items-center justify-between rounded-2xl border px-5 py-4 transition
                     {{ request()->routeIs('lotteries.index', 'lotteries.history', 'investment', 'winner.history') ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-transparent bg-brand-dark hover:border-orange-500 hover:bg-orange-500/10' }}">
-
                     <span class="flex items-center gap-4">
                         <i class="fa-solid fa-layer-group w-5"></i>
-                        <span>Pages</span>
+                        <span>Lottery</span>
                     </span>
 
                     <i id="mobilePagesArrow" class="fa-solid fa-chevron-down text-xs transition-transform duration-300">
@@ -184,39 +206,23 @@
                 </button>
 
                 <div id="mobilePagesDropdown" class="pages-mobile-dropdown">
-
                     <div class="mt-2 space-y-1 rounded-2xl border border-brand-border bg-brand-dark/50 p-2">
-
                         <a href="{{ auth()->check() ? route('lotteries.index') : route('auth.login') }}"
                             class="flex items-center gap-3 rounded-xl px-4 py-3 transition
                             {{ request()->routeIs('lotteries.index') ? 'bg-green-500/10 text-green-500' : 'hover:bg-green-500/10' }}">
-                            <i class="fa-solid fa-ticket w-5 text-xs text-green-500"></i>
-                            <span class="text-sm">Lottery</span>
+                            <span
+                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 text-green-500">
+                                <i class="fa-solid fa-ticket w-5 text-xs text-green-500"></i></span>
+                            <span class="text-sm">All Lotteries</span>
                         </a>
-
-                        <a href="{{ auth()->check() ? route('investment') : route('auth.login') }}"
+                        <a href="{{ route('lotteries.history') }}"
                             class="flex items-center gap-3 rounded-xl px-4 py-3 transition
-                            {{ request()->routeIs('investment') ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-orange-500/10' }}">
-                            <i class="fa-solid fa-chart-line w-5 text-xs text-orange-500"></i>
-                            <span class="text-sm">Investment</span>
+                                {{ request()->routeIs('lotteries.history') ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-orange-500/10' }}">
+                            <span
+                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
+                                <i class="fa-solid fa-clock-rotate-left w-5 text-xs text-orange-500"></i></span>
+                            <span class="text-sm">Lottery History</span>
                         </a>
-
-                        @auth
-                            <a href="{{ route('lotteries.history') }}"
-                                class="flex items-center gap-3 rounded-xl px-4 py-3 transition
-                                {{ request()->routeIs('lotteries.history') ? 'bg-green-500/10 text-green-500' : 'hover:bg-green-500/10' }}">
-                                <i class="fa-solid fa-clock-rotate-left w-5 text-xs text-green-500"></i>
-                                <span class="text-sm">My History</span>
-                            </a>
-                        @endauth
-
-                        <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
-                            class="flex items-center gap-3 rounded-xl px-4 py-3 transition
-                            {{ request()->routeIs('winner.history') ? 'bg-orange-500/10 text-orange-500' : 'hover:bg-orange-500/10' }}">
-                            <i class="fa-solid fa-trophy w-5 text-xs text-orange-500"></i>
-                            <span class="text-sm">Leader Board</span>
-                        </a>
-
                     </div>
 
                 </div>
