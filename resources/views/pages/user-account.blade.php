@@ -1,5 +1,224 @@
 @extends('layouts.master')
+@push('styles')
+    <style>
+        /* ===========================
+       dashboard
+    =========================== */
+        .dashboard .candle-chart {
+            position: relative;
+            height: 190px;
+            overflow: hidden;
+            border-radius: 14px;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.025),
+                    transparent);
+        }
 
+        .dashboard .chart-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.05;
+        }
+
+        .dashboard .chart-line-1 {
+            top: 25%;
+        }
+
+        .dashboard .chart-line-2 {
+            top: 50%;
+        }
+
+        .dashboard .chart-line-3 {
+            top: 75%;
+        }
+
+        .dashboard .candles {
+            position: absolute;
+            inset: 10px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 10px;
+        }
+
+        .dashboard .candle {
+            position: relative;
+            width: 10px;
+            border-radius: 2px;
+            animation: dashboardCandleMove 1.8s ease-in-out infinite;
+        }
+
+        .dashboard .candle::before,
+        .dashboard .candle::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            width: 2px;
+            transform: translateX(-50%);
+            background: currentColor;
+            opacity: 0.9;
+        }
+
+        .dashboard .candle::before {
+            top: -18px;
+            height: 18px;
+        }
+
+        .dashboard .candle::after {
+            bottom: -18px;
+            height: 18px;
+        }
+
+        .dashboard .candle span {
+            display: block;
+            width: 100%;
+            height: 100%;
+            border-radius: 2px;
+            background: currentColor;
+            box-shadow: 0 0 12px currentColor;
+        }
+
+        .dashboard .green {
+            color: #22c55e;
+        }
+
+        .dashboard .red {
+            color: #ef4444;
+        }
+
+        .dashboard .c1 {
+            height: 48px;
+            animation-delay: -0.2s;
+        }
+
+        .dashboard .c2 {
+            height: 78px;
+            animation-delay: -0.7s;
+        }
+
+        .dashboard .c3 {
+            height: 58px;
+            animation-delay: -1.1s;
+        }
+
+        .dashboard .c4 {
+            height: 92px;
+            animation-delay: -0.4s;
+        }
+
+        .dashboard .c5 {
+            height: 65px;
+            animation-delay: -1.5s;
+        }
+
+        .dashboard .c6 {
+            height: 105px;
+            animation-delay: -0.9s;
+        }
+
+        .dashboard .c7 {
+            height: 55px;
+            animation-delay: -1.3s;
+        }
+
+        .dashboard .c8 {
+            height: 120px;
+            animation-delay: -0.3s;
+        }
+
+        .dashboard .c9 {
+            height: 82px;
+            animation-delay: -1.7s;
+        }
+
+        .dashboard .c10 {
+            height: 68px;
+            animation-delay: -0.6s;
+        }
+
+        .dashboard .c11 {
+            height: 110px;
+            animation-delay: -1.2s;
+        }
+
+        .dashboard .c12 {
+            height: 90px;
+            animation-delay: -0.8s;
+        }
+
+        .dashboard .c13 {
+            height: 62px;
+            animation-delay: -1.6s;
+        }
+
+        .dashboard .c14 {
+            height: 125px;
+            animation-delay: -0.5s;
+        }
+
+        .dashboard .c15 {
+            height: 98px;
+            animation-delay: -1.4s;
+        }
+
+        .dashboard .c16 {
+            height: 72px;
+            animation-delay: -0.1s;
+        }
+
+        .dashboard .c17 {
+            height: 115px;
+            animation-delay: -1s;
+        }
+
+        .dashboard .c18 {
+            height: 88px;
+            animation-delay: -0.7s;
+        }
+
+        @keyframes dashboardCandleMove {
+
+            0%,
+            100% {
+                transform: translateY(12px);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .dashboard .candle-chart {
+                height: 150px;
+            }
+
+            .dashboard .candles {
+                gap: 5px;
+            }
+
+            .dashboard .candle {
+                width: 7px;
+            }
+
+            .dashboard .candle::before,
+            .dashboard .candle::after {
+                height: 12px;
+            }
+
+            .dashboard .candle::before {
+                top: -12px;
+            }
+
+            .dashboard .candle::after {
+                bottom: -12px;
+            }
+        }
+    </style>
+@endpush
 @section('content')
     <section class="dashboard py-8 lg:py-12">
         <div class="container">
@@ -142,11 +361,13 @@
                     </div>
 
                     <div class="mt-6">
+
                         <div id="dashboard-panel" class="account-tab-panel grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
                             <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-wallet text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Wallet Balance</p>
-                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->withdrawable_balance, 2) }}</h3>
+                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->withdrawable_balance, 2) }}
+                                </h3>
                             </div>
                             <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
                                 <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
@@ -162,6 +383,54 @@
                                 <i class="fa-solid fa-gift text-3xl text-brand-primary"></i>
                                 <p class="mt-5 text-sm">Bonus Balance</p>
                                 <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->bonus_balance, 2) }}</h3>
+                            </div>
+                        </div>
+                        {{-- Candlestick --}}
+                        <div
+                            class="mt-5 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-4 sm:p-6">
+                            <div class="mb-4 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs uppercase tracking-wider opacity-50">Live Activity</span>
+                                    <h3 class="mt-1 text-lg font-semibold">Winning Trends</h3>
+                                </div>
+
+                                <div class="flex items-center gap-4 text-xs opacity-60">
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                        Up
+                                    </span>
+                                    <span class="flex items-center gap-1.5">
+                                        <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                        Down
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="candle-chart">
+                                <div class="chart-line chart-line-1"></div>
+                                <div class="chart-line chart-line-2"></div>
+                                <div class="chart-line chart-line-3"></div>
+
+                                <div class="candles">
+                                    <div class="candle green c1"><span></span></div>
+                                    <div class="candle red c2"><span></span></div>
+                                    <div class="candle green c3"><span></span></div>
+                                    <div class="candle green c4"><span></span></div>
+                                    <div class="candle red c5"><span></span></div>
+                                    <div class="candle green c6"><span></span></div>
+                                    <div class="candle red c7"><span></span></div>
+                                    <div class="candle green c8"><span></span></div>
+                                    <div class="candle green c9"><span></span></div>
+                                    <div class="candle red c10"><span></span></div>
+                                    <div class="candle green c11"><span></span></div>
+                                    <div class="candle green c12"><span></span></div>
+                                    <div class="candle red c13"><span></span></div>
+                                    <div class="candle green c14"><span></span></div>
+                                    <div class="candle green c15"><span></span></div>
+                                    <div class="candle red c16"><span></span></div>
+                                    <div class="candle green c17"><span></span></div>
+                                    <div class="candle green c18"><span></span></div>
+                                </div>
                             </div>
                         </div>
 
@@ -282,6 +551,11 @@
                     title: 'Transactions',
                     description: 'View your full transaction history and payment activity.'
                 },
+                invest: {
+                    label: 'Investments',
+                    title: 'Investments',
+                    description: 'Review your investment packages and returns here.'
+                },
                 referral: {
                     label: 'Referral',
                     title: 'Referral',
@@ -299,34 +573,47 @@
                 }
             };
 
+            function selectTab(activeTab) {
+                const activeButton = Array.from(buttons).find(function(button) {
+                    return button.getAttribute('data-tab') === activeTab;
+                });
+
+                if (!activeButton) {
+                    activeTab = 'dashboard';
+                }
+
+                buttons.forEach(function(item) {
+                    const isActive = item === activeButton || item.getAttribute('data-tab') === activeTab;
+                    item.classList.toggle('bg-brand-primary', isActive);
+                    item.classList.toggle('text-white', isActive);
+                    item.classList.toggle('hover:bg-brand-dark', !isActive);
+                    item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                });
+
+                panels.forEach(function(panel) {
+                    panel.classList.add('hidden');
+                });
+
+                const activePanel = document.getElementById(activeTab + '-panel');
+                if (activePanel) {
+                    activePanel.classList.remove('hidden');
+                }
+
+                if (tabContent[activeTab]) {
+                    label.textContent = tabContent[activeTab].label;
+                    title.innerHTML = tabContent[activeTab].title;
+                    description.textContent = tabContent[activeTab].description;
+                }
+                history.replaceState(null, '', '#' + activeTab);
+            }
+
             buttons.forEach(function(button) {
                 button.addEventListener('click', function() {
-                    const activeTab = this.getAttribute('data-tab');
-
-                    buttons.forEach(function(item) {
-                        item.classList.remove('bg-brand-primary', 'text-white');
-                        item.classList.add('hover:bg-brand-dark');
-                    });
-
-                    this.classList.add('bg-brand-primary', 'text-white');
-                    this.classList.remove('hover:bg-brand-dark');
-
-                    panels.forEach(function(panel) {
-                        panel.classList.add('hidden');
-                    });
-
-                    const activePanel = document.getElementById(activeTab + '-panel');
-                    if (activePanel) {
-                        activePanel.classList.remove('hidden');
-                    }
-
-                    if (tabContent[activeTab]) {
-                        label.textContent = tabContent[activeTab].label;
-                        title.innerHTML = tabContent[activeTab].title;
-                        description.textContent = tabContent[activeTab].description;
-                    }
+                    selectTab(this.getAttribute('data-tab'));
                 });
             });
+
+            selectTab(window.location.hash.slice(1) || 'dashboard');
         });
     </script>
 @endpush
