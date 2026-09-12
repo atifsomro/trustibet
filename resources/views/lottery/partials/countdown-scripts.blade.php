@@ -103,6 +103,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function stopCountdown(element) {
+        if (element && typeof element._lotteryCountdownStop === 'function') {
+            element._lotteryCountdownStop();
+        }
+    }
+
     function refreshLotteryShell(lotteryId, liveHtmlUrl) {
         if (!liveHtmlUrl) {
             return Promise.resolve();
@@ -114,6 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
+            cache: 'no-store',
         })
             .then(function (response) {
                 return response.text();
@@ -123,6 +130,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!current) {
                     return;
                 }
+
+                current.querySelectorAll('.lottery-countdown').forEach(stopCountdown);
 
                 const template = document.createElement('div');
                 template.innerHTML = html.trim();
@@ -150,7 +159,27 @@ document.addEventListener('DOMContentLoaded', function () {
         let endDate = new Date(element.dataset.end).getTime();
         let clockOffsetMs = 0;
         let intervalId = null;
+        let retryTimer = null;
         let drawing = false;
+        let stopped = false;
+        let drawAttempt = 0;
+
+        function stop() {
+            stopped = true;
+            drawing = false;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+                retryTimer = null;
+            }
+        }
+
+        element._lotteryCountdownStop = stop;
 
         function syncClock(serverNowIso) {
             if (!serverNowIso) {
@@ -170,20 +199,70 @@ document.addEventListener('DOMContentLoaded', function () {
             return Date.now() + clockOffsetMs;
         }
 
+        function remainingMs() {
+            return endDate - nowMs();
+        }
+
+        function ensureInterval() {
+            if (stopped || intervalId) {
+                return;
+            }
+
+            intervalId = setInterval(updateCountdown, 250);
+        }
+
+        function clearRetry() {
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+                retryTimer = null;
+            }
+        }
+
+        function scheduleRetry(delayMs) {
+            if (stopped || retryTimer) {
+                return;
+            }
+
+            retryTimer = setTimeout(function () {
+                retryTimer = null;
+
+                if (stopped) {
+                    return;
+                }
+
+                drawing = false;
+
+                if (remainingMs() <= 0) {
+                    updateCountdown();
+                }
+            }, delayMs);
+        }
+
         function applyEnd(iso, serverNowIso) {
-            if (!iso) {
+            if (!iso || stopped) {
+                return false;
+            }
+
+            const nextEnd = new Date(iso).getTime();
+
+            if (Number.isNaN(nextEnd)) {
                 return false;
             }
 
             element.dataset.end = iso;
-            endDate = new Date(iso).getTime();
+            endDate = nextEnd;
             syncClock(serverNowIso);
-            drawing = false;
-            updateCountdown();
 
-            if (!intervalId) {
-                intervalId = setInterval(updateCountdown, 250);
+            // Only treat as a successful restart when time remains.
+            if (remainingMs() <= 0) {
+                return false;
             }
+
+            clearRetry();
+            drawing = false;
+            drawAttempt = 0;
+            updateCountdown();
+            ensureInterval();
 
             return true;
         }
@@ -191,9 +270,14 @@ document.addEventListener('DOMContentLoaded', function () {
         function requestDraw() {
             const drawUrl = element.dataset.drawUrl;
 
-            if (!drawUrl) {
+            if (!drawUrl || stopped) {
+                drawing = false;
+                scheduleRetry(1000);
                 return;
             }
+
+            drawAttempt += 1;
+            const attempt = drawAttempt;
 
             fetch(drawUrl, {
                 method: 'POST',
@@ -202,83 +286,102 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                credentials: 'same-origin',
+                cache: 'no-store',
             })
                 .then(function (response) {
                     return response.json().catch(function () {
                         return {};
+                    }).then(function (data) {
+                        return {
+                            ok: response.ok,
+                            data: data || {},
+                        };
                     });
                 })
-                .then(function (data) {
-                    if (!data) {
-                        drawing = false;
+                .then(function (result) {
+                    if (stopped || attempt !== drawAttempt) {
                         return;
                     }
+
+                    const data = result.data || {};
 
                     updateWallet(data.wallet);
                     showPersonalResultNotice(data.personal_result);
 
-                    if (data.ends_at) {
-                        applyEnd(data.ends_at, data.server_now);
-                    }
+                    const restarted = applyEnd(data.ends_at, data.server_now);
 
                     if (data.drawn || data.already_drawn || data.restarted) {
                         showNewRoundBanner();
                     }
 
-                    const lotteryId = data.lottery_id
-                        || element.dataset.lotteryId
-                        || element.closest('[data-lottery-shell]')?.getAttribute('data-lottery-shell');
-                    const liveHtmlUrl = data.live_html_url;
+                    if (restarted) {
+                        const lotteryId = data.lottery_id
+                            || element.dataset.lotteryId
+                            || element.closest('[data-lottery-shell]')?.getAttribute('data-lottery-shell');
+                        const liveHtmlUrl = data.live_html_url;
 
-                    if (lotteryId && liveHtmlUrl) {
-                        const shell = document.querySelector('[data-lottery-shell="' + lotteryId + '"]');
-                        if (shell) {
-                            return refreshLotteryShell(lotteryId, liveHtmlUrl);
+                        if (lotteryId && liveHtmlUrl) {
+                            const shell = document.querySelector('[data-lottery-shell="' + lotteryId + '"]');
+                            if (shell) {
+                                return refreshLotteryShell(lotteryId, liveHtmlUrl);
+                            }
+
+                            const actions = document.querySelector('[data-lottery-show-actions="' + lotteryId + '"]');
+                            if (actions) {
+                                return fetch(liveHtmlUrl + (liveHtmlUrl.includes('?') ? '&' : '?') + 'view=show-actions', {
+                                    headers: {
+                                        'Accept': 'text/html',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    credentials: 'same-origin',
+                                    cache: 'no-store',
+                                })
+                                    .then(function (response) {
+                                        return response.text();
+                                    })
+                                    .then(function (html) {
+                                        if (!stopped) {
+                                            actions.innerHTML = html;
+                                        }
+                                    })
+                                    .catch(function () {});
+                            }
                         }
 
-                        const actions = document.querySelector('[data-lottery-show-actions="' + lotteryId + '"]');
-                        if (actions) {
-                            return fetch(liveHtmlUrl + (liveHtmlUrl.includes('?') ? '&' : '?') + 'view=show-actions', {
-                                headers: {
-                                    'Accept': 'text/html',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                },
-                                credentials: 'same-origin',
-                            })
-                                .then(function (response) {
-                                    return response.text();
-                                })
-                                .then(function (html) {
-                                    actions.innerHTML = html;
-                                })
-                                .catch(function () {});
-                        }
+                        return;
                     }
+
+                    // Still at zero: draw in progress, clock skew, or error — retry soon.
+                    drawing = false;
+                    scheduleRetry(result.ok ? 750 : 1500);
                 })
                 .catch(function () {
+                    if (stopped || attempt !== drawAttempt) {
+                        return;
+                    }
+
                     drawing = false;
-                    setTimeout(function () {
-                        if (endDate - nowMs() <= 0) {
-                            drawing = true;
-                            requestDraw();
-                        }
-                    }, 3000);
+                    scheduleRetry(2000);
                 });
         }
 
         function updateCountdown() {
-            const difference = endDate - nowMs();
+            if (stopped) {
+                return;
+            }
+
+            const difference = remainingMs();
 
             if (difference <= 0) {
                 element.textContent = '00:00:00';
 
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
+                // Keep the interval alive so short (seconds) timers recover after draw races.
+                ensureInterval();
 
                 if (!drawing) {
                     drawing = true;
+                    clearRetry();
                     requestDraw();
                 }
 
@@ -289,10 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateCountdown();
-
-        if (endDate - nowMs() > 0) {
-            intervalId = setInterval(updateCountdown, 250);
-        }
+        ensureInterval();
     }
 
     window.lotteryStartCountdown = startCountdown;

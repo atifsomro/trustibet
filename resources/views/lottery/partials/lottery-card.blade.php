@@ -47,7 +47,8 @@
                     class="lottery-countdown font-mono text-xl font-bold tracking-[3px] text-orange-400"
                     data-end="{{ $endsAt->toIso8601String() }}"
                     data-server-now="{{ now()->toIso8601String() }}"
-                    data-draw-url="{{ route('lotteries.draw-due', $lottery) }}">
+                    data-draw-url="{{ route('lotteries.draw-due', $lottery) }}"
+                    data-lottery-id="{{ $lottery->id }}">
                     --:--:--
                 </span>
             </div>

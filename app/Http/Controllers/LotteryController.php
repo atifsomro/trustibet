@@ -41,8 +41,7 @@ class LotteryController extends Controller
                     $query->where('status', 'completed');
                 },
             ])
-            ->orderBy('sort_order')
-            ->orderBy('starts_at')
+            ->ordered()
             ->get();
 
         $resultLotteries = Lottery::query()
@@ -66,9 +65,8 @@ class LotteryController extends Controller
                         ->where('winners_announced', true);
                 },
             ])
-            ->get()
-            ->sortByDesc(fn (Lottery $lottery) => $lottery->latestAnnouncedDraw?->id ?? 0)
-            ->values();
+            ->ordered()
+            ->get();
 
         return view(
             'lottery.index',
@@ -424,10 +422,22 @@ class LotteryController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
 
-            return response()->json([
-                'drawn' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
+            // Always return timer fields so short (seconds) countdowns can
+            // retry/recover instead of freezing on 00:00:00.
+            $fresh = $lottery->fresh();
+
+            return response()->json(array_merge(
+                $this->livePayload(
+                    lottery: $fresh,
+                    drawn: false,
+                    alreadyDrawn: $fresh?->currentRoundHasDraw() ?? false,
+                    personalDraw: $previousDraw,
+                ),
+                [
+                    'message' => $exception->getMessage(),
+                    'retry' => true,
+                ]
+            ), 409);
         }
     }
 

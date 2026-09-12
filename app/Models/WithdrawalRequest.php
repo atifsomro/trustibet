@@ -26,7 +26,6 @@ class WithdrawalRequest extends Model
     protected $casts = [
         'amount' => 'float',
         'status' => WithdrawalStatus::class,
-        'account_details' => 'array',
         'requested_at' => 'datetime',
         'processed_at' => 'datetime',
     ];
@@ -50,6 +49,37 @@ class WithdrawalRequest extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Account details are stored as plain text. Older rows may still be
+     * JSON-encoded from when this attribute was incorrectly cast as array.
+     */
+    public function getAccountDetailsAttribute(?string $value): mixed
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"'))
+            || str_starts_with($value, '{')
+            || str_starts_with($value, '[')
+        ) {
+            $decoded = json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return $decoded;
+            }
+        }
+
+        return $value;
     }
 
     /*

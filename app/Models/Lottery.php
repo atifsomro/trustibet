@@ -172,7 +172,9 @@ class Lottery extends Model
     }
     public function scopeOrdered($query)
     {
-        return $query->orderBy('created_at', 'desc'); // or whatever column makes sense
+        return $query
+            ->orderBy('created_at')
+            ->orderBy('id');
     }
     /*
     |--------------------------------------------------------------------------
