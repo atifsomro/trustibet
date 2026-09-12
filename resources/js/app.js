@@ -9,7 +9,7 @@ const mobileMenu = document.getElementById("MobileMenu");
 const overlay = document.getElementById("Overlay");
 
 function openMenu() {
-    mobileMenu.classList.remove("right-[-100%]");
+    mobileMenu.classList.remove("-right-full");
     mobileMenu.classList.add("right-0");
 
     overlay.classList.remove("hidden");
@@ -19,7 +19,7 @@ function openMenu() {
 
 function closeMenu() {
     mobileMenu.classList.remove("right-0");
-    mobileMenu.classList.add("right-[-100%]");
+    mobileMenu.classList.add("-right-full");
 
     overlay.classList.add("hidden");
 

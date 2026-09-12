@@ -146,6 +146,7 @@ class LotteryController extends Controller
             ->withQueryString();
 
         $lotteries = Lottery::query()
+            ->withTrashed()
             ->orderBy('title')
             ->get(['id', 'title']);
 
@@ -305,15 +306,9 @@ class LotteryController extends Controller
     {
         try {
             /*
-             * Do not delete a lottery after tickets have been sold.
+             * Soft-delete only. Tickets, draws, and winners stay so
+             * purchase / draw history remains intact.
              */
-            if ($lottery->tickets()->exists()) {
-                return back()->with(
-                    'error',
-                    'This lottery cannot be deleted because tickets have already been sold.'
-                );
-            }
-
             $lottery->delete();
 
             return back()

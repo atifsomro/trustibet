@@ -52,12 +52,14 @@
                                         data-name="{{ $bank->bank_name }}" data-account_name="{{ $bank->account_title }}" data-number="{{ $bank->account_number }}"
                                         data-network="{{ $bank->bank_name }}" data-currency="{{ $bank->currency }}"
                                         data-rate="{{ $bank->conversion_rate }}"
-                                        data-qr="{{ $bank->qr_code ? Storage::url($bank->qr_code) : asset('images/placeholder/placeholder.webp') }}">
+                                        data-qr="{{ $bank->qr_code_url }}">
                                         <input type="radio" name="bank_account_id" value="{{ $bank->id }}"
                                             @checked($key == 0) class="hidden">
                                         <div
-                                            class="bg-white rounded-full w-20 h-20 flex items-center content-center m-auto">
-                                            <img src="{{ Storage::url($bank->picture) }}" class="h-14 mx-auto">
+                                            class="bg-white rounded-full w-20 h-20 flex items-center justify-center m-auto overflow-hidden">
+                                            <img src="{{ $bank->picture_url }}"
+                                                 alt="{{ $bank->bank_name }}"
+                                                 class="h-14 w-14 object-contain mx-auto">
                                         </div>
                                         <h5 class="text-center mt-4">
                                             {{ $bank->bank_name }}

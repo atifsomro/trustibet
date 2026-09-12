@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="TILL">
+  <rect width="128" height="128" rx="28" fill="#0EA5E9"/>
+  <rect x="24" y="36" width="80" height="56" rx="12" fill="#fff"/>
+  <rect x="36" y="48" width="56" height="10" rx="5" fill="#0EA5E9"/>
+  <circle cx="48" cy="74" r="6" fill="#0EA5E9"/>
+  <circle cx="64" cy="74" r="6" fill="#38BDF8"/>
+  <circle cx="80" cy="74" r="6" fill="#0284C7"/>
+  <text x="64" y="112" text-anchor="middle" fill="#fff" font-family="Arial, sans-serif" font-size="16" font-weight="700">TILL</text>
+</svg>

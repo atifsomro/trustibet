@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LotteryTicket extends Model
 {
@@ -35,7 +36,7 @@ class LotteryTicket extends Model
      */
     public function lottery(): BelongsTo
     {
-        return $this->belongsTo(Lottery::class);
+        return $this->belongsTo(Lottery::class)->withTrashed();
     }
 
     /**
@@ -44,6 +45,14 @@ class LotteryTicket extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Winning record for this ticket, if any.
+     */
+    public function winner(): HasOne
+    {
+        return $this->hasOne(LotteryWinner::class, 'ticket_id');
     }
 
     /**

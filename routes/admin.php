@@ -35,6 +35,7 @@ Route::prefix('admin')
             ->except(['show']);
         // Lottery details
         Route::get('lotteries/{lottery}', [LotteryController::class, 'show'])
+            ->withTrashed()
             ->name('lotteries.show');
         // Purchase & draw history
         Route::get('lottery-history', [LotteryController::class, 'history'])
@@ -46,7 +47,7 @@ Route::prefix('admin')
         Route::get(
                 'lotteries/{lottery}/draws/{draw}',
                 [LotteryController::class, 'drawShow']
-            )->name('lotteries.draws.show');
+            )->withTrashed()->name('lotteries.draws.show');
 
         /*
         |--------------------------------------------------------------------------
