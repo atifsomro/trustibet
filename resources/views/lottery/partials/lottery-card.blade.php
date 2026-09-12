@@ -42,9 +42,13 @@
             <div
                 class="mx-auto w-full mt-2 inline-flex items-center justify-center gap-3 rounded-2xl border border-orange-500/20 bg-orange-500/5 px-2 py-2">
                 <i class="fa-regular fa-clock text-orange-400"></i>
-                <span class="lottery-countdown font-mono text-base font-bold tracking-[3px] text-orange-400"
-                    data-end="{{ $endsAt->toIso8601String() }}" data-server-now="{{ now()->toIso8601String() }}"
-                    data-draw-url="{{ route('lotteries.draw-due', $lottery) }}">
+                <span
+                    class="lottery-countdown font-mono text-base font-bold tracking-[3px] text-orange-400"
+                    data-end="{{ $endsAt->toIso8601String() }}"
+                    data-server-now="{{ now()->toIso8601String() }}"
+                    data-draw-url="{{ route('lotteries.draw-due', $lottery) }}"
+                    data-lottery-id="{{ $lottery->id }}"
+                    data-lottery-title="{{ $lottery->title }}">
                     --:--:--
                 </span>
             </div>
@@ -130,20 +134,15 @@
 
         @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
 
-        <div class="mt-2 flex items-center justify-center gap-2 opacity-50">
-            <a href="{{ route('lotteries.show', $lottery) }}"
-                class="text-sm transition hover:text-green-500 hover:opacity-100">
-                View details
-            </a>
-
-            @if ($lottery->hasPreviousRounds())
-                <span>·</span>
-                <a href="{{ route('lotteries.results', $lottery) }}"
+        {{-- Temporarily hidden; route/show page still work --}}
+        @if (false)
+            <div class="mt-2 flex items-center justify-center gap-2 opacity-50">
+                <a href="{{ route('lotteries.show', $lottery) }}"
                     class="text-sm transition hover:text-green-500 hover:opacity-100">
-                    View results
+                    View details
                 </a>
-            @endif
-        </div>
+            </div>
+        @endif
 
     </div>
 </div>

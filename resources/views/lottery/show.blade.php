@@ -127,7 +127,8 @@
                                             data-end="{{ $endsAt->toIso8601String() }}"
                                             data-server-now="{{ now()->toIso8601String() }}"
                                             data-draw-url="{{ route('lotteries.draw-due', $lottery) }}"
-                                            data-lottery-id="{{ $lottery->id }}">
+                                            data-lottery-id="{{ $lottery->id }}"
+                                            data-lottery-title="{{ $lottery->title }}">
                                             --:--:--
                                         </span>
                                     @endif

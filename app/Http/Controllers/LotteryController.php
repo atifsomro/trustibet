@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Lottery\BuyLotteryTicketsAction;
 use App\Enums\LotteryStatus;
+use App\Exceptions\InsufficientBalanceException;
 use App\Http\Requests\BuyLotteryTicketRequest;
 use App\Models\Lottery;
 use App\Models\LotteryDraw;
@@ -11,6 +12,7 @@ use App\Models\LotteryTicket;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class LotteryController extends Controller
@@ -41,8 +43,7 @@ class LotteryController extends Controller
                     $query->where('status', 'completed');
                 },
             ])
-            ->orderBy('sort_order')
-            ->orderBy('starts_at')
+            ->ordered()
             ->get();
 
         $resultLotteries = Lottery::query()
@@ -66,9 +67,8 @@ class LotteryController extends Controller
                         ->where('winners_announced', true);
                 },
             ])
-            ->get()
-            ->sortByDesc(fn(Lottery $lottery) => $lottery->latestAnnouncedDraw?->id ?? 0)
-            ->values();
+            ->ordered()
+            ->get();
 
         return view(
             'lottery.index',
@@ -369,54 +369,155 @@ class LotteryController extends Controller
     }
 
     /**
-     * The authenticated user's lottery purchase and result history.
+     * The authenticated user's lottery purchase and result history,
+     * grouped by lottery round / draw.
      */
     public function history(): View
     {
+        $userId = (int) auth('web')->id();
+
         $tickets = LotteryTicket::query()
-            ->with(['lottery.latestCompletedDraw.winners'])
-            ->where('user_id', auth('web')->id())
-            ->latest('purchased_at')
+            ->with(['lottery', 'winner'])
+            ->where('user_id', $userId)
+            ->orderByDesc('purchased_at')
             ->get();
 
-        $history = $tickets
-            ->groupBy('lottery_id')
-            ->map(function (Collection $lotteryTickets) {
-                /** @var LotteryTicket $first */
-                $first = $lotteryTickets->first();
-                $lottery = $first->lottery;
+        $lotteryIds = $tickets->pluck('lottery_id')->unique()->values();
 
-                $amount = $lotteryTickets->sum(fn(LotteryTicket $ticket) => (float) $ticket->price);
-                $hasWinner = $lotteryTickets->contains(fn(LotteryTicket $ticket) => $ticket->isWinner());
-                $allResolved = $lotteryTickets->every(fn(LotteryTicket $ticket) => in_array($ticket->status, ['winner', 'lost', 'refunded', 'cancelled'], true));
+        $drawsByLottery = LotteryDraw::query()
+            ->with([
+                'winners' => fn ($query) => $query
+                    ->where('user_id', $userId)
+                    ->with('ticket'),
+            ])
+            ->whereIn('lottery_id', $lotteryIds)
+            ->where('status', 'completed')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('lottery_id');
 
-                $drawStatus = 'pending';
-                $outcome = 'not_yet_drawn';
+        $history = collect();
 
-                if ($lottery?->isCancelled()) {
-                    $drawStatus = 'cancelled';
-                    $outcome = 'cancelled';
-                } elseif ($allResolved || $lottery?->isCompleted()) {
-                    $drawStatus = 'drawn';
-                    $outcome = $hasWinner ? 'won' : 'lost';
+        foreach ($tickets->groupBy('lottery_id') as $lotteryId => $lotteryTickets) {
+            /** @var \App\Models\Lottery|null $lottery */
+            $lottery = $lotteryTickets->first()?->lottery;
+            $lotteryDraws = $drawsByLottery->get($lotteryId, collect());
+
+            $roundNumbers = $lotteryDraws
+                ->values()
+                ->mapWithKeys(fn (LotteryDraw $draw, int $index) => [
+                    (int) $draw->id => $index + 1,
+                ]);
+
+            $assignedIds = collect();
+
+            foreach ($lotteryDraws as $draw) {
+                $roundTickets = $lotteryTickets->filter(
+                    fn (LotteryTicket $ticket) => ! $assignedIds->contains($ticket->id)
+                        && $this->ticketBelongsToDraw($ticket, $draw)
+                );
+
+                if ($roundTickets->isEmpty()) {
+                    continue;
                 }
 
-                return [
+                $assignedIds = $assignedIds->merge($roundTickets->pluck('id'));
+                $wins = $draw->winners;
+
+                if ($wins->isNotEmpty()) {
+                    $outcome = 'won';
+                    $drawStatus = 'drawn';
+                } elseif ($draw->winners_announced) {
+                    $outcome = 'lost';
+                    $drawStatus = 'drawn';
+                } else {
+                    $outcome = 'pending';
+                    $drawStatus = 'pending';
+                }
+
+                $history->push([
                     'lottery' => $lottery,
-                    'tickets' => $lotteryTickets,
-                    'quantity' => $lotteryTickets->count(),
-                    'amount' => $amount,
-                    'purchased_at' => $lotteryTickets->min('purchased_at'),
+                    'draw' => $draw,
+                    'round_number' => $roundNumbers->get((int) $draw->id),
+                    'tickets' => $roundTickets->values(),
+                    'quantity' => $roundTickets->count(),
+                    'amount' => $roundTickets->sum(fn (LotteryTicket $ticket) => (float) $ticket->price),
+                    'purchased_at' => $roundTickets->min('purchased_at'),
+                    'drawn_at' => $draw->completed_at,
                     'draw_status' => $drawStatus,
                     'outcome' => $outcome,
-                ];
-            })
+                    'wins' => $wins,
+                    'prize_total' => $wins->sum(fn ($win) => (float) $win->prize_amount),
+                ]);
+            }
+
+            $openTickets = $lotteryTickets
+                ->reject(fn (LotteryTicket $ticket) => $assignedIds->contains($ticket->id))
+                ->values();
+
+            if ($openTickets->isEmpty()) {
+                continue;
+            }
+
+            $drawStatus = 'pending';
+            $outcome = 'not_yet_drawn';
+
+            if ($lottery?->isCancelled()) {
+                $drawStatus = 'cancelled';
+                $outcome = 'cancelled';
+            } elseif ($openTickets->every(
+                fn (LotteryTicket $ticket) => in_array($ticket->status, ['winner', 'lost', 'refunded', 'cancelled'], true)
+            )) {
+                $drawStatus = 'drawn';
+                $outcome = $openTickets->contains(fn (LotteryTicket $ticket) => $ticket->isWinner())
+                    ? 'won'
+                    : 'lost';
+            }
+
+            $history->push([
+                'lottery' => $lottery,
+                'draw' => null,
+                'round_number' => $roundNumbers->count() + 1,
+                'tickets' => $openTickets,
+                'quantity' => $openTickets->count(),
+                'amount' => $openTickets->sum(fn (LotteryTicket $ticket) => (float) $ticket->price),
+                'purchased_at' => $openTickets->min('purchased_at'),
+                'drawn_at' => null,
+                'draw_status' => $drawStatus,
+                'outcome' => $outcome,
+                'wins' => collect(),
+                'prize_total' => 0.0,
+            ]);
+        }
+
+        $history = $history
+            ->sortByDesc(fn (array $row) => optional($row['purchased_at'])->timestamp ?? 0)
             ->values();
 
         return view('lottery.history', array_merge(
             compact('history'),
             $this->lotteryWalletSummary()
         ));
+    }
+
+    /**
+     * Whether a ticket was purchased inside a draw's sales window.
+     */
+    protected function ticketBelongsToDraw(LotteryTicket $ticket, LotteryDraw $draw): bool
+    {
+        if (!$ticket->purchased_at) {
+            return false;
+        }
+
+        if ($draw->sales_start_at && $ticket->purchased_at->lt($draw->sales_start_at)) {
+            return false;
+        }
+
+        if ($draw->sales_end_at && $ticket->purchased_at->gt($draw->sales_end_at)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -457,10 +558,22 @@ class LotteryController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
 
-            return response()->json([
-                'drawn' => false,
-                'message' => $exception->getMessage(),
-            ], 422);
+            // Always return timer fields so short (seconds) countdowns can
+            // retry/recover instead of freezing on 00:00:00.
+            $fresh = $lottery->fresh();
+
+            return response()->json(array_merge(
+                $this->livePayload(
+                    lottery: $fresh,
+                    drawn: false,
+                    alreadyDrawn: $fresh?->currentRoundHasDraw() ?? false,
+                    personalDraw: $previousDraw,
+                ),
+                [
+                    'message' => $exception->getMessage(),
+                    'retry' => true,
+                ]
+            ), 409);
         }
     }
 
@@ -546,6 +659,7 @@ class LotteryController extends Controller
             'already_drawn' => $alreadyDrawn,
             'restarted' => $drawn,
             'lottery_id' => $lottery->id,
+            'lottery_title' => $lottery->title,
             'ends_at' => $lottery->ends_at?->toIso8601String(),
             'server_now' => now()->toIso8601String(),
             'round_number' => $lottery->currentRoundNumber(),
@@ -604,11 +718,48 @@ class LotteryController extends Controller
     ): RedirectResponse {
         abort_unless($lottery->isVisibleToPublic(), 404);
 
-        $action->execute(
-            user: auth('web')->user(),
-            lottery: $lottery,
-            quantity: 1
-        );
+        $user = auth('web')->user();
+        $balance = (float) ($user?->wallet?->withdrawable_balance ?? 0);
+        $ticketPrice = (float) $lottery->ticket_price;
+
+        if ($balance < $ticketPrice) {
+            return redirect()
+                ->route('deposits.index')
+                ->with(
+                    'warning',
+                    'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
+                );
+        }
+
+        try {
+            $action->execute(
+                user: $user,
+                lottery: $lottery,
+                quantity: 1
+            );
+        } catch (InsufficientBalanceException $exception) {
+            return redirect()
+                ->route('deposits.index')
+                ->with(
+                    'warning',
+                    'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
+                );
+        } catch (ValidationException $exception) {
+            $messages = collect($exception->errors())->flatten()->implode(' ');
+
+            if (str_contains(strtolower($messages), 'insufficient')
+                || str_contains(strtolower($messages), 'balance')
+            ) {
+                return redirect()
+                    ->route('deposits.index')
+                    ->with(
+                        'warning',
+                        'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
+                    );
+            }
+
+            throw $exception;
+        }
 
         return redirect()
             ->back()

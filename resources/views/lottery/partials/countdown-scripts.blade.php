@@ -1,16 +1,18 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('new_round') === '1') {
-        params.delete('new_round');
-        const query = params.toString();
-        window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
-        showNewRoundBanner();
-    }
+    const recentNewRoundToasts = new Map();
 
     function csrfToken() {
         return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     function formatRemaining(differenceMs) {
@@ -24,27 +26,116 @@ document.addEventListener('DOMContentLoaded', function () {
             String(seconds).padStart(2, '0');
     }
 
-    function showNewRoundBanner(message) {
-        let banner = document.getElementById('newRoundBanner');
+    function ensureToastStack() {
+        let stack = document.getElementById('lotteryToastStack');
 
-        if (!banner) {
-            const host = document.getElementById('lotteryLiveNotices') || document.querySelector('.container');
-            if (!host) {
-                return;
-            }
-
-            banner = document.createElement('div');
-            banner.id = 'newRoundBanner';
-            banner.className = 'mx-auto mt-8 max-w-3xl rounded-2xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm text-green-400';
-            host.prepend(banner);
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.id = 'lotteryToastStack';
+            stack.setAttribute('aria-live', 'polite');
+            stack.style.cssText = [
+                'position:fixed',
+                'top:16px',
+                'right:16px',
+                'z-index:2147483646',
+                'display:flex',
+                'flex-direction:column',
+                'gap:10px',
+                'width:min(22rem,calc(100vw - 2rem))',
+                'pointer-events:none',
+            ].join(';');
+            document.body.appendChild(stack);
         }
 
-        banner.innerHTML =
-            '<strong class="block">New round started.</strong>' +
-            '<span class="mt-1 block opacity-80">' +
-            (message || 'The previous draw is complete. Tickets are now on sale for the new round.') +
-            '</span>';
-        banner.hidden = false;
+        return stack;
+    }
+
+    function showNewRoundToast(lotteryTitle, message, lotteryId) {
+        const key = String(lotteryId || lotteryTitle || 'lottery');
+        const now = Date.now();
+        const lastShown = recentNewRoundToasts.get(key) || 0;
+
+        // Avoid duplicate toasts from draw retries within a few seconds.
+        if (now - lastShown < 4000) {
+            return;
+        }
+
+        recentNewRoundToasts.set(key, now);
+
+        const stack = ensureToastStack();
+        const toast = document.createElement('div');
+        const title = String(lotteryTitle || '').trim();
+
+        toast.setAttribute('role', 'status');
+        toast.style.cssText = [
+            'pointer-events:auto',
+            'display:flex',
+            'align-items:flex-start',
+            'gap:12px',
+            'padding:14px 16px',
+            'border-radius:14px',
+            'border:1px solid rgba(34,197,94,.35)',
+            'background:rgba(15,23,42,.96)',
+            'color:#4ade80',
+            'box-shadow:0 12px 30px rgba(0,0,0,.35)',
+            'transform:translateX(24px)',
+            'opacity:0',
+            'transition:opacity .25s ease, transform .25s ease',
+            'font-size:14px',
+            'line-height:1.4',
+        ].join(';');
+
+        toast.innerHTML =
+            '<div style="margin-top:2px;width:32px;height:32px;border-radius:10px;border:1px solid rgba(34,197,94,.25);background:rgba(34,197,94,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+                '<i class="fa-solid fa-rotate" style="color:#4ade80;"></i>' +
+            '</div>' +
+            '<div style="min-width:0;flex:1;">' +
+                '<strong style="display:block;color:#4ade80;font-size:14px;">New round started</strong>' +
+                (title
+                    ? '<span style="display:block;margin-top:2px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(title) + '</span>'
+                    : '') +
+                '<span style="display:block;margin-top:4px;color:rgba(255,255,255,.7);font-size:12px;">' +
+                    escapeHtml(message || 'Tickets are now on sale for the new round.') +
+                '</span>' +
+            '</div>' +
+            '<button type="button" aria-label="Dismiss" data-lottery-toast-close="1" style="border:0;background:transparent;color:rgba(255,255,255,.55);cursor:pointer;padding:2px 4px;line-height:1;">' +
+                '<i class="fa-solid fa-xmark"></i>' +
+            '</button>';
+
+        stack.appendChild(toast);
+
+        requestAnimationFrame(function () {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(0)';
+        });
+
+        const dismiss = function () {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(24px)';
+            setTimeout(function () {
+                toast.remove();
+            }, 250);
+        };
+
+        toast.querySelector('[data-lottery-toast-close]')?.addEventListener('click', dismiss);
+        setTimeout(dismiss, 3000);
+    }
+
+    window.showNewRoundToast = showNewRoundToast;
+
+    function showNewRoundBanner(message) {
+        const notices = document.getElementById('lotteryLiveNotices');
+        showNewRoundToast(notices?.dataset?.lotteryTitle || '', message);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('new_round') === '1') {
+        params.delete('new_round');
+        const query = params.toString();
+        window.history.replaceState({}, '', window.location.pathname + (query ? '?' + query : '') + window.location.hash);
+        const notices = document.getElementById('lotteryLiveNotices');
+        showNewRoundToast(notices?.dataset?.lotteryTitle || '');
     }
 
     function showPersonalResultNotice(personal) {
@@ -103,6 +194,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function stopCountdown(element) {
+        if (element && typeof element._lotteryCountdownStop === 'function') {
+            element._lotteryCountdownStop();
+        }
+    }
+
     function refreshLotteryShell(lotteryId, liveHtmlUrl) {
         if (!liveHtmlUrl) {
             return Promise.resolve();
@@ -114,6 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'X-Requested-With': 'XMLHttpRequest',
             },
             credentials: 'same-origin',
+            cache: 'no-store',
         })
             .then(function (response) {
                 return response.text();
@@ -123,6 +221,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!current) {
                     return;
                 }
+
+                current.querySelectorAll('.lottery-countdown').forEach(stopCountdown);
 
                 const template = document.createElement('div');
                 template.innerHTML = html.trim();
@@ -150,7 +250,27 @@ document.addEventListener('DOMContentLoaded', function () {
         let endDate = new Date(element.dataset.end).getTime();
         let clockOffsetMs = 0;
         let intervalId = null;
+        let retryTimer = null;
         let drawing = false;
+        let stopped = false;
+        let drawAttempt = 0;
+
+        function stop() {
+            stopped = true;
+            drawing = false;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+                retryTimer = null;
+            }
+        }
+
+        element._lotteryCountdownStop = stop;
 
         function syncClock(serverNowIso) {
             if (!serverNowIso) {
@@ -170,20 +290,70 @@ document.addEventListener('DOMContentLoaded', function () {
             return Date.now() + clockOffsetMs;
         }
 
+        function remainingMs() {
+            return endDate - nowMs();
+        }
+
+        function ensureInterval() {
+            if (stopped || intervalId) {
+                return;
+            }
+
+            intervalId = setInterval(updateCountdown, 250);
+        }
+
+        function clearRetry() {
+            if (retryTimer) {
+                clearTimeout(retryTimer);
+                retryTimer = null;
+            }
+        }
+
+        function scheduleRetry(delayMs) {
+            if (stopped || retryTimer) {
+                return;
+            }
+
+            retryTimer = setTimeout(function () {
+                retryTimer = null;
+
+                if (stopped) {
+                    return;
+                }
+
+                drawing = false;
+
+                if (remainingMs() <= 0) {
+                    updateCountdown();
+                }
+            }, delayMs);
+        }
+
         function applyEnd(iso, serverNowIso) {
-            if (!iso) {
+            if (!iso || stopped) {
+                return false;
+            }
+
+            const nextEnd = new Date(iso).getTime();
+
+            if (Number.isNaN(nextEnd)) {
                 return false;
             }
 
             element.dataset.end = iso;
-            endDate = new Date(iso).getTime();
+            endDate = nextEnd;
             syncClock(serverNowIso);
-            drawing = false;
-            updateCountdown();
 
-            if (!intervalId) {
-                intervalId = setInterval(updateCountdown, 250);
+            // Only treat as a successful restart when time remains.
+            if (remainingMs() <= 0) {
+                return false;
             }
+
+            clearRetry();
+            drawing = false;
+            drawAttempt = 0;
+            updateCountdown();
+            ensureInterval();
 
             return true;
         }
@@ -191,9 +361,14 @@ document.addEventListener('DOMContentLoaded', function () {
         function requestDraw() {
             const drawUrl = element.dataset.drawUrl;
 
-            if (!drawUrl) {
+            if (!drawUrl || stopped) {
+                drawing = false;
+                scheduleRetry(1000);
                 return;
             }
+
+            drawAttempt += 1;
+            const attempt = drawAttempt;
 
             fetch(drawUrl, {
                 method: 'POST',
@@ -202,83 +377,111 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                credentials: 'same-origin',
+                cache: 'no-store',
             })
                 .then(function (response) {
                     return response.json().catch(function () {
                         return {};
+                    }).then(function (data) {
+                        return {
+                            ok: response.ok,
+                            data: data || {},
+                        };
                     });
                 })
-                .then(function (data) {
-                    if (!data) {
-                        drawing = false;
+                .then(function (result) {
+                    if (stopped || attempt !== drawAttempt) {
                         return;
                     }
+
+                    const data = result.data || {};
 
                     updateWallet(data.wallet);
                     showPersonalResultNotice(data.personal_result);
 
-                    if (data.ends_at) {
-                        applyEnd(data.ends_at, data.server_now);
-                    }
-
-                    if (data.drawn || data.already_drawn || data.restarted) {
-                        showNewRoundBanner();
-                    }
-
+                    const restarted = applyEnd(data.ends_at, data.server_now);
                     const lotteryId = data.lottery_id
                         || element.dataset.lotteryId
                         || element.closest('[data-lottery-shell]')?.getAttribute('data-lottery-shell');
-                    const liveHtmlUrl = data.live_html_url;
+                    const lotteryTitle = data.lottery_title || element.dataset.lotteryTitle || '';
 
-                    if (lotteryId && liveHtmlUrl) {
-                        const shell = document.querySelector('[data-lottery-shell="' + lotteryId + '"]');
-                        if (shell) {
-                            return refreshLotteryShell(lotteryId, liveHtmlUrl);
-                        }
-
-                        const actions = document.querySelector('[data-lottery-show-actions="' + lotteryId + '"]');
-                        if (actions) {
-                            return fetch(liveHtmlUrl + (liveHtmlUrl.includes('?') ? '&' : '?') + 'view=show-actions', {
-                                headers: {
-                                    'Accept': 'text/html',
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                },
-                                credentials: 'same-origin',
-                            })
-                                .then(function (response) {
-                                    return response.text();
-                                })
-                                .then(function (html) {
-                                    actions.innerHTML = html;
-                                })
-                                .catch(function () {});
-                        }
+                    // Show as soon as a draw/restart is confirmed — do not wait on applyEnd,
+                    // which can briefly fail on very short (seconds) timers.
+                    if (data.drawn || data.restarted || (data.already_drawn && restarted)) {
+                        showNewRoundToast(
+                            lotteryTitle,
+                            data.round_number
+                                ? 'Round ' + data.round_number + ' is now live.'
+                                : 'Tickets are now on sale for the new round.',
+                            lotteryId
+                        );
                     }
+
+                    if (restarted) {
+                        const liveHtmlUrl = data.live_html_url;
+
+                        if (lotteryId && liveHtmlUrl) {
+                            const shell = document.querySelector('[data-lottery-shell="' + lotteryId + '"]');
+                            if (shell) {
+                                return refreshLotteryShell(lotteryId, liveHtmlUrl);
+                            }
+
+                            const actions = document.querySelector('[data-lottery-show-actions="' + lotteryId + '"]');
+                            if (actions) {
+                                return fetch(liveHtmlUrl + (liveHtmlUrl.includes('?') ? '&' : '?') + 'view=show-actions', {
+                                    headers: {
+                                        'Accept': 'text/html',
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    },
+                                    credentials: 'same-origin',
+                                    cache: 'no-store',
+                                })
+                                    .then(function (response) {
+                                        return response.text();
+                                    })
+                                    .then(function (html) {
+                                        if (!stopped) {
+                                            actions.innerHTML = html;
+                                        }
+                                    })
+                                    .catch(function () {});
+                            }
+                        }
+
+                        return;
+                    }
+
+                    // Still at zero: draw in progress, clock skew, or error — retry soon.
+                    drawing = false;
+                    scheduleRetry(result.ok ? 750 : 1500);
                 })
                 .catch(function () {
+                    if (stopped || attempt !== drawAttempt) {
+                        return;
+                    }
+
                     drawing = false;
-                    setTimeout(function () {
-                        if (endDate - nowMs() <= 0) {
-                            drawing = true;
-                            requestDraw();
-                        }
-                    }, 3000);
+                    scheduleRetry(2000);
                 });
         }
 
         function updateCountdown() {
-            const difference = endDate - nowMs();
+            if (stopped) {
+                return;
+            }
+
+            const difference = remainingMs();
 
             if (difference <= 0) {
                 element.textContent = '00:00:00';
 
-                if (intervalId) {
-                    clearInterval(intervalId);
-                    intervalId = null;
-                }
+                // Keep the interval alive so short (seconds) timers recover after draw races.
+                ensureInterval();
 
                 if (!drawing) {
                     drawing = true;
+                    clearRetry();
                     requestDraw();
                 }
 
@@ -289,10 +492,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updateCountdown();
-
-        if (endDate - nowMs() > 0) {
-            intervalId = setInterval(updateCountdown, 250);
-        }
+        ensureInterval();
     }
 
     window.lotteryStartCountdown = startCountdown;

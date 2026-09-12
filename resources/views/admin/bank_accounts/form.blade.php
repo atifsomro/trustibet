@@ -272,9 +272,10 @@
 
             <div class="mt-2">
 
-                <img src="{{ asset('storage/'.$bankAccount->picture) }}"
+                <img src="{{ $bankAccount->picture_url }}"
                      width="120"
-                     class="border rounded">
+                     class="border rounded"
+                     alt="{{ $bankAccount->bank_name }}">
 
             </div>
 
@@ -299,9 +300,10 @@
 
             <div class="mt-2">
 
-                <img src="{{ asset('storage/'.$bankAccount->qr_code) }}"
+                <img src="{{ $bankAccount->qr_code_url }}"
                      width="120"
-                     class="border rounded">
+                     class="border rounded"
+                     alt="{{ $bankAccount->bank_name }} QR">
 
             </div>
 

@@ -85,6 +85,88 @@
         </script>
     @endif
 
+    @if (session('warning'))
+        <style>
+            .swal2-lottery-warning {
+                width: min(340px, calc(100vw - 2rem)) !important;
+                padding: 1.25rem 1.15rem 1.1rem !important;
+                border-radius: 1rem !important;
+                border: 1px solid rgba(249, 115, 22, 0.28) !important;
+                background: linear-gradient(180deg, #132033 0%, #0f172a 100%) !important;
+                box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45) !important;
+            }
+
+            .swal2-lottery-warning .swal2-icon {
+                margin: 0 auto 0.65rem !important;
+                width: 2.75rem !important;
+                height: 2.75rem !important;
+                border-width: 2px !important;
+                border-color: rgba(249, 115, 22, 0.55) !important;
+                color: #fb923c !important;
+            }
+
+            .swal2-lottery-warning .swal2-icon .swal2-icon-content {
+                font-size: 1.35rem !important;
+                color: #fb923c !important;
+            }
+
+            .swal2-lottery-warning .swal2-title {
+                margin: 0 0 0.4rem !important;
+                padding: 0 !important;
+                font-size: 1.05rem !important;
+                font-weight: 700 !important;
+                color: #fff !important;
+                line-height: 1.3 !important;
+            }
+
+            .swal2-lottery-warning .swal2-html-container {
+                margin: 0 0 1rem !important;
+                padding: 0 !important;
+                font-size: 0.85rem !important;
+                line-height: 1.45 !important;
+                color: rgba(255, 255, 255, 0.72) !important;
+            }
+
+            .swal2-lottery-warning .swal2-actions {
+                margin: 0 !important;
+            }
+
+            .swal2-lottery-warning .swal2-confirm {
+                margin: 0 !important;
+                padding: 0.55rem 1.35rem !important;
+                border: 0 !important;
+                border-radius: 0.75rem !important;
+                background: linear-gradient(90deg, #22c55e, #f97316) !important;
+                box-shadow: 0 8px 18px rgba(34, 197, 94, 0.22) !important;
+                font-size: 0.85rem !important;
+                font-weight: 600 !important;
+            }
+
+            .swal2-lottery-warning .swal2-confirm:focus {
+                box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.25) !important;
+            }
+        </style>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Insufficient Balance',
+                    text: @json(session('warning')),
+                    confirmButtonText: 'Deposit Now',
+                    buttonsStyling: false,
+                    width: 340,
+                    padding: '1.25rem',
+                    background: '#0f172a',
+                    color: '#fff',
+                    customClass: {
+                        popup: 'swal2-lottery-warning',
+                        confirmButton: 'swal2-confirm'
+                    }
+                });
+            });
+        </script>
+    @endif
+
     @if ($errors->any())
         <script>
             document.addEventListener('DOMContentLoaded', function() {

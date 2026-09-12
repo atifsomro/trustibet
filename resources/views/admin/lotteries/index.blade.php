@@ -391,37 +391,31 @@
 
                                 {{-- =================================================
                                     Delete
-
-                                    Only allow delete if no tickets exist.
                                 ================================================== --}}
-                                @if (!$lottery->tickets()->exists())
+                                <form
+                                    action="{{ route(
+                                        'admin.lotteries.destroy',
+                                        $lottery
+                                    ) }}"
+                                    method="POST"
+                                    class="d-inline"
+                                >
 
-                                    <form
-                                        action="{{ route(
-                                            'admin.lotteries.destroy',
-                                            $lottery
-                                        ) }}"
-                                        method="POST"
-                                        class="d-inline"
+                                    @csrf
+
+                                    @method('DELETE')
+
+                                    <button
+                                        type="submit"
+                                        onclick="return confirm(
+                                            'Delete this lottery? It will be hidden from the list, but purchase and draw history will be kept.'
+                                        )"
+                                        class="btn btn-sm btn-danger"
                                     >
+                                        Delete
+                                    </button>
 
-                                        @csrf
-
-                                        @method('DELETE')
-
-                                        <button
-                                            type="submit"
-                                            onclick="return confirm(
-                                                'Delete this lottery?'
-                                            )"
-                                            class="btn btn-sm btn-danger"
-                                        >
-                                            Delete
-                                        </button>
-
-                                    </form>
-
-                                @endif
+                                </form>
 
                             </td>
 

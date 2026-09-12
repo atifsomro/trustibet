@@ -128,12 +128,16 @@
                         <tr>
 
                             <th>
-                                Payment Details
+                                Account Details
                             </th>
 
                             <td>
 
-<pre class="mb-0">{{ json_encode($withdrawal->payment_details, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                @if(is_array($withdrawal->account_details))
+                                    <pre class="mb-0">{{ json_encode($withdrawal->account_details, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                @else
+                                    {!! nl2br(e($withdrawal->account_details ?: '-')) !!}
+                                @endif
 
                             </td>
 
@@ -204,12 +208,12 @@
                         <tr>
 
                             <th>
-                                Admin Notes
+                                Remarks / Notes
                             </th>
 
                             <td>
 
-                                {{ $withdrawal->admin_notes ?: '-' }}
+                                {!! nl2br(e($withdrawal->remarks ?: '-')) !!}
 
                             </td>
 
