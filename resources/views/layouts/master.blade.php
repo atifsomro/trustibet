@@ -13,6 +13,7 @@
         content="claimrise, online casino, claimrise mining, live casino, casino games, online betting, claimrise uk, betting platform, slots, roulette, blackjack, live dealer, aviator game, color trading, dice game, lucky wheel, betting bonuses, secure betting, fast withdrawals">
     <meta name="robots" content="index, follow">
     <meta name="author" content="TrustiBet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ asset('images/brand/favicon.png') }}">
     <!-- PNG Favicon (Recommended) -->
@@ -49,7 +50,7 @@
     @include('components.back-to-top')
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
-
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     {{-- Page Specific JS --}}
     @stack('scripts')
     <script>
