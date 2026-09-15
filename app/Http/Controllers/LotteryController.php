@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Paginator;
 
 class LotteryController extends Controller
 {
@@ -375,15 +377,15 @@ class LotteryController extends Controller
     public function history(): View
     {
         $userId = (int) auth('web')->id();
-
+    
         $tickets = LotteryTicket::query()
             ->with(['lottery', 'winner'])
             ->where('user_id', $userId)
             ->orderByDesc('purchased_at')
             ->get();
-
+    
         $lotteryIds = $tickets->pluck('lottery_id')->unique()->values();
-
+    
         $drawsByLottery = LotteryDraw::query()
             ->with([
                 'winners' => fn ($query) => $query
@@ -395,35 +397,35 @@ class LotteryController extends Controller
             ->orderBy('id')
             ->get()
             ->groupBy('lottery_id');
-
+    
         $history = collect();
-
+    
         foreach ($tickets->groupBy('lottery_id') as $lotteryId => $lotteryTickets) {
             /** @var \App\Models\Lottery|null $lottery */
             $lottery = $lotteryTickets->first()?->lottery;
             $lotteryDraws = $drawsByLottery->get($lotteryId, collect());
-
+    
             $roundNumbers = $lotteryDraws
                 ->values()
                 ->mapWithKeys(fn (LotteryDraw $draw, int $index) => [
                     (int) $draw->id => $index + 1,
                 ]);
-
+    
             $assignedIds = collect();
-
+    
             foreach ($lotteryDraws as $draw) {
                 $roundTickets = $lotteryTickets->filter(
                     fn (LotteryTicket $ticket) => ! $assignedIds->contains($ticket->id)
                         && $this->ticketBelongsToDraw($ticket, $draw)
                 );
-
+    
                 if ($roundTickets->isEmpty()) {
                     continue;
                 }
-
+    
                 $assignedIds = $assignedIds->merge($roundTickets->pluck('id'));
                 $wins = $draw->winners;
-
+    
                 if ($wins->isNotEmpty()) {
                     $outcome = 'won';
                     $drawStatus = 'drawn';
@@ -434,7 +436,7 @@ class LotteryController extends Controller
                     $outcome = 'pending';
                     $drawStatus = 'pending';
                 }
-
+    
                 $history->push([
                     'lottery' => $lottery,
                     'draw' => $draw,
@@ -450,18 +452,18 @@ class LotteryController extends Controller
                     'prize_total' => $wins->sum(fn ($win) => (float) $win->prize_amount),
                 ]);
             }
-
+    
             $openTickets = $lotteryTickets
                 ->reject(fn (LotteryTicket $ticket) => $assignedIds->contains($ticket->id))
                 ->values();
-
+    
             if ($openTickets->isEmpty()) {
                 continue;
             }
-
+    
             $drawStatus = 'pending';
             $outcome = 'not_yet_drawn';
-
+    
             if ($lottery?->isCancelled()) {
                 $drawStatus = 'cancelled';
                 $outcome = 'cancelled';
@@ -473,7 +475,7 @@ class LotteryController extends Controller
                     ? 'won'
                     : 'lost';
             }
-
+    
             $history->push([
                 'lottery' => $lottery,
                 'draw' => null,
@@ -489,13 +491,25 @@ class LotteryController extends Controller
                 'prize_total' => 0.0,
             ]);
         }
-
+    
         $history = $history
             ->sortByDesc(fn (array $row) => optional($row['purchased_at'])->timestamp ?? 0)
             ->values();
-
+    
+        // Paginate the assembled collection (10 per page)
+        $perPage = 10;
+        $currentPage = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage('page');
+    
+        $paginatedHistory = new \Illuminate\Pagination\LengthAwarePaginator(
+            $history->forPage($currentPage, $perPage)->values(),
+            $history->count(),
+            $perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
+    
         return view('lottery.history', array_merge(
-            compact('history'),
+            ['history' => $paginatedHistory],
             $this->lotteryWalletSummary()
         ));
     }
