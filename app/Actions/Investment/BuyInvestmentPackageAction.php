@@ -73,7 +73,7 @@ class BuyInvestmentPackageAction
                 'price' => $price,
                 'daily_roi' => $package->daily_roi,
                 'total_days' => $package->total_days,
-                'description' => $package->description,
+                'feature_points' => $package->feature_points ?? [],
                 'starts_at' => $startsAt->toDateString(),
                 'ends_at' => $endsAt->toDateString(),
                 'status' => InvestmentStatus::ACTIVE,

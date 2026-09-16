@@ -35,31 +35,8 @@
 
             @include('lottery.partials.user-balance')
 
-            {{-- Messages --}}
-            @if (session('success'))
-                <div class="mb-4 rounded-2xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm text-green-400">
-
-                    {{ session('success') }}
-
-                </div>
-            @endif
-
-
-            @if ($errors->any())
-                <div class="mb-4 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-400">
-
-                    <ul class="space-y-1">
-
-                        @foreach ($errors->all() as $error)
-                            <li>
-                                {{ $error }}
-                            </li>
-                        @endforeach
-
-                    </ul>
-
-                </div>
-            @endif
+            @php $skipFlashSwal = true; @endphp
+            @include('partials.purchase-alert-host')
 
 
             {{-- ========================================================= --}}
@@ -155,7 +132,7 @@
                                     <span class="text-xs uppercase tracking-wider opacity-50">
                                         Tickets Sold
                                     </span>
-                                    <div class="mt-2 text-2xl font-bold text-green-500">
+                                    <div class="mt-2 text-2xl font-bold text-green-500" data-lottery-sold="{{ $lottery->id }}">
                                         {{ number_format($lottery->totalCurrentRoundTickets()) }}
                                     </div>
                                 </div>
@@ -165,7 +142,7 @@
                                     <span class="text-xs uppercase tracking-wider opacity-50">
                                         Tickets Remaining
                                     </span>
-                                    <div class="mt-2 text-2xl font-bold text-orange-400">
+                                    <div class="mt-2 text-2xl font-bold text-orange-400" data-lottery-remaining-count="{{ $lottery->id }}">
                                         @if ($remainingTickets === null)
                                             Unlimited
                                         @else
@@ -522,7 +499,9 @@
                                 Buy Tickets
                             </h3>
 
-                            @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
+                            <div data-lottery-buy-slot="{{ $lottery->id }}">
+                                @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
+                            </div>
 
                         </div>
 

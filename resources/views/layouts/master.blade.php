@@ -33,6 +33,7 @@
 
     {{-- Page Specific CSS --}}
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/js/notifications.js'])
+    @include('partials.purchase-alert-styles')
     @stack('styles')
 
 </head>
@@ -52,6 +53,7 @@
 
     {{-- Page Specific JS --}}
     @stack('scripts')
+    <script src="{{ asset('js/purchase.js') }}?v={{ filemtime(public_path('js/purchase.js')) }}"></script>
     <script>
         const backToTop = document.getElementById("backToTop");
         window.addEventListener("scroll", () => {
@@ -72,7 +74,7 @@
     </script>
     @include('components.support')
 
-    @if (session('success'))
+    @if (session('success') && empty($skipFlashSwal))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
@@ -85,7 +87,7 @@
         </script>
     @endif
 
-    @if (session('warning'))
+    @if (session('warning') && empty($skipFlashSwal))
         <style>
             .swal2-lottery-warning {
                 width: min(340px, calc(100vw - 2rem)) !important;
@@ -167,7 +169,7 @@
         </script>
     @endif
 
-    @if ($errors->any())
+    @if ($errors->any() && empty($skipFlashSwal))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({

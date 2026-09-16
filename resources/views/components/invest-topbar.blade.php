@@ -4,7 +4,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="opacity-70">Active Plan</p>
-                    <span class="mt-2">{{ $activeInvestment?->package_name ?? 'None' }}</span>
+                    <span class="mt-2" data-invest-stat="active-plan">{{ $activeInvestment?->package_name ?? 'None' }}</span>
                 </div>
                 <div class="w-10 h-10 rounded bg-brand-primary/10 flex items-center justify-center">
                     <i class="fa-solid fa-layer-group text-brand-primary text-2xl"></i>
@@ -16,7 +16,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="opacity-70">Days Left</p>
-                    <span class="mt-2">
+                    <span class="mt-2" data-invest-stat="days-left">
                         @if ($activeInvestment)
                             {{ max(0, $activeInvestment->total_days - $activeInvestment->daysElapsed()) }} days
                         @else
@@ -34,7 +34,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="opacity-70">Total Invested</p>
-                    <span class="mt-2">${{ number_format($totalInvested ?? 0, 2) }}</span>
+                    <span class="mt-2" data-invest-stat="total-invested">${{ number_format($totalInvested ?? 0, 2) }}</span>
                 </div>
                 <div class="w-10 h-10 rounded bg-green-500/10 flex items-center justify-center">
                     <i class="fa-solid fa-wallet text-green-500 text-2xl"></i>
@@ -46,7 +46,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="opacity-70">Withdrawable</p>
-                    <span class="mt-2 text-brand-primary">
+                    <span class="mt-2 text-brand-primary" data-invest-stat="withdrawable">
                         ${{ number_format((float) ($wallet->withdrawable_balance ?? 0), 2) }}
                     </span>
                 </div>

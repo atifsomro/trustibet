@@ -18,6 +18,7 @@ use App\Models\InvestmentRoiLog;
 use App\Models\UserInvestment;
 use App\Models\WalletTransaction;
 use App\Services\Wallet\WalletService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -70,20 +71,59 @@ class InvestmentController extends Controller
         ]);
     }
 
-    public function buy(Request $request, InvestmentPackage $package): RedirectResponse
+    public function buy(Request $request, InvestmentPackage $package): RedirectResponse|JsonResponse
     {
         try {
-            $investment = $this->buyAction->execute(auth()->user(), $package);
+            $user = auth()->user();
+            $investment = $this->buyAction->execute($user, $package);
+            $successMessage = sprintf(
+                'Successfully purchased %s for $%s.',
+                $investment->package_name,
+                number_format((float) $investment->price, 2)
+            );
+
+            if ($this->wantsAjax($request)) {
+                $wallet = $this->walletService->wallet($user);
+                $activeInvestment = UserInvestment::query()
+                    ->where('user_id', $user->id)
+                    ->active()
+                    ->latest()
+                    ->first();
+                $totalInvested = (float) UserInvestment::query()
+                    ->where('user_id', $user->id)
+                    ->whereIn('status', [InvestmentStatus::ACTIVE, InvestmentStatus::COMPLETED])
+                    ->sum('price');
+
+                return response()->json([
+                    'ok' => true,
+                    'type' => 'success',
+                    'title' => 'Payment Successful',
+                    'message' => $successMessage,
+                    'action' => [
+                        'label' => 'View My Investments',
+                        'url' => route('investments.mine'),
+                    ],
+                    'wallet' => [
+                        'withdrawable' => (float) ($wallet->withdrawable_balance ?? 0),
+                    ],
+                    'stats' => [
+                        'active_plan' => $activeInvestment?->package_name ?? 'None',
+                        'days_left' => $activeInvestment
+                            ? max(0, $activeInvestment->total_days - $activeInvestment->daysElapsed())
+                            : null,
+                        'total_invested' => $totalInvested,
+                    ],
+                ]);
+            }
 
             return redirect()
                 ->route('investments.mine')
-                ->with('success', sprintf(
-                    'Successfully purchased %s for $%s.',
-                    $investment->package_name,
-                    number_format((float) $investment->price, 2)
-                ));
+                ->with('success', $successMessage);
         } catch (InsufficientBalanceException $e) {
-            return back()->with('error', 'Insufficient withdrawable balance to buy this package.');
+            return $this->investmentBuyErrorResponse(
+                $request,
+                'Insufficient withdrawable balance to buy this package.'
+            );
         } catch (Throwable $e) {
             report($e);
 
@@ -91,7 +131,10 @@ class InvestmentController extends Controller
                 ? collect($e->errors())->flatten()->first()
                 : 'Unable to purchase package.';
 
-            return back()->with('error', $message ?? 'Unable to purchase package.');
+            return $this->investmentBuyErrorResponse(
+                $request,
+                $message ?? 'Unable to purchase package.'
+            );
         }
     }
 
@@ -216,5 +259,30 @@ class InvestmentController extends Controller
 
             return back()->with('error', $message ?? 'Unable to transfer ROI balance.');
         }
+    }
+
+    protected function wantsAjax(Request $request): bool
+    {
+        return $request->expectsJson() || $request->ajax();
+    }
+
+    protected function investmentBuyErrorResponse(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($this->wantsAjax($request)) {
+            $isInsufficient = str_contains(strtolower($message), 'insufficient');
+
+            return response()->json([
+                'ok' => false,
+                'type' => $isInsufficient ? 'warning' : 'error',
+                'title' => $isInsufficient ? 'Insufficient Balance' : 'Unable to Buy Package',
+                'message' => $message,
+                'action' => $isInsufficient ? [
+                    'label' => 'Deposit Now',
+                    'url' => route('deposits.index'),
+                ] : null,
+            ], 422);
+        }
+
+        return back()->with('error', $message);
     }
 }

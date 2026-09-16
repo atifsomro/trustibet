@@ -24,7 +24,7 @@ class InvestmentRoiLog extends Model
 
     protected $casts = [
         'roi_date' => 'date',
-        'amount' => 'decimal:2',
+        'amount' => 'decimal:4',
         'status' => InvestmentRoiStatus::class,
         'claimed_at' => 'datetime',
         'expired_at' => 'datetime',

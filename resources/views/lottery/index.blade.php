@@ -27,30 +27,8 @@
             </div>
             @include('lottery.partials.new-round-banner')
             @include('lottery.partials.user-balance')
-            {{-- Success Message --}}
-            @if (session('success'))
-                <div
-                    class="mx-auto mt-8 max-w-3xl rounded-2xl border border-green-500/20 bg-green-500/10 px-5 py-4 text-sm text-green-400">
-                    {{ session('success') }}
-                </div>
-            @endif
-            {{-- Error Messages --}}
-            @if ($errors->any())
-                <div
-                    class="mx-auto mt-8 max-w-3xl rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm text-red-400">
-
-                    <ul class="space-y-1">
-
-                        @foreach ($errors->all() as $error)
-                            <li>
-                                {{ $error }}
-                            </li>
-                        @endforeach
-
-                    </ul>
-
-                </div>
-            @endif
+            @php $skipFlashSwal = true; @endphp
+            @include('partials.purchase-alert-host')
 
             @if ($lotteries->count())
                 <div

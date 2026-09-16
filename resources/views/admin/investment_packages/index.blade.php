@@ -41,7 +41,8 @@
                                 <th>Price</th>
                                 <th>Daily ROI</th>
                                 <th>Total Days</th>
-                                <th>Description</th>
+                                <th>Feature Points</th>
+                                <th>Recommended</th>
                                 <th>Status</th>
                                 <th width="180">Actions</th>
                             </tr>
@@ -54,7 +55,14 @@
                                     <td>${{ number_format((float) $package->price, 2) }}</td>
                                     <td>${{ number_format((float) $package->daily_roi, 2) }}</td>
                                     <td>{{ $package->total_days }} days</td>
-                                    <td>{{ \Illuminate\Support\Str::limit($package->description, 40) }}</td>
+                                    <td>{{ count($package->feature_points ?? []) }}</td>
+                                    <td>
+                                        @if ($package->is_recommended)
+                                            <span class="badge badge-warning">Yes</span>
+                                        @else
+                                            <span class="badge badge-secondary">No</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if ($package->is_active)
                                             <span class="badge badge-success">Active</span>
@@ -76,7 +84,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4">No packages found.</td>
+                                    <td colspan="9" class="text-center py-4">No packages found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
