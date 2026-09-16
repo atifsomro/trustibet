@@ -228,7 +228,7 @@
                     <div
                         class="rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-6 position-static lg:sticky lg:top-24">
                         <div class="text-center">
-                            <img src="{{ asset('images/profile/avatar.png') }}"
+                            <img src="{{ auth()->user()->avatar ?? asset('images/profile/avatar.png') }}"
                                 class="w-18 h-18 md:w-24 md:h-24 rounded-full mx-auto border-4 border-brand-primary object-cover">
                             <h4 class="mt-4">
                                 {{ auth()->user()->name }}
@@ -273,26 +273,26 @@
                                 Wallet
                             </button>
 
-                            <button type="button"
+                            {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="entries">
                                 <i class="fa-solid fa-ticket"></i>
                                 My Entries
-                            </button>
+                            </button> --}}
 
-                            <button type="button"
+                            {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="winnings">
                                 <i class="fa-solid fa-trophy"></i>
                                 Winnings
-                            </button>
+                            </button> --}}
 
-                            <button type="button"
+                            {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="transactions">
                                 <i class="fa-solid fa-credit-card"></i>
                                 Transactions
-                            </button>
+                            </button> --}}
 
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
@@ -300,12 +300,12 @@
                                 <i class="fa-solid fa-credit-card"></i>
                                 Investments
                             </button>
-                            <button type="button"
+                            {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="referral">
                                 <i class="fa-solid fa-credit-card"></i>
                                 Referral
-                            </button>
+                            </button> --}}
 
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
@@ -314,12 +314,12 @@
                                 KYC
                             </button>
 
-                            <button type="button"
+                            {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="settings">
                                 <i class="fa-solid fa-gear"></i>
                                 Settings
-                            </button>
+                            </button> --}}
 
                             <a href="#"
                                 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 text-red-400">
@@ -614,6 +614,42 @@
             });
 
             selectTab(window.location.hash.slice(1) || 'dashboard');
+        });
+    </script>
+    <script>
+        $('#profileImage').on('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+            // Instant local preview (before upload completes)
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#profilePreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+            // Upload via AJAX
+            const formData = new FormData();
+            formData.append('avatar', file);
+            formData.append('_token', $('meta[name="csrf-token"]').attr('content'));
+
+            $.ajax({
+                url: '{{ route('profile.avatar.update') }}', // adjust to your route
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function () {
+                    // optional: show a small spinner/loading state on the avatar
+                },
+                success: function (response) {
+                    // Replace preview with the actual saved URL (handles CDN paths, cache-busting, etc.)
+                    $('#profilePreview').attr('src', response.avatar_url + '?t=' + Date.now());
+                    $(".object-cover").attr('src', response.avatar_url + '?t=' + Date.now());
+                },
+                error: function (xhr) {
+                    alert(xhr.responseJSON?.message || 'Upload failed. Please try again.');
+                    // optionally revert preview to old avatar here
+                }
+            });
         });
     </script>
 @endpush

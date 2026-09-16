@@ -163,7 +163,38 @@
                     </table>
                 </div>
             </div>
-
+            @if ($history->hasPages())
+                <div
+                    class="history_pagination flex items-center justify-center gap-2 border-t border-brand-border px-5 py-4">
+                    @if ($history->onFirstPage())
+                        <span
+                            class="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-brand-border bg-brand-dark text-sm opacity-30">
+                            <i class="fa-solid fa-chevron-left"></i> </span>
+                    @else
+                        <a href="{{ $history->previousPageUrl() }}"
+                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-brand-border bg-brand-dark text-sm transition hover:border-green-500/40 hover:text-green-400">
+                            <i class="fa-solid fa-chevron-left"></i> </a>
+                    @endif
+            
+                
+                    <span class="min-w-[55px] text-center text-sm font-semibold">
+                        {{ $history->currentPage() }} / {{ $history->lastPage() }}
+                    </span>
+            
+                    @if ($history->hasMorePages())
+                        <a href="{{ $history->nextPageUrl() }}"
+                            class="flex h-9 w-9 items-center justify-center rounded-lg border border-brand-border bg-brand-dark text-sm transition hover:border-green-500/40 hover:text-green-400">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    @else
+                        <span
+                            class="flex h-9 w-9 cursor-not-allowed items-center justify-center rounded-lg border border-brand-border bg-brand-dark text-sm opacity-30">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </span>
+                    @endif
+                </div>
+            
+            @endif
         @else
 
             <div class="mx-auto mt-10 max-w-xl rounded-3xl border border-brand-border bg-brand-surface p-10 text-center">

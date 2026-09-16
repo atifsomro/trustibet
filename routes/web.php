@@ -70,6 +70,8 @@ use App\Http\Controllers\User\InvestmentController;
 Route::get('/game/{slug}', [GameController::class, 'show'])->middleware('auth')->name('game.show');
 
 use App\Http\Controllers\ScratchCardController;
+use App\Http\Controllers\User\ProfileController;
+
 Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
     ->name('scratch.reveal');
 
@@ -80,6 +82,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-investments/{investment}', [InvestmentController::class, 'show'])->name('investments.show');
     Route::post('/investments/claim', [InvestmentController::class, 'claim'])->name('investments.claim');
     Route::post('/investments/transfer-roi', [InvestmentController::class, 'transfer'])->name('investments.transfer');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
+        ->name('profile.avatar.update');
 });
 
 ### FRONTEND AUTH ROUTE ###

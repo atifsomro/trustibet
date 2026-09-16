@@ -5,7 +5,7 @@
             <div class="xl:col-span-4">
                 <div class="rounded-3xl border border-brand-border bg-brand-surface text-center">
                     <div class="relative inline-block">
-                        <img id="profilePreview" src="{{ asset('images/profile/avatar.png') }}" alt="Profile"
+                        <img id="profilePreview" src="{{ auth()->user()->avatar ??  asset('images/profile/avatar.png') }}" alt="Profile"
                             class="w-20 h-20 md:w-30 md:h-30 rounded-full object-cover border-4 border-brand-primary">
                         <label for="profileImage"
                             class="absolute bottom-2 right-2 flex h-6 w-6 md:h-10 md:w-10 cursor-pointer items-center justify-center rounded-full bg-brand-primary shadow-lg transition hover:scale-110">
@@ -68,35 +68,35 @@
                         <div class="grid gap-6 md:grid-cols-2">
                             <div>
                                 <label class="mb-2 block">Full Name</label>
-                                <input type="text" value="Tiger King" disabled
+                                <input type="text" value="{{ auth()->user()->name }}" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
                             <div>
                                 <label class="mb-2 block">Username</label>
-                                <input type="text" value="@tigerking" disabled
+                                <input type="text" value="{{ auth()->user()->username }}" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
                             <div>
                                 <label class="mb-2 block">Email Address</label>
-                                <input type="email" value="tiger@example.com" disabled
+                                <input type="email" value="{{ auth()->user()->email }}" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
 
                             <div>
                                 <label class="mb-2 block">Phone Number</label>
-                                <input type="text" value="+92 300 1234567" disabled
+                                <input type="text" value="{{ auth()->user()->phone ?? "" }}" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
 
                             <div>
                                 <label class="mb-2 block">Country</label>
-                                <input type="text" value="Pakistan" disabled
+                                <input type="text" value="{{ auth()->user()->country()->name ?? "" }}" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
 
                             <div>
                                 <label class="mb-2 block">Date of Birth</label>
-                                <input type="text" value="15 Jan 2000" disabled
+                                <input type="text" value="" disabled
                                     class="w-full cursor-not-allowed rounded-xl border border-brand-border bg-brand-dark px-4 py-3 opacity-70">
                             </div>
 
