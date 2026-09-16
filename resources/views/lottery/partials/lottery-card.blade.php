@@ -111,7 +111,7 @@
         @endif
 
         <div class="mt-2 flex items-center justify-between opacity-60">
-            <span class="text-xs">
+            <span class="text-xs" data-lottery-remaining-label="{{ $lottery->id }}">
                 <i class="fa-solid fa-ticket mr-1"></i>
                 @if ($remainingTickets === null)
                     Unlimited Tickets
@@ -122,7 +122,7 @@
             </span>
 
             @auth
-                <span class="text-xs">
+                <span class="text-xs" data-lottery-user-tickets="{{ $lottery->id }}">
                     @if ($maxPerUser === null)
                         {{ $userTickets }} purchased
                     @else
@@ -132,7 +132,9 @@
             @endauth
         </div>
 
-        @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
+        <div data-lottery-buy-slot="{{ $lottery->id }}">
+            @include('lottery.partials.buy-ticket-form', ['lottery' => $lottery])
+        </div>
 
         {{-- Temporarily hidden; route/show page still work --}}
         @if (false)

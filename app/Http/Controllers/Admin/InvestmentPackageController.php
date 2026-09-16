@@ -18,10 +18,7 @@ class InvestmentPackageController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%");
-            });
+            $query->where('name', 'LIKE', "%{$search}%");
         }
 
         if ($request->filled('status')) {
@@ -53,7 +50,9 @@ class InvestmentPackageController extends Controller
     {
         $validated = $this->validateRequest($request);
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_recommended'] = $request->boolean('is_recommended');
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+        $validated['feature_points'] = $this->normalizeFeaturePoints($validated['feature_points'] ?? []);
 
         DB::beginTransaction();
         try {
@@ -85,7 +84,9 @@ class InvestmentPackageController extends Controller
     {
         $validated = $this->validateRequest($request);
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['is_recommended'] = $request->boolean('is_recommended');
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+        $validated['feature_points'] = $this->normalizeFeaturePoints($validated['feature_points'] ?? []);
 
         DB::beginTransaction();
         try {
@@ -136,9 +137,23 @@ class InvestmentPackageController extends Controller
             'price' => ['required', 'numeric', 'min:0.01'],
             'daily_roi' => ['required', 'numeric', 'min:0'],
             'total_days' => ['required', 'integer', 'min:1'],
-            'description' => ['nullable', 'string'],
+            'feature_points' => ['nullable', 'array'],
+            'feature_points.*' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['nullable', 'boolean'],
+            'is_recommended' => ['nullable', 'boolean'],
         ]);
+    }
+
+    /**
+     * @param  array<int, mixed>  $points
+     * @return list<string>
+     */
+    protected function normalizeFeaturePoints(array $points): array
+    {
+        return array_values(array_filter(array_map(
+            static fn ($point) => trim((string) $point),
+            $points
+        ), static fn (string $point) => $point !== ''));
     }
 }

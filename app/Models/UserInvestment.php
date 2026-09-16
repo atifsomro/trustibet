@@ -21,7 +21,7 @@ class UserInvestment extends Model
         'daily_roi',
         'daily_roi_updated_at',
         'total_days',
-        'description',
+        'feature_points',
         'starts_at',
         'ends_at',
         'status',
@@ -32,9 +32,10 @@ class UserInvestment extends Model
 
     protected $casts = [
         'price' => 'decimal:2',
-        'daily_roi' => 'decimal:2',
+        'daily_roi' => 'decimal:4',
         'daily_roi_updated_at' => 'datetime',
         'total_days' => 'integer',
+        'feature_points' => 'array',
         'starts_at' => 'date',
         'ends_at' => 'date',
         'status' => InvestmentStatus::class,

@@ -1,5 +1,15 @@
 @php
-    $isEdit = isset($package);
+    $defaultFeaturePoints = \App\Models\InvestmentPackage::defaultFeaturePoints();
+    $existingFeaturePoints = $package->feature_points ?? null;
+    $featurePoints = old(
+        'feature_points',
+        (is_array($existingFeaturePoints) && count($existingFeaturePoints) > 0)
+            ? $existingFeaturePoints
+            : $defaultFeaturePoints
+    );
+    if (! is_array($featurePoints) || count($featurePoints) === 0) {
+        $featurePoints = $defaultFeaturePoints;
+    }
 @endphp
 
 <div class="row">
@@ -52,7 +62,7 @@
         @enderror
     </div>
 
-    <div class="col-md-6 mb-3">
+    <div class="col-md-3 mb-3">
         <label class="form-label d-block">Status</label>
         <div class="form-check mt-2">
             <input type="checkbox" name="is_active" value="1" class="form-check-input" id="is_active"
@@ -61,13 +71,101 @@
         </div>
     </div>
 
+    <div class="col-md-3 mb-3">
+        <label class="form-label d-block">Recommended</label>
+        <div class="form-check mt-2">
+            <input type="checkbox" name="is_recommended" value="1" class="form-check-input" id="is_recommended"
+                {{ old('is_recommended', $package->is_recommended ?? false) ? 'checked' : '' }}>
+            <label class="form-check-label" for="is_recommended">Show Recommended badge</label>
+        </div>
+    </div>
+
     <div class="col-md-12 mb-3">
-        <label class="form-label">Description</label>
-        <textarea name="description" rows="4"
-            class="form-control @error('description') is-invalid @enderror"
-            placeholder="Features / description">{{ old('description', $package->description ?? '') }}</textarea>
-        @error('description')
-            <div class="invalid-feedback">{{ $message }}</div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label mb-0">Feature Points</label>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-feature-point">
+                + Add Point
+            </button>
+        </div>
+        <p class="text-muted small mb-2">
+            These appear as checklist items on the investment card (e.g. “300% Deposit Bonus”).
+        </p>
+
+        <div id="feature-points-list">
+            @foreach ($featurePoints as $index => $point)
+                <div class="input-group mb-2 feature-point-row">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fa fa-check"></i></span>
+                    </div>
+                    <input type="text" name="feature_points[]"
+                        class="form-control @error('feature_points.' . $index) is-invalid @enderror"
+                        value="{{ $point }}"
+                        placeholder="e.g. Highest Daily Earnings">
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-danger remove-feature-point" title="Remove">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        @error('feature_points')
+            <div class="text-danger small">{{ $message }}</div>
+        @enderror
+        @error('feature_points.*')
+            <div class="text-danger small">{{ $message }}</div>
         @enderror
     </div>
 </div>
+
+<template id="feature-point-template">
+    <div class="input-group mb-2 feature-point-row">
+        <div class="input-group-prepend">
+            <span class="input-group-text"><i class="fa fa-check"></i></span>
+        </div>
+        <input type="text" name="feature_points[]" class="form-control"
+            placeholder="e.g. Highest Daily Earnings">
+        <div class="input-group-append">
+            <button type="button" class="btn btn-outline-danger remove-feature-point" title="Remove">
+                &times;
+            </button>
+        </div>
+    </div>
+</template>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const list = document.getElementById('feature-points-list');
+        const addBtn = document.getElementById('add-feature-point');
+        const template = document.getElementById('feature-point-template');
+
+        if (!list || !addBtn || !template) {
+            return;
+        }
+
+        addBtn.addEventListener('click', function() {
+            list.appendChild(template.content.cloneNode(true));
+        });
+
+        list.addEventListener('click', function(event) {
+            const removeBtn = event.target.closest('.remove-feature-point');
+            if (!removeBtn) {
+                return;
+            }
+
+            const rows = list.querySelectorAll('.feature-point-row');
+            const row = removeBtn.closest('.feature-point-row');
+
+            if (rows.length <= 1) {
+                const input = row.querySelector('input');
+                if (input) {
+                    input.value = '';
+                }
+                return;
+            }
+
+            row.remove();
+        });
+    });
+</script>

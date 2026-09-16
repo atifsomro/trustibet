@@ -8,7 +8,9 @@
     <form
         method="POST"
         action="{{ route('lotteries.tickets.buy', $lottery) }}"
-        class="mt-2"
+        class="js-ajax-purchase mt-2"
+        data-purchase-type="lottery"
+        data-lottery-id="{{ $lottery->id }}"
     >
         @csrf
 

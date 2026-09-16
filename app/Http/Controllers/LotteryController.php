@@ -9,6 +9,7 @@ use App\Http\Requests\BuyLotteryTicketRequest;
 use App\Models\Lottery;
 use App\Models\LotteryDraw;
 use App\Models\LotteryTicket;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -729,7 +730,7 @@ class LotteryController extends Controller
         BuyLotteryTicketRequest $request,
         Lottery $lottery,
         BuyLotteryTicketsAction $action
-    ): RedirectResponse {
+    ): RedirectResponse|JsonResponse {
         abort_unless($lottery->isVisibleToPublic(), 404);
 
         $user = auth('web')->user();
@@ -737,12 +738,7 @@ class LotteryController extends Controller
         $ticketPrice = (float) $lottery->ticket_price;
 
         if ($balance < $ticketPrice) {
-            return redirect()
-                ->route('deposits.index')
-                ->with(
-                    'warning',
-                    'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
-                );
+            return $this->insufficientLotteryBalanceResponse($request);
         }
 
         try {
@@ -752,35 +748,48 @@ class LotteryController extends Controller
                 quantity: 1
             );
         } catch (InsufficientBalanceException $exception) {
-            return redirect()
-                ->route('deposits.index')
-                ->with(
-                    'warning',
-                    'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
-                );
+            return $this->insufficientLotteryBalanceResponse($request);
         } catch (ValidationException $exception) {
             $messages = collect($exception->errors())->flatten()->implode(' ');
 
             if (str_contains(strtolower($messages), 'insufficient')
                 || str_contains(strtolower($messages), 'balance')
             ) {
-                return redirect()
-                    ->route('deposits.index')
-                    ->with(
-                        'warning',
-                        'Your balance is insufficient. Please deposit amount to buy lottery tickets.'
-                    );
+                return $this->insufficientLotteryBalanceResponse($request);
+            }
+
+            if ($this->wantsAjax($request)) {
+                return response()->json([
+                    'ok' => false,
+                    'type' => 'error',
+                    'title' => 'Unable to Buy Ticket',
+                    'message' => $messages !== '' ? $messages : 'Unable to purchase ticket.',
+                ], 422);
             }
 
             throw $exception;
         }
 
+        $lottery->refresh();
+        $user->unsetRelation('wallet');
+        $user->load('wallet');
+
+        $successMessage = 'Ticket purchased successfully.';
+
+        if ($this->wantsAjax($request)) {
+            return response()->json([
+                'ok' => true,
+                'type' => 'success',
+                'title' => 'Payment Successful',
+                'message' => $successMessage,
+                'lottery' => $this->lotteryPurchaseState($lottery, $user->id),
+                'wallet' => $this->lotteryWalletSummary(),
+            ]);
+        }
+
         return redirect()
             ->back()
-            ->with(
-                'success',
-                'Ticket purchased successfully.'
-            );
+            ->with('success', $successMessage);
     }
 
     /**
@@ -811,6 +820,71 @@ class LotteryController extends Controller
             'usedBalance' => $used,
             'remainingBalance' => (float) ($wallet?->withdrawable_balance ?? 0),
             'walletCurrency' => $wallet?->currency ?? 'USD',
+        ];
+    }
+
+    protected function wantsAjax(Request $request): bool
+    {
+        return $request->expectsJson() || $request->ajax();
+    }
+
+    protected function insufficientLotteryBalanceResponse(Request $request): RedirectResponse|JsonResponse
+    {
+        $message = 'Your balance is insufficient. Please deposit amount to buy lottery tickets.';
+
+        if ($this->wantsAjax($request)) {
+            return response()->json([
+                'ok' => false,
+                'type' => 'warning',
+                'title' => 'Insufficient Balance',
+                'message' => $message,
+                'action' => [
+                    'label' => 'Deposit Now',
+                    'url' => route('deposits.index'),
+                ],
+            ], 422);
+        }
+
+        return redirect()
+            ->route('deposits.index')
+            ->with('warning', $message);
+    }
+
+    /**
+     * @return array{
+     *     id: int,
+     *     remaining_tickets: int|null,
+     *     remaining_label: string,
+     *     tickets_sold: int,
+     *     user_tickets: int,
+     *     max_tickets_per_user: int|null,
+     *     user_tickets_label: string,
+     *     can_buy: bool,
+     *     sales_open: bool
+     * }
+     */
+    protected function lotteryPurchaseState(Lottery $lottery, ?int $userId): array
+    {
+        $remainingTickets = $lottery->remainingTickets();
+        $maxPerUser = $lottery->max_tickets_per_user;
+        $userTickets = $userId ? $lottery->ticketsForCurrentRoundUser($userId) : 0;
+        $salesOpen = $lottery->isSalesOpen();
+        $canBuy = $userId && $salesOpen && $lottery->maxPurchaseQuantityForUser($userId) > 0;
+
+        return [
+            'id' => $lottery->id,
+            'remaining_tickets' => $remainingTickets,
+            'remaining_label' => $remainingTickets === null
+                ? 'Unlimited Tickets'
+                : number_format($remainingTickets) . ' Tickets Remaining',
+            'tickets_sold' => $lottery->totalCurrentRoundTickets(),
+            'user_tickets' => $userTickets,
+            'max_tickets_per_user' => $maxPerUser,
+            'user_tickets_label' => $maxPerUser === null
+                ? $userTickets . ' purchased'
+                : $userTickets . '/' . $maxPerUser . ' Purchased',
+            'can_buy' => $canBuy,
+            'sales_open' => $salesOpen,
         ];
     }
 }

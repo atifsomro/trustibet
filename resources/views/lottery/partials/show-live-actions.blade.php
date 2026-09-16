@@ -6,7 +6,9 @@
     Buy Tickets
 </h3>
 
-@include('lottery.partials.buy-ticket-form', [
-    'lottery' => $lottery,
-    'remainingBalance' => $remainingBalance,
-])
+<div data-lottery-buy-slot="{{ $lottery->id }}">
+    @include('lottery.partials.buy-ticket-form', [
+        'lottery' => $lottery,
+        'remainingBalance' => $remainingBalance,
+    ])
+</div>

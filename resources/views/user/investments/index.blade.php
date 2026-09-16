@@ -3,16 +3,8 @@
 @section('content')
     <section class="py-8">
         <div class="container">
-            @if (session('success'))
-                <div class="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-400">
-                    {{ session('success') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-400">
-                    {{ session('error') }}
-                </div>
-            @endif
+            @php $skipFlashSwal = true; @endphp
+            @include('partials.purchase-alert-host')
 
             <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <div>

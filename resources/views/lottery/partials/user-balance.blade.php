@@ -30,7 +30,7 @@
                     <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-orange-400/80">
                         Used on tickets
                     </span>
-                    <strong class="mt-1 block text-base font-bold text-orange-400 data-lottery-balance="used">
+                    <strong class="mt-1 block text-base font-bold text-orange-400" data-lottery-balance="used">
                         {{ $walletCurrency }} {{ number_format($usedBalance, 2) }}
                     </strong>
                 </div>
@@ -45,7 +45,7 @@
                     <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-green-400/80">
                         Remaining balance
                     </span>
-                    <strong class="mt-1 block text-sm font-bold text-green-400 data-lottery-balance="remaining">
+                    <strong class="mt-1 block text-sm font-bold text-green-400" data-lottery-balance="remaining">
                         {{ $walletCurrency }} {{ number_format($remainingBalance, 2) }}
                     </strong>
                 </div>
