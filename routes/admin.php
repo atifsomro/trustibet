@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\KycController;
 use App\Http\Controllers\Admin\LotteryController;
 use App\Http\Controllers\Admin\InvestmentPackageController;
 use App\Http\Controllers\Admin\UserInvestmentController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\PageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -178,4 +180,33 @@ Route::middleware('auth:admin')->prefix('admin/withdrawals')->name('admin.withdr
         Route::post('/{kyc}/reject', [KycController::class, 'reject'])
         ->name('reject');
 
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Settings (dynamic frontend config)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:admin')
+    ->prefix('admin/settings')
+    ->name('admin.settings.')
+    ->controller(SettingController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::put('/', 'update')->name('update');
+        Route::delete('/{setting}', 'destroy')->name('destroy');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| CMS Pages (About Us, Privacy Policy, etc.)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:admin')
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::resource('pages', PageController::class)->except(['show']);
     });

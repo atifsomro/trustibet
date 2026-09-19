@@ -63,6 +63,12 @@ Route::get('/404', function () {
     return view('errors.404');
 })->name('404');
 
+// CMS pages managed from Admin > Pages. Served at /page/{slug} so the
+// existing hardcoded routes above (/about, /privacy-policy, etc.) are
+// left completely untouched.
+Route::get('/page/{slug}', [\App\Http\Controllers\PageController::class, 'show'])
+    ->name('page.show');
+
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\LotteryController;
 use App\Http\Controllers\User\InvestmentController;
