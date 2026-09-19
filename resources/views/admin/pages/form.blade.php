@@ -26,31 +26,6 @@
         @error('content')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
-
-        {{-- Summernote WYSIWYG editor — free, locally bundled with this admin
-             theme (no external CDN or API key needed). It binds to the
-             textarea above and keeps its value in sync automatically, so
-             the plain-HTML content still posts as before if JS ever fails
-             to load. --}}
-        <link rel="stylesheet"
-            href="{{ asset('assets/admin_assets/node_modules/summernote/dist/summernote-bs4.css') }}">
-        <script src="{{ asset('assets/admin_assets/node_modules/summernote/dist/summernote-bs4.min.js') }}"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                $('#page-content-editor').summernote({
-                    height: 320,
-                    placeholder: 'Write the page content...',
-                    toolbar: [
-                        ['style', ['style']],
-                        ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
-                        ['color', ['color']],
-                        ['para', ['ul', 'ol', 'paragraph']],
-                        ['insert', ['link', 'picture', 'table', 'hr']],
-                        ['view', ['fullscreen', 'codeview']]
-                    ]
-                });
-            });
-        </script>
     </div>
 
     <div class="col-md-6 mb-3">
@@ -81,3 +56,30 @@
         </div>
     </div>
 </div>
+
+@push('page_js')
+    {{-- Summernote WYSIWYG editor — free, locally bundled with this admin
+        theme (no external CDN or API key needed). It binds to the
+        textarea above and keeps its value in sync automatically, so
+        the plain-HTML content still posts as before if JS ever fails
+        to load. --}}
+    <link rel="stylesheet"
+        href="{{ asset('assets/admin_assets/node_modules/summernote/dist/summernote-bs4.css') }}">
+    <script src="{{ asset('assets/admin_assets/node_modules/summernote/dist/summernote-bs4.min.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            $('#page-content-editor').summernote({
+                height: 320,
+                placeholder: 'Write the page content...',
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'picture', 'table', 'hr']],
+                    ['view', ['fullscreen', 'codeview']]
+                ]
+            });
+        });
+    </script>
+@endpush

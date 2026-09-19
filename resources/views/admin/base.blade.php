@@ -35,6 +35,7 @@
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
     <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
+    @stack('page_css')
 </head>
 
 <body class="skin-blue fixed-layout">
@@ -119,6 +120,7 @@
     <script src="{{ asset('assets/admin_assets/dist/js/dashboard1.js') }}"></script>
     <script src="{{ asset('assets/admin_assets/node_modules/toast-master/js/jquery.toast.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.26.25/sweetalert2.min.js" integrity="sha512-dmAN1QwqVuU3dD62u4+wOeqNPKpS9Me5pqOf4NROrcryBWUn1Z65+u3U+GFuwqIm9dw6Y2VPI0g/UVaB4gI54g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script></script>
+    @stack('page_js')
     @if (session('success'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
