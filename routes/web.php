@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepositController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\User\KycController;
 use Illuminate\Support\Facades\Route;
@@ -66,7 +67,7 @@ Route::get('/404', function () {
 // CMS pages managed from Admin > Pages. Served at /page/{slug} so the
 // existing hardcoded routes above (/about, /privacy-policy, etc.) are
 // left completely untouched.
-Route::get('/page/{slug}', [\App\Http\Controllers\PageController::class, 'show'])
+Route::get('/page/{slug}', [PageController::class, 'show'])
     ->name('page.show');
 
 use App\Http\Controllers\GameController;

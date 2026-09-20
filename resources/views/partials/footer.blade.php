@@ -19,22 +19,22 @@
                     Quick Links
                 </h5>
                 <div class="mt-3 md:mt-5 flex flex-wrap justify-start gap-x-4 gap-y-2 md:gap-x-8 md:gap-y-4 lg:justify-center">
-                    <a href="{{ url('/about') }}"
+                    <a href="{{ url('page/about-us') }}"
                         class="text-gray-400 transition-all duration-300 hover:text-green-500">
                         About Us
                     </a>
 
-                    <a href="{{ url('/contact') }}"
+                    <a href="{{ url('page/contact-us') }}"
                         class="text-gray-400 transition-all duration-300 hover:text-green-500">
                         Contact Us
                     </a>
 
-                    <a href="{{ route('privacy.policy') }}"
+                    <a href="{{ url('page/privacy-policy') }}"
                         class="text-gray-400 transition-all duration-300 hover:text-green-500">
                         Privacy Policy
                     </a>
 
-                    <a href="{{ route('terms.conditions') }}"
+                    <a href="{{ url('page/term-and-condition') }}"
                         class="text-gray-400 transition-all duration-300 hover:text-green-500">
                         Terms & Conditions
                     </a>
@@ -47,19 +47,19 @@
                     Follow Us
                 </h5>
                 <div class="mt-3 md:mt-5 flex gap-4">
-                    <a href="#"
+                    <a href="{{ config('settings.site_facebook') }}"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-brand-border bg-brand-dark transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:bg-green-500/10 hover:text-green-500">
                         <i class="fa-brands fa-facebook-f"></i>
                     </a>
-                    <a href="#"
+                    <a href="{{ config('settings.site_twitter') }}"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-brand-border bg-brand-dark transition-all duration-300 hover:-translate-y-1 hover:border-brand-primary hover:bg-brand-primary/10 hover:text-brand-primary">
                         <i class="fa-brands fa-x-twitter"></i>
                     </a>
-                    <a href="#"
+                    <a href="{{ config('settings.site_instagram') }}"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-brand-border bg-brand-dark transition-all duration-300 hover:-translate-y-1 hover:border-scrach-lock hover:bg-scrach-lock/10 hover:text-scrach-lock">
                         <i class="fa-brands fa-instagram"></i>
                     </a>
-                    <a href="#"
+                    <a href="{{ config('settings.site_tiktok') }}"
                         class="flex h-11 w-11 items-center justify-center rounded-full border border-brand-border bg-brand-dark transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:bg-green-500/10 hover:text-green-500">
                         <i class="fa-brands fa-tiktok"></i>
                     </a>
