@@ -134,7 +134,18 @@
                             <td>
 
                                 @if(is_array($withdrawal->account_details))
-                                    <pre class="mb-0">{{ json_encode($withdrawal->account_details, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                    <table class="table table-sm table-borderless mb-0">
+                                        @foreach ($withdrawal->account_details as $key => $value)
+                                            <tr>
+                                                <td class="pl-0 pr-3 text-muted" style="width: 160px;">
+                                                    {{ ucwords(str_replace('_', ' ', (string) $key)) }}
+                                                </td>
+                                                <td class="pl-0">
+                                                    {{ $value }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </table>
                                 @else
                                     {!! nl2br(e($withdrawal->account_details ?: '-')) !!}
                                 @endif

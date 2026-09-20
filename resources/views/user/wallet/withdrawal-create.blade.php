@@ -109,20 +109,81 @@
 
                     </div>
 
-                    {{-- Account Details --}}
+                    {{-- Account Title --}}
                     <div>
 
                         <label class="block text-sm font-medium mb-2">
-                            Account Details
+                            Account Title
                         </label>
 
-                        <textarea
-                            name="account_details"
-                            rows="6"
+                        <input
+                            type="text"
+                            name="account_title"
+                            value="{{ old('account_title') }}"
                             class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
-                            placeholder="Provide complete account details where you want to receive the payment.">{{ old('account_details') }}</textarea>
+                            placeholder="Name on the receiving account">
 
-                        @error('account_details')
+                        @error('account_title')
+                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+
+                    </div>
+
+                    {{-- Account Number --}}
+                    <div>
+
+                        <label class="block text-sm font-medium mb-2">
+                            Account Number
+                        </label>
+
+                        <input
+                            type="text"
+                            name="account_number"
+                            value="{{ old('account_number') }}"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
+                            placeholder="Account / IBAN / mobile number">
+
+                        @error('account_number')
+                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+
+                    </div>
+
+                    {{-- Bank Name — only shown for Bank Transfer --}}
+                    <div id="bank_name_field" style="{{ old('payment_method') === 'bank_transfer' ? '' : 'display:none;' }}">
+
+                        <label class="block text-sm font-medium mb-2">
+                            Bank Name
+                        </label>
+
+                        <input
+                            type="text"
+                            name="bank_name"
+                            value="{{ old('bank_name') }}"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
+                            placeholder="e.g. HBL, Meezan Bank">
+
+                        @error('bank_name')
+                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                        @enderror
+
+                    </div>
+
+                    {{-- Crypto Source — only shown for Crypto --}}
+                    <div id="crypto_source_field" style="{{ old('payment_method') === 'crypto' ? '' : 'display:none;' }}">
+
+                        <label class="block text-sm font-medium mb-2">
+                            Crypto Exchange / Source
+                        </label>
+
+                        <input
+                            type="text"
+                            name="crypto_source"
+                            value="{{ old('crypto_source') }}"
+                            class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary"
+                            placeholder="e.g. Binance, Trust Wallet">
+
+                        @error('crypto_source')
                             <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
                         @enderror
 
@@ -282,5 +343,41 @@
     </div>
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var methodSelect = document.getElementById('payment_method');
+        var bankField = document.getElementById('bank_name_field');
+        var cryptoField = document.getElementById('crypto_source_field');
+
+        if (!methodSelect || !bankField || !cryptoField) {
+            return;
+        }
+
+        var bankInput = bankField.querySelector('input');
+        var cryptoInput = cryptoField.querySelector('input');
+
+        function toggleFields() {
+            var value = methodSelect.value;
+            var isBank = value === 'bank_transfer';
+            var isCrypto = value === 'crypto';
+
+            bankField.style.display = isBank ? '' : 'none';
+            cryptoField.style.display = isCrypto ? '' : 'none';
+
+            // Clear out the hidden field's value so a stale bank name
+            // isn't submitted alongside a crypto withdrawal (or vice versa).
+            if (!isBank && bankInput) {
+                bankInput.value = '';
+            }
+            if (!isCrypto && cryptoInput) {
+                cryptoInput.value = '';
+            }
+        }
+
+        methodSelect.addEventListener('change', toggleFields);
+        toggleFields();
+    });
+</script>
 
 @endsection

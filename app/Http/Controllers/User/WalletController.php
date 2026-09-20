@@ -132,11 +132,31 @@ class WalletController extends Controller
     public function storeWithdrawal(
         RequestWithdrawalRequest $request
     ): RedirectResponse {
+
+        // Structured payment details, keyed for a clean admin display.
+        // Bank name / crypto source are only included for the payment
+        // method they apply to. Stored as JSON in the existing
+        // account_details column — WithdrawalRequest::getAccountDetailsAttribute()
+        // already decodes JSON transparently for display.
+        $accountDetails = array_filter([
+            'account_title' => $request->account_title,
+            'account_number' => $request->account_number,
+            'bank_name' => $request->payment_method === 'bank_transfer'
+                ? $request->bank_name
+                : null,
+            'crypto_source' => $request->payment_method === 'crypto'
+                ? $request->crypto_source
+                : null,
+        ], static fn ($value) => $value !== null && $value !== '');
+
         $this->withdrawalService->request(
             user: $request->user(),
             amount: (float) $request->amount,
             paymentMethod: $request->payment_method,
-            accountDetails: $request->account_details,
+            accountDetails: json_encode(
+                $accountDetails,
+                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
+            ),
             remarks: $request->remarks
         );
 
