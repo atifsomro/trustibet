@@ -17,12 +17,12 @@
                         </a>
                     </li>
 
-                    <li>
+                    {{-- <li>
                         <a href="{{ auth()->check() ? route('about') : route('auth.login') }}"
                             class="{{ request()->routeIs('about') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
                             About
                         </a>
-                    </li>
+                    </li> --}}
 
                     @auth
                         <li>
@@ -54,7 +54,7 @@
                     </li>
                     <li class="relative">
                         <button type="button" onclick="togglePagesDropdown()"
-                            class="flex items-center gap-2 transition hover:text-brand-primary {{ request()->routeIs('lotteries.index', 'lotteries.history', 'investment', 'winner.history') ? 'text-brand-primary' : '' }}">
+                            class="flex items-center gap-2 transition hover:text-brand-primary {{ request()->routeIs('lotteries.index', 'lotteries.history') ? 'text-brand-primary' : '' }}">
                             Lottery
                             <i id="pagesArrow"
                                 class="fa-solid fa-chevron-down text-[10px] transition-transform duration-300"></i>
@@ -96,6 +96,18 @@
                     <a href="{{ route('auth.logout') }}" class="btn btn-primary hidden lg:inline-flex">
                         Logout
                     </a>
+                    <a href="{{ route('user-account') }}"
+                        class="header-balance rounded-xl md:flex border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm font-medium text-green-400 transition-all duration-300 hover:bg-green-500/20 animate-pulse">
+                        <span class="relative leading-tight">
+                            <span class="block text-[12px] font-medium">
+                                Current Balance
+                            </span>
+
+                            <span class="block text-[10px] font-bold text-white">
+                                $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
+                            </span>
+                        </span>
+                    </a>
                 @endif
 
                 <button id="MenuToggle" class="flex lg:hidden btn btn-primary">
@@ -136,7 +148,17 @@
     <nav class="p-6">
 
         <ul class="space-y-3">
-
+            <li>
+                <a href="{{ route('user-account') }}"
+                    class="flex items-center justify-between rounded-xl bg-gradient-to-r from-green-500 to-orange-500 py-4 px-5 font-semibold text-white shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-all duration-300 hover:bg-green-500/20 animate-pulse">
+                    <span class="block text-sm font-medium">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Current Balance
+                    </span>
+                    <span class="block text-[12px] font-bold text-white">
+                        $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
+                    </span>
+                </a>
+            </li>
             <li>
                 <a href="/"
                     class="flex items-center gap-4 rounded-2xl border px-5 py-4 transition
@@ -146,14 +168,14 @@
                 </a>
             </li>
 
-            <li>
+            {{-- <li>
                 <a href="{{ route('about') }}"
                     class="flex items-center gap-4 rounded-2xl border px-5 py-4 transition
                     {{ request()->routeIs('about') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
                     <i class="fa-solid fa-circle-info w-5"></i>
                     <span>About</span>
                 </a>
-            </li>
+            </li> --}}
 
             @auth
                 <li>
@@ -195,7 +217,7 @@
             <li>
                 <button type="button" onclick="toggleMobilePages()"
                     class="flex w-full items-center justify-between rounded-2xl border px-5 py-4 transition
-                    {{ request()->routeIs('lotteries.index', 'lotteries.history', 'investment', 'winner.history') ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-transparent bg-brand-dark hover:border-orange-500 hover:bg-orange-500/10' }}">
+                    {{ request()->routeIs('lotteries.index', 'lotteries.history') ? 'border-orange-500 bg-orange-500/10 text-orange-500' : 'border-transparent bg-brand-dark hover:border-orange-500 hover:bg-orange-500/10' }}">
                     <span class="flex items-center gap-4">
                         <i class="fa-solid fa-layer-group w-5"></i>
                         <span>Lottery</span>

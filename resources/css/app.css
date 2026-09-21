@@ -277,7 +277,11 @@ header .pages-dropdown.show {
     transform: translateY(0);
     pointer-events: auto;
 }
-
+@media screen and (max-width: 420px) {
+    header .header-balance {
+        display: none;
+    }
+}
 /* ===========================
    WHEEL GAME
 =========================== */
