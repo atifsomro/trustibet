@@ -95,20 +95,13 @@
             </ul>
         </div>
 
-        @php
-            $roundNumber = $lottery->currentRoundNumber();
-        @endphp
-
-        @if ($lottery->hasPreviousRounds())
+        @unless ($lottery->isCompleted() || $lottery->isCancelled())
             <div class="mt-2 rounded-2xl border border-green-500/20 bg-green-500/5 px-2 py-2 text-center">
                 <span class="block text-xs font-semibold uppercase tracking-[3px] text-green-400">
-                    New Round
-                </span>
-                <span class="mt-1 block text-xs">
-                    Round {{ $roundNumber }} is live
+                    Round {{ $lottery->currentRoundNumber() }} is live
                 </span>
             </div>
-        @endif
+        @endunless
 
         <div class="mt-2 flex items-center justify-between opacity-60">
             <span class="text-xs" data-lottery-remaining-label="{{ $lottery->id }}">

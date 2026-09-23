@@ -48,10 +48,12 @@
                                     </td>
 
                                     <td class="px-5 py-4">
-                                        <span
-                                            class="inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-400">
-                                            Round {{ $row['round_number'] ?? '—' }}
-                                        </span>
+                                        <span class="inline-flex rounded-full border border-orange-500/20 bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-400">Round {{ $row['round_number'] ?? '—' }}</span>
+                                        @if ($row['round_date'] ?? null)
+                                            <span class="mt-1 block text-[11px] opacity-60">
+                                                {{ $row['round_date']->copy()->timezone(config('app.timezone'))->format('d M Y') }}
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td class="px-5 py-4">

@@ -15,6 +15,11 @@ class Lottery extends Model
     use HasFactory;
     use SoftDeletes;
 
+    /**
+     * Cached daily round number for the current sales window.
+     */
+    private ?int $resolvedCurrentRoundNumber = null;
+
     protected $fillable = [
         'title',
         'ticket_price',
@@ -269,6 +274,7 @@ class Lottery extends Model
         // so a 7s timer is stored as exactly 7s, not ~6.x after truncation.
         $from = $from->copy()->startOfSecond();
 
+        $this->resolvedCurrentRoundNumber = null;
         $this->starts_at = $from;
         $this->ends_at = $from->copy()->addSeconds($duration);
         $this->sales_start_at = $this->starts_at;
@@ -459,13 +465,45 @@ class Lottery extends Model
         $this->save();
     }
 
+    /**
+     * Calendar day the live round belongs to.
+     * A round keeps the day it started, even if the countdown crosses midnight.
+     * The next round after that is round 1 of the new day.
+     */
+    public function currentRoundDate(): \Illuminate\Support\Carbon
+    {
+        $start = $this->periodStart();
+
+        return ($start ? \Illuminate\Support\Carbon::parse($start) : now())
+            ->copy()
+            ->timezone(config('app.timezone'))
+            ->startOfDay();
+    }
+
+    /**
+     * Live round number within the current calendar day. Restarts at 1 each day.
+     */
     public function currentRoundNumber(): int
     {
-        $completed = array_key_exists('completed_draws_count', $this->attributes)
-            ? (int) $this->completed_draws_count
-            : $this->draws()->where('status', 'completed')->count();
+        if ($this->resolvedCurrentRoundNumber !== null) {
+            return $this->resolvedCurrentRoundNumber;
+        }
 
-        return $completed + 1;
+        $completed = $this->draws()
+            ->where('status', 'completed')
+            ->startedOnDate($this->currentRoundDate()->toDateString())
+            ->count();
+
+        return $this->resolvedCurrentRoundNumber = $completed + 1;
+    }
+
+    public function roundLabel(): string
+    {
+        return sprintf(
+            'Round %d · %s',
+            $this->currentRoundNumber(),
+            $this->currentRoundDate()->format('d M Y')
+        );
     }
 
     public function hasPreviousRounds(): bool

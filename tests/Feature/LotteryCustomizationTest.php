@@ -334,6 +334,120 @@ class LotteryCustomizationTest extends TestCase
         $show->assertSee('85.00');
     }
 
+    public function test_round_numbers_restart_each_day_and_history_keeps_the_date(): void
+    {
+        Notification::fake();
+
+        $anchor = now()->subDay()->setTime(10, 0, 0);
+        $yesterdayLabel = $anchor->format('d M Y');
+
+        $this->travelTo($anchor->copy());
+
+        $user = $this->makeUserWithBalance(100);
+        $lottery = $this->makeLottery([
+            'title' => 'Daily Round Lottery',
+            'duration_seconds' => 3600,
+        ]);
+
+        app(BuyLotteryTicketsAction::class)->execute($user, $lottery, 1);
+        $this->travelTo($anchor->copy()->addMinute());
+        $lottery = $this->closeAndDraw($lottery);
+        $this->assertSame(2, $lottery->currentRoundNumber());
+        $this->assertSame($yesterdayLabel, $lottery->currentRoundDate()->format('d M Y'));
+
+        $this->travelTo($anchor->copy()->addMinutes(2));
+        app(BuyLotteryTicketsAction::class)->execute($user, $lottery, 1);
+        $this->travelTo($anchor->copy()->addMinutes(3));
+        $lottery = $this->closeAndDraw($lottery);
+        $this->assertSame(3, $lottery->currentRoundNumber());
+
+        $this->travelTo($anchor->copy()->addDay());
+        $todayLabel = now()->format('d M Y');
+
+        $lottery = $lottery->fresh();
+        $this->assertSame(3, $lottery->currentRoundNumber());
+        $this->assertSame($yesterdayLabel, $lottery->currentRoundDate()->format('d M Y'));
+
+        $lottery = $this->closeAndDraw($lottery);
+        $this->assertSame(1, $lottery->currentRoundNumber());
+        $this->assertSame($todayLabel, $lottery->currentRoundDate()->format('d M Y'));
+
+        $index = $this->actingAs($user)->get(route('lotteries.index'));
+        $index->assertOk();
+        $index->assertSee('Round 1 is live');
+        $index->assertDontSee($todayLabel);
+        $index->assertDontSee('Round 3');
+
+        $this->travel(1)->minutes();
+        app(BuyLotteryTicketsAction::class)->execute($user, $lottery->fresh(), 1);
+        $this->travel(1)->minutes();
+        $lottery = $this->closeAndDraw($lottery->fresh());
+        $this->assertSame(2, $lottery->currentRoundNumber());
+        $this->assertSame($todayLabel, $lottery->currentRoundDate()->format('d M Y'));
+
+        $results = $this->actingAs($user)->get(route('lotteries.results', $lottery));
+        $results->assertOk();
+        $results->assertSee('Round 1 · '.$yesterdayLabel);
+        $results->assertSee('Round 2 · '.$yesterdayLabel);
+        $results->assertSee('Round 3 · '.$yesterdayLabel);
+        $results->assertSee('Round 1 · '.$todayLabel);
+        $results->assertDontSee('Round 4');
+
+        $roundOne = $this->actingAs($user)->get(route('lotteries.results', [
+            'lottery' => $lottery,
+            'round' => 1,
+        ]));
+        $roundOne->assertOk();
+        $roundOne->assertSee('Round 1 · '.$yesterdayLabel);
+        $roundOne->assertSee('Round 1 · '.$todayLabel);
+        $roundOne->assertDontSee('Round 2 · '.$yesterdayLabel);
+        $roundOne->assertDontSee('Round 3 · '.$yesterdayLabel);
+
+        $roundOneToday = $this->actingAs($user)->get(route('lotteries.results', [
+            'lottery' => $lottery,
+            'round' => 1,
+            'from' => now()->toDateString(),
+            'to' => now()->toDateString(),
+        ]));
+        $roundOneToday->assertOk();
+        $roundOneToday->assertSee('Round 1 · '.$todayLabel);
+        $roundOneToday->assertDontSee('Round 1 · '.$yesterdayLabel);
+
+        $history = $this->actingAs($user)->get(route('lotteries.history'));
+        $history->assertOk();
+        $this->assertSame(2, substr_count($history->getContent(), '>Round 1<'));
+        $this->assertSame(1, substr_count($history->getContent(), '>Round 2<'));
+        $history->assertSee($yesterdayLabel);
+        $history->assertSee($todayLabel);
+        $history->assertDontSee('Round 3');
+        $history->assertDontSee('Round 4');
+
+        Notification::assertSentTo(
+            $user,
+            LotteryNewRoundNotification::class,
+            function (LotteryNewRoundNotification $notification) use ($user, $todayLabel) {
+                $payload = $notification->toArray($user);
+
+                return $payload['round_number'] === 2
+                    && $payload['round_date'] === now()->toDateString()
+                    && str_contains($payload['message'], 'Round 2 · '.$todayLabel);
+            }
+        );
+    }
+
+    protected function closeAndDraw(Lottery $lottery): Lottery
+    {
+        $lottery->ends_at = now();
+        $lottery->sales_end_at = $lottery->ends_at;
+        $lottery->draw_at = $lottery->ends_at;
+        $lottery->status = LotteryStatus::ENDED;
+        $lottery->save();
+
+        app(DrawLotteryAction::class)->execute($lottery->fresh());
+
+        return $lottery->fresh();
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      */

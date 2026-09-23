@@ -119,12 +119,12 @@
                                     <div class="mt-2 text-lg font-bold text-orange-400">
                                         Automatic via scheduler
                                     </div>
-                                    @if ($lottery->hasPreviousRounds())
+                                    @unless ($lottery->isCompleted() || $lottery->isCancelled())
                                         <span
                                             class="mt-2 block text-xs font-semibold uppercase tracking-[2px] text-green-400">
-                                            New Round {{ $lottery->currentRoundNumber() }}
+                                            {{ $lottery->roundLabel() }}
                                         </span>
-                                    @endif
+                                    @endunless
                                 </div>
                                 {{-- Tickets Sold --}}
                                 <div

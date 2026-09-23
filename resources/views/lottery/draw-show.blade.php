@@ -30,7 +30,7 @@
                             {{ $lottery->title }}
                         </h1>
                         <p class="mt-2 text-sm opacity-60">
-                            Draw #{{ $draw->id }}
+                            {{ $draw->dailyRoundLabel() }}
                             · {{ $draw->completed_at?->format('d M Y h:i A') }}
                         </p>
                     </div>

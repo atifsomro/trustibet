@@ -41,11 +41,6 @@ class LotteryController extends Controller
                     }
                 },
             ])
-            ->withCount([
-                'draws as completed_draws_count' => function ($query) {
-                    $query->where('status', 'completed');
-                },
-            ])
             ->ordered()
             ->get();
 
@@ -111,11 +106,17 @@ class LotteryController extends Controller
 
         abort_unless($totalRounds > 0, 404);
 
-        $roundNumbers = (clone $baseQuery)
-            ->orderBy('id')
-            ->pluck('id')
-            ->values()
-            ->mapWithKeys(fn($id, $index) => [(int) $id => $index + 1]);
+        $dailyRounds = LotteryDraw::dailyRoundsFor(
+            $lottery->draws()
+                ->where('status', 'completed')
+                ->orderBy('id')
+                ->get(['id', 'lottery_id', 'sales_start_at', 'completed_at', 'created_at'])
+        );
+
+        $roundNumbers = $dailyRounds->map(fn (array $round) => $round['number']);
+        $roundDates = $dailyRounds->map(fn (array $round) => $round['date']);
+        $announcedIds = (clone $baseQuery)->pluck('id');
+        $maxDailyRound = (int) ($roundNumbers->only($announcedIds->all())->max() ?: 1);
 
         $latestDrawId = (clone $baseQuery)->latest('id')->value('id');
 
@@ -174,6 +175,8 @@ class LotteryController extends Controller
             'matchedRounds' => $draws->total(),
             'focusDrawId' => $focusDrawId,
             'roundNumbers' => $roundNumbers,
+            'roundDates' => $roundDates,
+            'maxDailyRound' => $maxDailyRound,
             'latestDrawId' => $latestDrawId,
             'filters' => [
                 'q' => $filters['q'] ?? '',
@@ -232,12 +235,14 @@ class LotteryController extends Controller
         }
 
         if (!empty($filters['round'])) {
-            $drawId = $roundNumbers->search((int) $filters['round']);
+            $matchingIds = $roundNumbers
+                ->filter(fn ($number) => (int) $number === (int) $filters['round'])
+                ->keys();
 
-            if ($drawId === false) {
+            if ($matchingIds->isEmpty()) {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->where('id', $drawId);
+                $query->whereIn('id', $matchingIds->all());
             }
         }
 
@@ -406,11 +411,7 @@ class LotteryController extends Controller
             $lottery = $lotteryTickets->first()?->lottery;
             $lotteryDraws = $drawsByLottery->get($lotteryId, collect());
     
-            $roundNumbers = $lotteryDraws
-                ->values()
-                ->mapWithKeys(fn (LotteryDraw $draw, int $index) => [
-                    (int) $draw->id => $index + 1,
-                ]);
+            $dailyRounds = LotteryDraw::dailyRoundsFor($lotteryDraws);
     
             $assignedIds = collect();
     
@@ -438,10 +439,13 @@ class LotteryController extends Controller
                     $drawStatus = 'pending';
                 }
     
+                $round = $dailyRounds->get((int) $draw->id);
+
                 $history->push([
                     'lottery' => $lottery,
                     'draw' => $draw,
-                    'round_number' => $roundNumbers->get((int) $draw->id),
+                    'round_number' => $round['number'] ?? null,
+                    'round_date' => $round['date'] ?? $draw->roundDate(),
                     'tickets' => $roundTickets->values(),
                     'quantity' => $roundTickets->count(),
                     'amount' => $roundTickets->sum(fn (LotteryTicket $ticket) => (float) $ticket->price),
@@ -477,10 +481,24 @@ class LotteryController extends Controller
                     : 'lost';
             }
     
+            $openPurchasedAt = $openTickets->min('purchased_at');
+            $openDay = ($openPurchasedAt ? \Illuminate\Support\Carbon::parse($openPurchasedAt) : now())
+                ->copy()
+                ->timezone(config('app.timezone'))
+                ->startOfDay();
+            $openRoundNumber = $lottery && $lottery->currentRoundDate()->equalTo($openDay)
+                ? $lottery->currentRoundNumber()
+                : LotteryDraw::query()
+                    ->where('lottery_id', $lotteryId)
+                    ->where('status', 'completed')
+                    ->startedOnDate($openDay->toDateString())
+                    ->count() + 1;
+
             $history->push([
                 'lottery' => $lottery,
                 'draw' => null,
-                'round_number' => $roundNumbers->count() + 1,
+                'round_number' => $openRoundNumber,
+                'round_date' => $openDay,
                 'tickets' => $openTickets,
                 'quantity' => $openTickets->count(),
                 'amount' => $openTickets->sum(fn (LotteryTicket $ticket) => (float) $ticket->price),
@@ -678,6 +696,8 @@ class LotteryController extends Controller
             'ends_at' => $lottery->ends_at?->toIso8601String(),
             'server_now' => now()->toIso8601String(),
             'round_number' => $lottery->currentRoundNumber(),
+            'round_date' => $lottery->currentRoundDate()->toDateString(),
+            'round_label' => $lottery->roundLabel(),
             'is_sales_open' => $lottery->isSalesOpen(),
             'remaining_tickets' => $lottery->remainingTickets(),
             'user_tickets' => $userId ? $lottery->ticketsForCurrentRoundUser($userId) : 0,
