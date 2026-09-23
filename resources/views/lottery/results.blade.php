@@ -112,8 +112,8 @@
                             <label for="lottery-results-round"
                                 class="mb-2 block text-xs uppercase tracking-wider opacity-50">Round</label>
                             <input id="lottery-results-round" type="number" name="round" min="1"
-                                max="{{ $totalRounds }}" value="{{ $filters['round'] }}"
-                                placeholder="e.g. {{ $totalRounds }}"
+                                max="{{ $maxDailyRound }}" value="{{ $filters['round'] }}"
+                                placeholder="e.g. {{ $maxDailyRound }}"
                                 class="w-full rounded-2xl border border-brand-border bg-brand-dark px-4 py-3.5 text-sm text-white placeholder:text-white/35 outline-none transition focus:border-green-500/40">
                         </div>
 
@@ -202,6 +202,7 @@
                         @foreach ($draws as $draw)
                             @php
                                 $roundNumber = $roundNumbers[(int) $draw->id] ?? null;
+                                $roundDate = $roundDates[(int) $draw->id] ?? $draw->roundDate();
                                 $isFocused = $focusDrawId
                                     ? (int) $focusDrawId === (int) $draw->id
                                     : $loop->first && !$hasActiveFilters;
@@ -225,7 +226,7 @@
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-1.5">
                                             <h3 class="text-sm font-bold">
-                                                Round {{ $roundNumber ?? $draw->id }}
+                                                Round {{ $roundNumber ?? $draw->id }} · {{ $roundDate->format('d M Y') }}
                                             </h3>
 
                                             @if ($isLatest)

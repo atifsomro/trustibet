@@ -411,9 +411,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (data.drawn || data.restarted || (data.already_drawn && restarted)) {
                         showNewRoundToast(
                             lotteryTitle,
-                            data.round_number
-                                ? 'Round ' + data.round_number + ' is now live.'
-                                : 'Tickets are now on sale for the new round.',
+                            data.round_label
+                                ? data.round_label + ' is now live.'
+                                : (data.round_number
+                                    ? 'Round ' + data.round_number + ' is now live.'
+                                    : 'Tickets are now on sale for the new round.'),
                             lotteryId
                         );
                     }
