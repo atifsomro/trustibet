@@ -124,7 +124,7 @@
                                     {{ $draw->lottery?->title ?? '—' }}
                                 </a>
                                 <br>
-                                <small class="text-muted">Draw #{{ $draw->id }}</small>
+                                <small class="text-muted">{{ $draw->dailyRoundLabel() }} · Draw #{{ $draw->id }}</small>
                             </td>
                             <td>{{ $draw->completed_at?->format('d M Y h:i A') ?? '—' }}</td>
                             <td>{{ number_format($draw->total_tickets) }}</td>

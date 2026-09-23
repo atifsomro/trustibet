@@ -103,7 +103,9 @@
                     @forelse ($draws as $draw)
                         <tr>
                             <td>
-                                <strong>Draw #{{ $draw->id }}</strong>
+                                <strong>{{ $draw->dailyRoundLabel() }}</strong>
+                                <br>
+                                <small class="text-muted">Draw #{{ $draw->id }}</small>
                             </td>
 
                             <td>

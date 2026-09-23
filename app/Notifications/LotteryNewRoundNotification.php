@@ -13,11 +13,15 @@ class LotteryNewRoundNotification extends Notification
 {
     use Queueable;
 
+    public string $roundDate;
+
     public function __construct(
         public Lottery $lottery,
         public LotteryDraw $previousDraw,
         public int $roundNumber,
+        ?string $roundDate = null,
     ) {
+        $this->roundDate = $roundDate ?? $lottery->currentRoundDate()->toDateString();
     }
 
     /**
@@ -38,9 +42,12 @@ class LotteryNewRoundNotification extends Notification
             'lottery_id' => $this->lottery->id,
             'draw_id' => $this->previousDraw->id,
             'round_number' => $this->roundNumber,
+            'round_date' => $this->roundDate,
             'title' => 'New round started',
             'message' => sprintf(
-                'A new round of %s is now open. Buy your ticket before the countdown ends.',
+                'Round %d · %s of %s is now open. Buy your ticket before the countdown ends.',
+                $this->roundNumber,
+                \Illuminate\Support\Carbon::parse($this->roundDate)->format('d M Y'),
                 $this->lottery->title
             ),
         ];

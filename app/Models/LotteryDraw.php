@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class LotteryDraw extends Model
@@ -176,5 +178,98 @@ class LotteryDraw extends Model
     public function hasFailed(): bool
     {
         return $this->status === 'failed';
+    }
+
+    /**
+     * When this round began. The calendar day of this instant owns the round number.
+     */
+    public function roundStartedAt(): ?Carbon
+    {
+        return $this->sales_start_at ?? $this->completed_at ?? $this->created_at;
+    }
+
+    /**
+     * Calendar day this round belongs to, in the application timezone.
+     */
+    public function roundDate(): Carbon
+    {
+        return ($this->roundStartedAt() ?? now())
+            ->copy()
+            ->timezone(config('app.timezone'))
+            ->startOfDay();
+    }
+
+    /**
+     * Completed draws whose round started on a calendar day.
+     */
+    public function scopeStartedOnDate(Builder $query, string $date): Builder
+    {
+        return $query->where(function (Builder $query) use ($date) {
+            $query->whereDate('sales_start_at', $date)
+                ->orWhere(function (Builder $inner) use ($date) {
+                    $inner->whereNull('sales_start_at')
+                        ->whereDate('completed_at', $date);
+                })
+                ->orWhere(function (Builder $inner) use ($date) {
+                    $inner->whereNull('sales_start_at')
+                        ->whereNull('completed_at')
+                        ->whereDate('created_at', $date);
+                });
+        });
+    }
+
+    /**
+     * 1-based position of this draw among completed rounds that started the same day.
+     */
+    public function dailyRoundNumber(): int
+    {
+        $query = static::query()
+            ->where('lottery_id', $this->lottery_id)
+            ->where('status', 'completed')
+            ->startedOnDate($this->roundDate()->toDateString());
+
+        if ($this->isCompleted()) {
+            return (int) $query->where('id', '<=', $this->id)->count();
+        }
+
+        return (int) $query->where('id', '<', $this->id)->count() + 1;
+    }
+
+    public function dailyRoundLabel(): string
+    {
+        return sprintf(
+            'Round %d · %s',
+            $this->dailyRoundNumber(),
+            $this->roundDate()->format('d M Y')
+        );
+    }
+
+    /**
+     * Daily round number and date for each draw. Numbers restart at 1 each day.
+     *
+     * @param  Collection<int, LotteryDraw>  $draws
+     * @return Collection<int, array{number: int, date: Carbon}>
+     */
+    public static function dailyRoundsFor(Collection $draws): Collection
+    {
+        $counts = [];
+
+        $ordered = $draws->sortBy(function (LotteryDraw $draw) {
+            $started = $draw->roundStartedAt();
+
+            return sprintf('%010d-%010d', $started?->timestamp ?? 0, $draw->id);
+        })->values();
+
+        return $ordered->mapWithKeys(function (LotteryDraw $draw) use (&$counts) {
+            $key = $draw->roundDate()->toDateString();
+            $counts[$key] = ($counts[$key] ?? 0) + 1;
+
+            return [
+                (int) $draw->id => [
+                    'number' => $counts[$key],
+                    'date' => $draw->roundDate(),
+                ],
+            ];
+        });
     }
 }

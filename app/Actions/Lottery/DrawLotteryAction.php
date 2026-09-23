@@ -260,12 +260,14 @@ class DrawLotteryAction
             ->get();
 
         $roundNumber = $lottery->currentRoundNumber();
+        $roundDate = $lottery->currentRoundDate()->toDateString();
 
         foreach ($users as $user) {
             $user->notify(new LotteryNewRoundNotification(
                 lottery: $lottery,
                 previousDraw: $draw,
                 roundNumber: $roundNumber,
+                roundDate: $roundDate,
             ));
         }
     }
