@@ -94,18 +94,11 @@ class BankAccount extends Model
      */
     public function getPictureUrlAttribute(): string
     {
-        $fallback = $this->fallbackAssetUrl('picture');
-
-        // Prefer bundled brand logos — they are reliable across local hosts.
-        if (! str_ends_with($fallback, 'placeholder.webp')) {
-            return $fallback;
-        }
-
         if ($this->picture && Storage::disk('public')->exists($this->picture)) {
             return asset('storage/' . ltrim($this->picture, '/'));
+        } else {
+            return $this->fallbackAssetUrl('picture');
         }
-
-        return $fallback;
     }
 
     /**
@@ -113,17 +106,11 @@ class BankAccount extends Model
      */
     public function getQrCodeUrlAttribute(): string
     {
-        $fallback = $this->fallbackAssetUrl('qr');
-
-        if (! str_ends_with($fallback, 'placeholder.webp')) {
-            return $fallback;
-        }
-
         if ($this->qr_code && Storage::disk('public')->exists($this->qr_code)) {
             return asset('storage/' . ltrim($this->qr_code, '/'));
+        } else {
+            return $this->fallbackAssetUrl('qr');
         }
-
-        return $fallback;
     }
 
     /**
