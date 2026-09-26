@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\InvestmentPackageController;
 use App\Http\Controllers\Admin\UserInvestmentController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\PageController;
+use App\Http\Controllers\Admin\GameController;
+use App\Http\Controllers\Admin\GamePlayController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')
@@ -64,6 +66,27 @@ Route::prefix('admin')
             ->name('user-investments.show');
         Route::put('user-investments/{userInvestment}/daily-roi', [UserInvestmentController::class, 'updateDailyRoi'])
             ->name('user-investments.update-daily-roi');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Games Management
+        |--------------------------------------------------------------------------
+        */
+        Route::resource('games', GameController::class)->except(['show']);
+        Route::post('games/{game}/packages', [GameController::class, 'storePackage'])
+            ->name('games.packages.store');
+        Route::put('games/{game}/packages/{package}', [GameController::class, 'updatePackage'])
+            ->name('games.packages.update');
+        Route::delete('games/{game}/packages/{package}', [GameController::class, 'destroyPackage'])
+            ->name('games.packages.destroy');
+        Route::post('games/{game}/packages/{package}/prizes', [GameController::class, 'storePrize'])
+            ->name('games.packages.prizes.store');
+        Route::put('games/{game}/packages/{package}/prizes/{prize}', [GameController::class, 'updatePrize'])
+            ->name('games.packages.prizes.update');
+        Route::delete('games/{game}/packages/{package}/prizes/{prize}', [GameController::class, 'destroyPrize'])
+            ->name('games.packages.prizes.destroy');
+        Route::get('game-plays', [GamePlayController::class, 'index'])
+            ->name('game-plays.index');
         });
         Route::resource('bank-accounts', BankAccountController::class);
         Route::controller(DepositController::class)->group(function () {

@@ -187,6 +187,19 @@
             });
         </script>
     @endif
+    <script>
+        window.syncWalletBalance = function (amount) {
+            const value = Number(amount);
+            if (!Number.isFinite(value)) {
+                return;
+            }
+            const compact = "$" + value.toFixed(2);
+            const header = "$ " + value.toFixed(2);
+            document.querySelectorAll("[data-live-balance]").forEach((el) => {
+                el.textContent = el.getAttribute("data-live-balance") === "header" ? header : compact;
+            });
+        };
+    </script>
 </body>
 
 </html>

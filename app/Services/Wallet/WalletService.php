@@ -124,6 +124,31 @@ class WalletService
     }
 
     /**
+     * Credit a wallet balance and return the ledger transaction.
+     */
+    public function creditWithTransaction(
+        User $user,
+        BalanceType $balanceType,
+        WalletTransactionType $transactionType,
+        float $amount,
+        ?Model $reference = null,
+        ?Bonus $bonus = null,
+        ?string $idempotencyKey = null,
+        array $meta = []
+    ): WalletTransaction {
+        return $this->creditWalletAction->executeWithTransaction(
+            wallet: $this->wallet($user),
+            balanceType: $balanceType,
+            transactionType: $transactionType,
+            amount: $amount,
+            reference: $reference,
+            bonus: $bonus,
+            idempotencyKey: $idempotencyKey,
+            meta: $meta
+        );
+    }
+
+    /**
      * Grant a bonus.
      */
     public function grantBonus(

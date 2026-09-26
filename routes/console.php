@@ -15,3 +15,11 @@ Schedule::command('lottery:draw-due')
 Schedule::command('investment:generate-daily-roi')
     ->hourly()
     ->withoutOverlapping();
+
+Schedule::command('games:tick-color-rounds')
+    ->everyMinute()
+    ->withoutOverlapping(2);
+
+Schedule::command('games:draw-limited')
+    ->everyMinute()
+    ->withoutOverlapping(2);

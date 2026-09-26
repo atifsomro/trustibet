@@ -213,33 +213,42 @@ select:-webkit-autofill {
 }
 
 @keyframes diceRoll {
-    0% {
-        transform: rotate(0deg) scale(1);
+    0%, 100% {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
     }
 
-    20% {
-        transform: rotate(90deg) scale(0.9);
-    }
-
-    40% {
-        transform: rotate(180deg) scale(1.15);
-    }
-
-    60% {
-        transform: rotate(270deg) scale(0.9);
-    }
-
-    80% {
-        transform: rotate(360deg) scale(1.15);
-    }
-
-    100% {
-        transform: rotate(540deg) scale(1);
+    50% {
+        box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.35), 0 0 18px rgba(56, 189, 248, 0.15);
     }
 }
 
 .dice-rolling {
-    animation: diceRoll 0.8s ease;
+    animation: diceRoll 0.7s ease-in-out;
+}
+
+.dice-rolling #topPips {
+    visibility: hidden;
+}
+
+.dice-stage {
+    width: min(55vw, 150px);
+    height: min(55vw, 150px);
+    border-radius: 1.1rem;
+    background: #0b1220;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (min-width: 768px) {
+    .dice-stage {
+        width: 150px;
+        height: 150px;
+        border-radius: 1.15rem;
+    }
 }
 
 /* ===========================
