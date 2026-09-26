@@ -192,6 +192,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (remaining) {
             remaining.textContent = currency + ' ' + Number(wallet.remaining || 0).toFixed(2);
         }
+
+        if (typeof syncWalletBalance === "function" && typeof wallet.remaining !== "undefined") {
+            syncWalletBalance(wallet.remaining);
+        }
     }
 
     function stopCountdown(element) {
