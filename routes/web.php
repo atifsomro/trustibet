@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\GameType;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GameController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\WalletController;
@@ -8,10 +10,6 @@ use App\Http\Controllers\User\KycController;
 use Illuminate\Support\Facades\Route;
 use App\Models\Kyc;
 use Illuminate\Support\Facades\Auth;
-
-Route::get('/', function () {
-    return view('pages.home');
-})->name('home');
 
 Route::get('/contact', function () {
     return view('pages.contact');
@@ -31,7 +29,7 @@ Route::get('/notifications', [\App\Http\Controllers\NotificationController::clas
 // Route::view('/register', 'pages.register')->name('register');
 Route::view('/about', 'pages.about')->name('about');
 Route::view('/welcome', 'pages.welcome')->name('welcome');
-Route::view('/participate', 'pages.participate')->name('participate');
+Route::get('/participate', [GameController::class, 'participate'])->name('participate');
 Route::view('/withdraw', 'pages.withdraw')->name('withdraw');
 Route::view('/deposit', 'pages.deposit')->name('deposit');
 
@@ -70,19 +68,45 @@ Route::get('/404', function () {
 Route::get('/page/{slug}', [PageController::class, 'show'])
     ->name('page.show');
 
-use App\Http\Controllers\GameController;
 use App\Http\Controllers\LotteryController;
 use App\Http\Controllers\User\InvestmentController;
+use App\Models\Game;
+use App\Services\Game\LimitedDrawService;
 
-Route::get('/game/{slug}', [GameController::class, 'show'])->middleware('auth')->name('game.show');
+Route::get('/', function (LimitedDrawService $limitedDraws) {
+    $featuredGames = Game::query()
+        ->active()
+        ->featured()
+        ->where('type', '!=', GameType::LIMITED_DRAW)
+        ->ordered()
+        ->get();
 
-use App\Http\Controllers\ScratchCardController;
+    $limitedDraw = $limitedDraws->primary();
+    $limitedDrawCard = $limitedDraw
+        ? $limitedDraws->present($limitedDraw, auth()->id())
+        : null;
+
+    return view('pages.home', compact('featuredGames', 'limitedDrawCard'));
+})->name('home');
+
+Route::get('/game/{slug}', [GameController::class, 'show'])
+    ->middleware('auth')
+    ->name('game.show');
+
 use App\Http\Controllers\User\ProfileController;
 
-Route::post('/scratch/reveal', [ScratchCardController::class, 'reveal'])
-    ->name('scratch.reveal');
-
 Route::middleware('auth')->group(function () {
+    Route::post('/games/{slug}/play', [GameController::class, 'play'])
+        ->name('games.play');
+    Route::post('/games/{slug}/session', [GameController::class, 'remember'])
+        ->name('games.session');
+    Route::post('/games/{slug}/session', [GameController::class, 'remember'])
+        ->name('games.session');
+    Route::post('/games/{slug}/bets', [GameController::class, 'placeBet'])
+        ->name('games.bets');
+    Route::get('/games/{slug}/round', [GameController::class, 'currentRound'])
+        ->name('games.round');
+
     Route::get('/investment', [InvestmentController::class, 'index'])->name('investment');
     Route::post('/investments/{package}/buy', [InvestmentController::class, 'buy'])->name('investments.buy');
     Route::get('/my-investments', [InvestmentController::class, 'mine'])->name('investments.mine');

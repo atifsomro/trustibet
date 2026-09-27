@@ -118,4 +118,74 @@ class CreditWalletAction
             return $wallet;
         });
     }
+
+    /**
+     * Credit a wallet balance and return the ledger transaction.
+     */
+    public function executeWithTransaction(
+        Wallet $wallet,
+        BalanceType $balanceType,
+        WalletTransactionType $transactionType,
+        float $amount,
+        ?Model $reference = null,
+        ?Bonus $bonus = null,
+        ?string $idempotencyKey = null,
+        array $meta = [],
+        bool $lockWallet = true
+    ): \App\Models\WalletTransaction {
+        return DB::transaction(function () use (
+            $wallet,
+            $balanceType,
+            $transactionType,
+            $amount,
+            $reference,
+            $bonus,
+            $idempotencyKey,
+            $meta,
+            $lockWallet
+        ) {
+            if ($amount <= 0) {
+                throw new \InvalidArgumentException(
+                    'Credit amount must be greater than zero.'
+                );
+            }
+
+            $query = Wallet::query();
+
+            if ($lockWallet) {
+                $query->lockForUpdate();
+            }
+
+            /** @var Wallet $wallet */
+            $wallet = $query->findOrFail($wallet->id);
+
+            if ($idempotencyKey !== null) {
+                $existingTransaction = $wallet->transactions()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->first();
+
+                if ($existingTransaction) {
+                    return $existingTransaction;
+                }
+            }
+
+            $balanceColumn = $balanceType->column();
+            $newBalance = $wallet->{$balanceColumn} + $amount;
+            $wallet->{$balanceColumn} = $newBalance;
+            $wallet->version++;
+            $wallet->save();
+
+            return $this->recordTransactionAction->execute(
+                wallet: $wallet,
+                balanceType: $balanceType,
+                transactionType: $transactionType,
+                amount: $amount,
+                balanceAfter: $newBalance,
+                reference: $reference,
+                bonus: $bonus,
+                idempotencyKey: $idempotencyKey,
+                meta: $meta
+            );
+        });
+    }
 }

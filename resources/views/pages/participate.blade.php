@@ -8,7 +8,7 @@
                     {{-- Prize Image --}}
                     <div
                         class="p-8 lg:p-12 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-brand-border">
-                        <img src="{{ asset('images/draw/prize.png') }}" alt="Prize" class="w-full max-w-md">
+                        <img src="{{ $draw['prize_image'] }}" alt="{{ $draw['prize_name'] }}" class="w-full max-w-md">
                         <h3 class="p-2 bg-green-400 text-brand-light rounded">See Prize</h3>
                         <div class="rounded-3xl border border-brand-border bg-brand-surface">
                             <div class="flex flex-col">
@@ -21,7 +21,7 @@
                                 <p class="mt-2">
                                     Don't miss your chance to win the
                                     <span class="text-brand-primary font-semibold">
-                                        Honda CG125
+                                        {{ $draw['prize_name'] }}
                                     </span>.
                                     Join now before the countdown reaches zero.
                                 </p>
@@ -67,44 +67,44 @@
                     {{-- Details --}}
                     <div class="p-8 lg:p-12">
                         <small class="uppercase tracking-[3px] text-brand-primary">
-                            One Rupee Lucky Draw
+                            {{ $draw['game']->badge ?: 'Limited Lucky Draw' }}
                         </small>
                         <h2 class="mt-3">
-                            Suzuki Bic
+                            {{ $draw['prize_name'] }}
                         </h2>
                         <p class="mt-4">
-                            Pay only <strong class="text-white">Rs.1</strong>
+                            Pay only <strong class="text-white">{{ $draw['fee_label'] }}</strong>
                             and get a chance to win this amazing prize.
                         </p>
                         <div class="mt-8 space-y-5">
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Prize Value</span>
                                 <strong class="text-brand-primary">
-                                    Rs. 280,000
+                                    {{ $draw['currency'] }} {{ number_format($draw['prize_value']) }}
                                 </strong>
                             </div>
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Entry Fee</span>
                                 <strong>
-                                    Rs. 1
+                                    {{ $draw['fee_label'] }}
                                 </strong>
                             </div>
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Participants</span>
                                 <strong>
-                                    28,451
+                                    {{ number_format($draw['entries']) }}
                                 </strong>
                             </div>
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Draw Date</span>
                                 <strong>
-                                    30 July 2026
+                                    {{ $draw['ends_at'] ? $draw['ends_at']->format('d M Y, h:i A') : 'Not scheduled' }}
                                 </strong>
                             </div>
                             <div class="flex justify-between">
                                 <span>Status</span>
-                                <span class="text-green-400">
-                                    ● Live
+                                <span class="{{ $draw['is_open'] ? 'text-green-400' : 'text-orange-400' }}">
+                                    {{ $draw['is_open'] ? '● Live' : '● Closed' }}
                                 </span>
                             </div>
                         </div>
@@ -118,10 +118,26 @@
                         </label>
                         <small id="termsError" class="block mt-2 text-red-500">
                         </small>
-                        <button id="participateBtn" class="btn-primary w-full justify-center mt-8">
-                            <i class="fa-solid fa-ticket mr-2"></i>
-                            Pay Rs.1 & Join Draw
-                        </button>
+                        @if ($draw['already_joined'])
+                            <button type="button" class="btn-primary w-full justify-center mt-8" disabled>
+                                <i class="fa-solid fa-circle-check mr-2"></i>
+                                You're in this draw
+                            </button>
+                        @elseif (! $draw['is_open'] || ! $draw['package'])
+                            <button type="button" class="btn-primary w-full justify-center mt-8" disabled>
+                                Draw closed
+                            </button>
+                        @elseif (! $user)
+                            <a href="{{ route('auth.login') }}" class="btn-primary w-full justify-center mt-8">
+                                <i class="fa-solid fa-ticket mr-2"></i>
+                                Login to join
+                            </a>
+                        @else
+                            <button id="participateBtn" class="btn-primary w-full justify-center mt-8">
+                                <i class="fa-solid fa-ticket mr-2"></i>
+                                Pay {{ $draw['fee_label'] }} & Join Draw
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -144,18 +160,18 @@
             <div class="mt-8 space-y-4">
                 <div class="flex justify-between">
                     <span>Prize</span>
-                    <strong>Honda CG125</strong>
+                    <strong>{{ $draw['prize_name'] }}</strong>
                 </div>
                 <div class="flex justify-between">
                     <span>Entry Fee</span>
                     <strong class="text-brand-primary">
-                        Rs.1
+                        {{ $draw['fee_label'] }}
                     </strong>
                 </div>
                 <div class="flex justify-between">
                     <span>Wallet Balance</span>
-                    <strong>
-                        Rs.500
+                    <strong id="walletBalance">
+                        ${{ number_format((float) $balance, 2) }}
                     </strong>
                 </div>
             </div>
@@ -189,27 +205,35 @@
                         <div class="mt-8 flex justify-between">
                             <span class="font-medium">
                                 <span id="joinedPlayers" class="text-green-400 font-bold">
-                                    28,451
+                                    {{ number_format($draw['entries']) }}
                                 </span>
                                 Players Joined
                             </span>
                             <span class="font-semibold">
-                                57%
+                                {{ $draw['percent'] }}%
                             </span>
                         </div>
                         {{-- Progress Bar --}}
                         <div class="mt-4 h-4 overflow-hidden rounded-full bg-brand-dark">
                             <div id="entryProgress"
-                                class="h-full rounded-full bg-brand-primary transition-all duration-1000" style="width:57%">
+                                class="h-full rounded-full bg-brand-primary transition-all duration-1000"
+                                style="width:{{ $draw['percent'] }}%">
                             </div>
                         </div>
                         <div class="mt-4 flex items-center justify-between">
                             <span>
-                                28,451 / 50,000 Entries
+                                {{ number_format($draw['entries']) }}
+                                @if ($draw['max_entries'] > 0)
+                                    / {{ number_format($draw['max_entries']) }} Entries
+                                @else
+                                    Entries
+                                @endif
                             </span>
-                            <span class="text-orange-400">
-                                🔥 21,549 Remaining
-                            </span>
+                            @if ($draw['remaining'] !== null)
+                                <span class="text-orange-400">
+                                    🔥 {{ number_format($draw['remaining']) }} Remaining
+                                </span>
+                            @endif
                         </div>
                         <div
                             class="mt-5 inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2">
@@ -230,7 +254,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
                                 <i class="fa-solid fa-users text-3xl text-brand-primary"></i>
                                 <h3 class="mt-4">
-                                    28,451
+                                    {{ number_format($draw['entries']) }}
                                 </h3>
                                 <p class="mt-2 text-sm">
                                     Participants
@@ -239,7 +263,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
                                 <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
                                 <h3 class="mt-4">
-                                    50,000
+                                    {{ $draw['max_entries'] > 0 ? number_format($draw['max_entries']) : 'Open' }}
                                 </h3>
                                 <p class="mt-2 text-sm">
                                     Total Entries
@@ -248,7 +272,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
                                 <i class="fa-solid fa-trophy text-3xl text-brand-primary"></i>
                                 <h3 class="mt-4">
-                                    1
+                                    {{ $draw['winner_count'] }}
                                 </h3>
                                 <p class="mt-2 text-sm">
                                     Lucky Winner
@@ -257,7 +281,7 @@
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
                                 <i class="fa-solid fa-coins text-3xl text-brand-primary"></i>
                                 <h3 class="mt-4">
-                                    Rs.1
+                                    {{ $draw['fee_label'] }}
                                 </h3>
                                 <p class="mt-2 text-sm">
                                     Entry Fee
@@ -272,52 +296,95 @@
 @endsection
 @push('scripts')
     <script>
-        // ===== PARTICIPATE PAGE =====
         document.addEventListener("DOMContentLoaded", () => {
-            try {
-                const checkbox = document.getElementById("agreeTerms");
-                const error = document.getElementById("termsError");
-                const btn = document.getElementById("participateBtn");
-                const modal = document.getElementById("confirmModal");
-                const cancel = document.getElementById("cancelParticipation");
-                const confirm = document.getElementById("confirmParticipation");
-                if (!btn) return;
-                btn.addEventListener("click", () => {
-                    if (!checkbox.checked) {
-                        error.textContent = "Please accept Terms & Conditions.";
-                        return;
+            const endAt = @json(optional($draw['ends_at'])->toIso8601String());
+            const daysEl = document.getElementById("days");
+            const hoursEl = document.getElementById("hours");
+            const minutesEl = document.getElementById("minutes");
+            const secondsEl = document.getElementById("seconds");
 
-                    }
-                    error.textContent = "";
-                    modal.classList.remove("hidden");
-                    modal.classList.add("flex");
-                    document.body.classList.add("overflow-hidden");
-                });
-
-                function closeModal() {
-                    modal.classList.remove("flex");
-                    modal.classList.add("hidden");
-                    document.body.classList.remove("overflow-hidden");
-                }
-
-                cancel?.addEventListener("click", closeModal);
-                modal?.addEventListener("click", (e) => {
-                    if (e.target === modal) {
-                        closeModal();
-                    }
-                });
-                document.addEventListener("keydown", (e) => {
-                    if (e.key === "Escape") {
-                        closeModal();
-                    }
-                });
-                confirm?.addEventListener("click", () => {
-                    closeModal();
-                    // Backend payment yahan call hogi.
-                });
-            } catch (err) {
-                console.error(err);
+            function pad(value) {
+                return String(value).padStart(2, "0");
             }
+
+            function tickCountdown() {
+                if (!endAt || !daysEl) return;
+                const diff = Math.max(0, new Date(endAt).getTime() - Date.now());
+                const total = Math.floor(diff / 1000);
+                daysEl.textContent = pad(Math.floor(total / 86400));
+                hoursEl.textContent = pad(Math.floor((total % 86400) / 3600));
+                minutesEl.textContent = pad(Math.floor((total % 3600) / 60));
+                secondsEl.textContent = pad(total % 60);
+            }
+
+            tickCountdown();
+            setInterval(tickCountdown, 1000);
+
+            const checkbox = document.getElementById("agreeTerms");
+            const error = document.getElementById("termsError");
+            const btn = document.getElementById("participateBtn");
+            const modal = document.getElementById("confirmModal");
+            const cancel = document.getElementById("cancelParticipation");
+            const confirm = document.getElementById("confirmParticipation");
+            if (!btn || !modal) return;
+
+            btn.addEventListener("click", () => {
+                if (!checkbox.checked) {
+                    error.textContent = "Please accept Terms & Conditions.";
+                    return;
+                }
+                error.textContent = "";
+                modal.classList.remove("hidden");
+                modal.classList.add("flex");
+                document.body.classList.add("overflow-hidden");
+            });
+
+            function closeModal() {
+                modal.classList.remove("flex");
+                modal.classList.add("hidden");
+                document.body.classList.remove("overflow-hidden");
+            }
+
+            cancel?.addEventListener("click", closeModal);
+            modal.addEventListener("click", (e) => {
+                if (e.target === modal) closeModal();
+            });
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") closeModal();
+            });
+
+            confirm?.addEventListener("click", async () => {
+                confirm.disabled = true;
+                try {
+                    const response = await fetch(@json(route('games.play', $draw['game']->slug)), {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({
+                            package_id: @json($draw['package']?->id),
+                            idempotency_key: crypto.randomUUID(),
+                        }),
+                    });
+                    const data = await response.json();
+                    if (!response.ok || data.success === false) {
+                        const message = data.message
+                            || Object.values(data.errors || {})[0]?.[0]
+                            || "Unable to join this draw.";
+                        error.textContent = message;
+                        closeModal();
+                        return;
+                    }
+                    window.location.reload();
+                } catch (err) {
+                    error.textContent = "Unable to join this draw.";
+                    closeModal();
+                } finally {
+                    confirm.disabled = false;
+                }
+            });
         });
     </script>
 @endpush

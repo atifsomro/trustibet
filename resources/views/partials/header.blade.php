@@ -103,7 +103,7 @@
                                 Current Balance
                             </span>
 
-                            <span class="block text-[10px] font-bold text-white">
+                            <span class="block text-[10px] font-bold text-white" data-live-balance="header">
                                 $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
                             </span>
                         </span>
@@ -154,7 +154,7 @@
                     <span class="block text-sm font-medium">
                         <i class="fa-solid fa-hand-holding-dollar"></i> Current Balance
                     </span>
-                    <span class="block text-[12px] font-bold text-white">
+                    <span class="block text-[12px] font-bold text-white" data-live-balance="header">
                         $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
                     </span>
                 </a>

@@ -179,6 +179,12 @@
                         <li class="{{ $active == 'user-investments' ? 'active' : '' }}">
                             <a href="{{ route('admin.user-investments.index') }}">Purchased Packages</a>
                         </li>
+                        <li class="{{ $active == 'games' ? 'active' : '' }}">
+                            <a href="{{ route('admin.games.index') }}">Games</a>
+                        </li>
+                        <li class="{{ $active == 'game-plays' ? 'active' : '' }}">
+                            <a href="{{ route('admin.game-plays.index') }}">Game Plays</a>
+                        </li>
                         <li class="{{ $active == 'pages' ? 'active' : '' }}">
                             <a href="{{ route('admin.pages.index') }}">CMS Pages</a>
                         </li>
