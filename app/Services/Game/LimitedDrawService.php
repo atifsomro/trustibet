@@ -106,7 +106,7 @@ class LimitedDrawService
             ? (int) min(100, round(($entries / $maxEntries) * 100))
             : 0;
         $fee = $package ? (float) $package->fee : 0;
-        $currency = (string) $game->configValue('currency', 'Rs.');
+        $currency = (string) $game->configValue('currency', '$');
         $open = $round
             && $round->status === GameRoundStatus::BETTING
             && $round->ends_at
@@ -132,7 +132,7 @@ class LimitedDrawService
             'headline' => (string) ($game->configValue('headline') ?: $game->title),
             'currency' => $currency,
             'fee' => $fee,
-            'fee_label' => trim($currency.' '. $this->money($fee)),
+            'fee_label' => $this->moneyLabel($currency, $fee),
             'entries' => $entries,
             'max_entries' => $maxEntries,
             'remaining' => $remaining,
@@ -181,6 +181,17 @@ class LimitedDrawService
         return str_ends_with($formatted, '.00')
             ? number_format($amount, 0)
             : $formatted;
+    }
+
+    public function moneyLabel(string $currency, float $amount): string
+    {
+        $formatted = $this->money($amount);
+
+        if (trim($currency) === '$') {
+            return '$'.$formatted;
+        }
+
+        return trim($currency.' '.$formatted);
     }
 
     protected function settleDue(Game $game): void

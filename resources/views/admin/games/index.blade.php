@@ -26,7 +26,7 @@
                             <option value="">All Types</option>
                             @foreach ($types as $type)
                                 <option value="{{ $type->value }}" @selected(request('type') === $type->value)>
-                                    {{ $type->label() }}
+                                    {{ $type->dropdownLabel() }}
                                 </option>
                             @endforeach
                         </select>
@@ -59,7 +59,7 @@
                                 <th>Plays</th>
                                 <th>Featured</th>
                                 <th>Status</th>
-                                <th width="180">Actions</th>
+                                <th width="100">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -88,13 +88,6 @@
                                     <td>
                                         <a href="{{ route('admin.games.edit', $game) }}"
                                             class="btn btn-sm btn-info text-white">Edit</a>
-                                        <form action="{{ route('admin.games.destroy', $game) }}" method="POST"
-                                            class="d-inline"
-                                            onsubmit="return confirm('Delete this game and related packages/prizes?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="btn btn-sm btn-danger">Delete</button>
-                                        </form>
                                     </td>
                                 </tr>
                             @empty

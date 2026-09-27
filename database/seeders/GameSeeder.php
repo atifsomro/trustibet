@@ -8,6 +8,7 @@ use App\Enums\GameType;
 use App\Models\Game;
 use App\Models\GamePackage;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 class GameSeeder extends Seeder
 {
@@ -26,9 +27,8 @@ class GameSeeder extends Seeder
             ['slug' => 'limited-draw'],
             [
                 'type' => GameType::LIMITED_DRAW,
-                'title' => 'One Rupee Lucky Draw',
-                'description' => 'Enter our exclusive Lucky Draw for only Rs.1 and get a chance to win exciting prizes. Every ticket gives you a fair opportunity to become the next lucky winner.',
-                'image_path' => 'images/draw/draw.png',
+                'title' => '$1 Lucky Draw',
+                'description' => 'Enter our exclusive Lucky Draw for only $1 and get a chance to win exciting prizes. Every ticket gives you a fair opportunity to become the next lucky winner.',
                 'badge' => 'Limited Lucky Draw',
                 'rating' => 4.9,
                 'is_active' => true,
@@ -39,7 +39,7 @@ class GameSeeder extends Seeder
                     'prize_name' => 'Honda CG125',
                     'prize_value' => 280000,
                     'prize_image' => 'images/draw/prize.png',
-                    'currency' => 'Rs.',
+                    'currency' => '$',
                     'draw_at' => '2026-10-30 18:00:00',
                     'max_entries' => 50000,
                     'winner_count' => 1,
@@ -48,9 +48,12 @@ class GameSeeder extends Seeder
             ]
         );
 
+        $this->attachImage($game, 'images/draw/draw.png');
+        $this->attachPrizeImage($game, 'images/draw/prize.png');
+
         $this->replacePackages($game, [
             [
-                'name' => 'Rs.1 Entry',
+                'name' => '$1 Entry',
                 'fee' => 1,
                 'sort_order' => 1,
                 'prizes' => [
@@ -70,7 +73,6 @@ class GameSeeder extends Seeder
                 'type' => GameType::SCRATCH_CARD,
                 'title' => 'Scratch Card',
                 'description' => 'Scratch cards instantly and reveal amazing rewards.',
-                'image_path' => 'images/games/scratch.png',
                 'badge' => 'Popular',
                 'rating' => 4.9,
                 'is_active' => true,
@@ -79,6 +81,8 @@ class GameSeeder extends Seeder
                 'config' => [],
             ]
         );
+
+        $this->attachImage($game, 'images/games/scratch.png');
 
         $this->replacePackages($game, [
             [
@@ -129,7 +133,6 @@ class GameSeeder extends Seeder
                 'type' => GameType::DICE,
                 'title' => 'Dice Game',
                 'description' => 'Roll the dice and predict the winning number.',
-                'image_path' => 'images/games/dice.png',
                 'badge' => 'Trending',
                 'rating' => 4.8,
                 'is_active' => true,
@@ -138,6 +141,8 @@ class GameSeeder extends Seeder
                 'config' => ['faces' => 6],
             ]
         );
+
+        $this->attachImage($game, 'images/games/dice.png');
 
         $this->replacePackages($game, [
             [
@@ -187,7 +192,6 @@ class GameSeeder extends Seeder
                 'type' => GameType::WHEEL,
                 'title' => 'Lucky Wheel',
                 'description' => 'Spin the wheel and unlock exciting lucky prizes.',
-                'image_path' => 'images/games/wheel.png',
                 'badge' => 'Hot',
                 'rating' => 4.9,
                 'is_active' => true,
@@ -196,6 +200,8 @@ class GameSeeder extends Seeder
                 'config' => ['free_spins_daily' => 2],
             ]
         );
+
+        $this->attachImage($game, 'images/games/wheel.png');
 
         $segments = [
             [
@@ -266,7 +272,6 @@ class GameSeeder extends Seeder
                 'type' => GameType::COLOR_TRADING,
                 'title' => 'Color Trading',
                 'description' => 'Predict the winning color and earn big rewards.',
-                'image_path' => 'images/games/trading.png',
                 'badge' => 'New',
                 'rating' => 4.8,
                 'is_active' => true,
@@ -279,6 +284,8 @@ class GameSeeder extends Seeder
                 ],
             ]
         );
+
+        $this->attachImage($game, 'images/games/trading.png');
 
         $colorWeights = collect($colors)->map(fn ($color, $i) => [
             'label' => ucfirst($color),
@@ -342,22 +349,43 @@ class GameSeeder extends Seeder
      */
     protected function replacePackages(Game $game, array $packages): void
     {
+        if ($game->plays()->exists()) {
+            $this->ensurePackages($game, $packages);
+            $this->command?->warn("{$game->title}: kept existing packages because players have already joined.");
+
+            return;
+        }
+
         $game->packages()->each(function (GamePackage $package) {
             $package->prizes()->delete();
             $package->delete();
         });
 
+        $this->ensurePackages($game, $packages);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $packages
+     */
+    protected function ensurePackages(Game $game, array $packages): void
+    {
         foreach ($packages as $packageData) {
             $prizes = $packageData['prizes'] ?? [];
             unset($packageData['prizes']);
 
-            $package = $game->packages()->create([
-                'name' => $packageData['name'],
-                'fee' => $packageData['fee'],
-                'meta' => $packageData['meta'] ?? [],
-                'is_active' => true,
-                'sort_order' => $packageData['sort_order'] ?? 0,
-            ]);
+            $package = $game->packages()->firstOrCreate(
+                ['name' => $packageData['name']],
+                [
+                    'fee' => $packageData['fee'],
+                    'meta' => $packageData['meta'] ?? [],
+                    'is_active' => true,
+                    'sort_order' => $packageData['sort_order'] ?? 0,
+                ]
+            );
+
+            if ($package->prizes()->exists()) {
+                continue;
+            }
 
             foreach ($prizes as $index => $prize) {
                 $package->prizes()->create([
@@ -370,5 +398,62 @@ class GameSeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    protected function attachImage(Game $game, string $relativePath): void
+    {
+        $this->assertPublicImage($relativePath);
+
+        if ($this->imageFileExists($game->image_path)) {
+            $this->command?->info("{$game->title}: image ready ({$game->image_path})");
+
+            return;
+        }
+
+        $game->image_path = $relativePath;
+        $game->save();
+        $this->command?->info("{$game->title}: image set to {$relativePath}");
+    }
+
+    protected function attachPrizeImage(Game $game, string $relativePath): void
+    {
+        $this->assertPublicImage($relativePath);
+
+        $current = (string) $game->configValue('prize_image', '');
+
+        if ($this->imageFileExists($current)) {
+            return;
+        }
+
+        $config = $game->config ?? [];
+        $config['prize_image'] = $relativePath;
+        $game->config = $config;
+        $game->save();
+    }
+
+    protected function assertPublicImage(string $relativePath): void
+    {
+        if (! is_file(public_path($relativePath))) {
+            throw new RuntimeException(
+                "Missing image public/{$relativePath}. Deploy the image files with the app, then run: php artisan db:seed --class=GameSeeder"
+            );
+        }
+    }
+
+    protected function imageFileExists(?string $path): bool
+    {
+        if ($path === null || $path === '') {
+            return false;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return true;
+        }
+
+        if (str_starts_with($path, 'images/')) {
+            return is_file(public_path($path));
+        }
+
+        return is_file(storage_path('app/public/'.ltrim($path, '/')));
     }
 }

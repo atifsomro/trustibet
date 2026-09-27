@@ -72,7 +72,7 @@ Route::prefix('admin')
         | Games Management
         |--------------------------------------------------------------------------
         */
-        Route::resource('games', GameController::class)->except(['show']);
+        Route::resource('games', GameController::class)->except(['show', 'destroy']);
         Route::post('games/{game}/packages', [GameController::class, 'storePackage'])
             ->name('games.packages.store');
         Route::put('games/{game}/packages/{package}', [GameController::class, 'updatePackage'])

@@ -28,6 +28,11 @@ enum GameType: string
         };
     }
 
+    public function dropdownLabel(): string
+    {
+        return $this === self::LIMITED_DRAW ? '1$ game' : $this->label();
+    }
+
     public function viewSlug(): string
     {
         return match ($this) {
