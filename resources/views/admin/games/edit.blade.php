@@ -110,31 +110,39 @@
 
                         <hr>
                         <h6>Prizes / Odds for {{ $package->name }}</h6>
+                        @php
+                            $showColorAndSegment = ! in_array($game->type, [
+                                \App\Enums\GameType::SCRATCH_CARD,
+                                \App\Enums\GameType::DICE,
+                            ], true);
+                        @endphp
                         <form method="POST"
                             action="{{ route('admin.games.packages.prizes.store', [$game, $package]) }}"
                             class="row g-2 mb-3">
                             @csrf
-                            <div class="col-md-3">
+                            <div class="{{ $showColorAndSegment ? 'col-md-3' : 'col-md-4' }}">
                                 <input type="text" name="label" class="form-control" placeholder="Label"
                                     required>
                             </div>
-                            <div class="col-md-2">
+                            <div class="{{ $showColorAndSegment ? 'col-md-2' : 'col-md-3' }}">
                                 <input type="number" step="0.01" min="0" name="prize_amount"
                                     class="form-control" placeholder="Amount" required>
                             </div>
-                            <div class="col-md-2">
+                            <div class="{{ $showColorAndSegment ? 'col-md-2' : 'col-md-3' }}">
                                 <input type="number" min="0" name="weight" class="form-control"
                                     placeholder="Weight" value="1" required>
                             </div>
-                            <div class="col-md-2">
-                                <input type="text" name="meta[color]" class="form-control"
-                                    placeholder="Color (optional)">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" min="0" name="meta[segment]" class="form-control"
-                                    placeholder="Segment #">
-                            </div>
-                            <div class="col-md-1">
+                            @if ($showColorAndSegment)
+                                <div class="col-md-2">
+                                    <input type="text" name="meta[color]" class="form-control"
+                                        placeholder="Color (optional)">
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" min="0" name="meta[segment]" class="form-control"
+                                        placeholder="Segment #">
+                                </div>
+                            @endif
+                            <div class="{{ $showColorAndSegment ? 'col-md-1' : 'col-md-2' }}">
                                 <button class="btn btn-primary w-100">Add</button>
                             </div>
                         </form>
@@ -146,8 +154,10 @@
                                         <th>Label</th>
                                         <th>Amount</th>
                                         <th>Weight</th>
-                                        <th>Color</th>
-                                        <th>Segment</th>
+                                        @if ($showColorAndSegment)
+                                            <th>Color</th>
+                                            <th>Segment</th>
+                                        @endif
                                         <th>Active</th>
                                         <th></th>
                                     </tr>
@@ -172,19 +182,21 @@
                                                     <input type="number" min="0" name="weight"
                                                         class="form-control form-control-sm"
                                                         value="{{ $prize->weight }}" required>
-                                                </td>
-                                                <td>
-                                                    <input type="text" name="meta[color]"
-                                                        class="form-control form-control-sm"
-                                                        value="{{ $prize->metaValue('color') }}">
-                                                </td>
-                                                <td>
-                                                    <input type="number" min="0" name="meta[segment]"
-                                                        class="form-control form-control-sm"
-                                                        value="{{ $prize->metaValue('segment') }}">
                                                     <input type="hidden" name="sort_order"
                                                         value="{{ $prize->sort_order }}">
                                                 </td>
+                                                @if ($showColorAndSegment)
+                                                    <td>
+                                                        <input type="text" name="meta[color]"
+                                                            class="form-control form-control-sm"
+                                                            value="{{ $prize->metaValue('color') }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" min="0" name="meta[segment]"
+                                                            class="form-control form-control-sm"
+                                                            value="{{ $prize->metaValue('segment') }}">
+                                                    </td>
+                                                @endif
                                                 <td>
                                                     <input type="checkbox" name="is_active" value="1"
                                                         {{ $prize->is_active ? 'checked' : '' }}>
@@ -204,7 +216,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center text-muted">No prizes yet.</td>
+                                            <td colspan="{{ $showColorAndSegment ? 7 : 5 }}" class="text-center text-muted">No prizes yet.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

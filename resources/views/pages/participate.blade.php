@@ -80,7 +80,7 @@
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Prize Value</span>
                                 <strong class="text-brand-primary">
-                                    {{ $draw['currency'] }} {{ number_format($draw['prize_value']) }}
+                                    {{ app(\App\Services\Game\LimitedDrawService::class)->moneyLabel($draw['currency'], (float) $draw['prize_value']) }}
                                 </strong>
                             </div>
                             <div class="flex justify-between border-b border-brand-border pb-4">

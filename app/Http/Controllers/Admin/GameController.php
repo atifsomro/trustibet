@@ -50,6 +50,7 @@ class GameController extends Controller
     {
         return view('admin.games.create', [
             'types' => GameType::cases(),
+            'existingTypes' => $this->existingTypeValues(),
             'active' => 'games',
         ]);
     }
@@ -125,21 +126,6 @@ class GameController extends Controller
         }
     }
 
-    public function destroy(Game $game)
-    {
-        try {
-            $game->delete();
-
-            return redirect()
-                ->route('admin.games.index')
-                ->with('success', 'Game deleted successfully.');
-        } catch (Throwable $e) {
-            report($e);
-
-            return back()->with('error', 'Unable to delete game.');
-        }
-    }
-
     public function storePackage(Request $request, Game $game)
     {
         $validated = $request->validate([
@@ -210,13 +196,14 @@ class GameController extends Controller
             'meta' => ['nullable', 'array'],
             'meta.color' => ['nullable', 'string', 'max:40'],
             'meta.segment' => ['nullable', 'integer', 'min:0'],
+            'meta.free_spins' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $package->prizes()->create([
             'label' => $validated['label'],
             'prize_amount' => $validated['prize_amount'],
             'weight' => $validated['weight'],
-            'meta' => $this->cleanMeta($validated['meta'] ?? []),
+            'meta' => $this->prizeMeta($game, $validated['meta'] ?? []),
             'is_active' => $request->boolean('is_active', true),
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
         ]);
@@ -237,13 +224,14 @@ class GameController extends Controller
             'meta' => ['nullable', 'array'],
             'meta.color' => ['nullable', 'string', 'max:40'],
             'meta.segment' => ['nullable', 'integer', 'min:0'],
+            'meta.free_spins' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $prize->update([
             'label' => $validated['label'],
             'prize_amount' => $validated['prize_amount'],
             'weight' => $validated['weight'],
-            'meta' => $this->cleanMeta($validated['meta'] ?? []),
+            'meta' => $this->prizeMeta($game, $validated['meta'] ?? []),
             'is_active' => $request->boolean('is_active'),
             'sort_order' => (int) ($validated['sort_order'] ?? 0),
         ]);
@@ -262,8 +250,14 @@ class GameController extends Controller
 
     protected function validateGame(Request $request, ?Game $game = null): array
     {
+        $typeRules = ['required', Rule::in(GameType::values())];
+
+        if ($game === null) {
+            $typeRules[] = Rule::unique('games', 'type');
+        }
+
         return $request->validate([
-            'type' => ['required', Rule::in(GameType::values())],
+            'type' => $typeRules,
             'slug' => [
                 'nullable',
                 'string',
@@ -273,8 +267,8 @@ class GameController extends Controller
             ],
             'title' => ['required', 'string', 'max:160'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'image' => ['nullable', 'image', 'max:4096'],
-            'prize_image' => ['nullable', 'image', 'max:4096'],
+            'image' => ['nullable', 'image', 'max:32768'],
+            'prize_image' => ['nullable', 'image', 'max:32768'],
             'badge' => ['nullable', 'string', 'max:40'],
             'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
@@ -293,7 +287,19 @@ class GameController extends Controller
             'config.max_entries' => ['nullable', 'integer', 'min:0'],
             'config.winner_count' => ['nullable', 'integer', 'min:1'],
             'config.max_per_user' => ['nullable', 'integer', 'min:1'],
+        ], [
+            'type.unique' => 'This game already exists.',
         ]);
+    }
+
+    protected function existingTypeValues(): array
+    {
+        return Game::query()
+            ->pluck('type')
+            ->map(fn ($type) => $type instanceof GameType ? $type->value : (string) $type)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     protected function normalizeConfig(GameType $type, array $config): array
@@ -332,7 +338,7 @@ class GameController extends Controller
             $normalized['prize_name'] = trim((string) ($config['prize_name'] ?? ''));
             $normalized['prize_value'] = (float) ($config['prize_value'] ?? 0);
             $normalized['prize_image'] = trim((string) ($config['prize_image'] ?? ''));
-            $normalized['currency'] = trim((string) ($config['currency'] ?? 'Rs.')) ?: 'Rs.';
+            $normalized['currency'] = trim((string) ($config['currency'] ?? '$')) ?: '$';
             $normalized['draw_at'] = ! empty($config['draw_at'])
                 ? \Illuminate\Support\Carbon::parse($config['draw_at'])->toDateTimeString()
                 : null;
@@ -372,6 +378,17 @@ class GameController extends Controller
         }
 
         app(LimitedDrawService::class)->sync($game);
+    }
+
+    protected function prizeMeta(Game $game, array $meta): array
+    {
+        $meta = $this->cleanMeta($meta);
+
+        if (in_array($game->type, [GameType::SCRATCH_CARD, GameType::DICE], true)) {
+            unset($meta['color'], $meta['segment']);
+        }
+
+        return $meta;
     }
 
     protected function cleanMeta(array $meta): array
