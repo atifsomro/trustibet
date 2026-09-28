@@ -5,28 +5,28 @@
             <div class="flex flex-col text-center items-center justify-between">
                 <i class="fa-solid fa-users text-xl sm:text-4xl text-brand-primary"></i>
                 <p class="opacity-70 my-2">Total Referrals</p>
-                <h3 class="">25</h3>
+                <h3>{{ $referralStats['total'] ?? 0 }}</h3>
             </div>
         </div>
         <div class="rounded-3xl border border-brand-border bg-brand-surface p-2">
             <div class="flex flex-col text-center items-center justify-between">
                 <i class="fa-solid fa-sack-dollar text-xl sm:text-4xl text-green-500"></i>
                 <p class="opacity-70 my-2">Total Earnings</p>
-                <h3 class=" text-green-500">Rs.8,500</h3>
+                <h3 class="text-green-500">${{ number_format((float) ($referralStats['total_earnings'] ?? 0), 2) }}</h3>
             </div>
         </div>
         <div class="rounded-3xl border border-brand-border bg-brand-surface p-2">
             <div class="flex flex-col text-center items-center justify-between">
                 <i class="fa-solid fa-hourglass-half text-xl sm:text-4xl text-yellow-500"></i>
                 <p class="opacity-70 my-2">Pending Bonus</p>
-                <h3 class=" text-yellow-500">Rs.500</h3>
+                <h3 class="text-yellow-500">${{ number_format((float) ($referralStats['pending_bonus'] ?? 0), 2) }}</h3>
             </div>
         </div>
         <div class="rounded-3xl border border-brand-border bg-brand-surface p-2 sm:p-6">
             <div class="flex flex-col text-center items-center justify-between">
                 <i class="fa-solid fa-user-check text-xl sm:text-4xl text-blue-500"></i>
                 <p class="opacity-70 my-2">Active Referrals</p>
-                <h3 class="">12</h3>
+                <h3>{{ $referralStats['active'] ?? 0 }}</h3>
             </div>
         </div>
     </div>
@@ -41,8 +41,9 @@
                     Refer Friends & Earn Rewards
                 </h3>
                 <p class="mt-4 opacity-70">
-                    Invite your friends to TrustiBet. Once they register, verify their account, and make their first
-                    deposit, you'll automatically receive your referral bonus.
+                    Invite your friends to TrustiBet. Once they register with your link and make their first
+                    deposit, you earn {{ number_format((float) ($bonusPercent ?? 5), 0) }}% as a referral bonus.
+                    Bonus unlocks after you make at least one deposit, and can only be used to invest or buy lottery tickets (not withdrawable).
                 </p>
             </div>
         </div>
@@ -53,20 +54,20 @@
             <h4>Your Referral Code</h4>
             <div class="mt-5 flex items-center justify-between rounded-2xl bg-brand-dark p-2 sm:p-5">
                 <h3 id="referralCodeText" class="tracking-widest text-brand-primary">
-                    TRUSTI4589
+                    {{ auth()->user()->referral_code }}
                 </h3>
-                <button id="copyReferralCode" class="btn-primary ext-[10px] sm:text-sm">
+                <button type="button" id="copyReferralCode" class="btn-primary text-[10px] sm:text-sm">
                     Copy
                 </button>
             </div>
         </div>
         <div class="rounded-3xl border border-brand-border bg-brand-surface p-4 md:p-8">
             <h4>Your Referral Link</h4>
-            <div class="mt-5 flex items-center justify-between rounded-2xl bg-brand-dark p-3 sm:p-5">
-                <p id="referralLinkText" class="truncate text-[10px]">
-                    https://trustibet.com/TRUSTI4589
+            <div class="mt-5 flex items-center justify-between rounded-2xl bg-brand-dark p-3 sm:p-5 gap-2">
+                <p id="referralLinkText" class="truncate text-[10px] sm:text-sm">
+                    {{ $referralLink ?? '' }}
                 </p>
-                <button id="copyReferralLink" class="btn-primary text-[10px] sm:text-sm">
+                <button type="button" id="copyReferralLink" class="btn-primary text-[10px] sm:text-sm shrink-0">
                     Copy
                 </button>
             </div>
@@ -125,39 +126,55 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr class="border-b border-brand-border">
-                        <td class="py-3 sm:py-5">*******</td>
-                        <td class="py-3 sm:py-5">12 Jul 2026</td>
-                        <td class="py-3 sm:py-5">Yes</td>
-                        <td class="py-3 sm:py-5 text-green-500">Rs.100</td>
-                        <td class="py-3 sm:py-5">
-                            <span class="rounded-full bg-green-500/20 px-3 py-1 text-green-500">
-                                Paid
-                            </span>
-                        </td>
-                    </tr>
-                    <tr class="border-b border-brand-border">
-                        <td class="py-3 sm:py-5">*******</< /td>
-                        <td class="py-3 sm:py-5">10 Jul 2026</td>
-                        <td class="py-3 sm:py-5">No</td>
-                        <td class="py-3 sm:py-5">--</td>
-                        <td class="py-3 sm:py-5">
-                            <span class="rounded-full bg-yellow-500/20 px-3 py-1 text-yellow-500">
-                                Pending
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="py-3 sm:py-5">*******</< /td>
-                        <td class="py-3 sm:py-5">08 Jul 2026</td>
-                        <td class="py-3 sm:py-5">Yes</td>
-                        <td class="py-3 sm:py-5 text-green-500">Rs.100</td>
-                        <td class="py-3 sm:py-5">
-                            <span class="rounded-full bg-green-500/20 px-3 py-1 text-green-500">
-                                Paid
-                            </span>
-                        </td>
-                    </tr>
+                    @forelse (($referrals ?? []) as $row)
+                        @php
+                            $invitee = $row->invitee;
+                            $earning = $row->earning;
+                        @endphp
+                        <tr class="border-b border-brand-border">
+                            <td class="py-3 sm:py-5">
+                                {{ $invitee->username ?? '—' }}
+                            </td>
+                            <td class="py-3 sm:py-5">
+                                {{ optional($invitee->created_at)->format('d M Y') ?? '—' }}
+                            </td>
+                            <td class="py-3 sm:py-5">
+                                @if ($earning)
+                                    ${{ number_format((float) $earning->deposit_amount, 2) }}
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="py-3 sm:py-5 {{ $earning?->isUnlocked() ? 'text-green-500' : ($earning?->isPending() ? 'text-yellow-500' : '') }}">
+                                @if ($earning)
+                                    ${{ number_format((float) $earning->bonus_amount, 2) }}
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="py-3 sm:py-5">
+                                @if ($earning?->isUnlocked())
+                                    <span class="rounded-full bg-green-500/20 px-3 py-1 text-green-500">
+                                        Unlocked
+                                    </span>
+                                @elseif ($earning?->isPending())
+                                    <span class="rounded-full bg-yellow-500/20 px-3 py-1 text-yellow-500">
+                                        Pending
+                                    </span>
+                                @else
+                                    <span class="rounded-full bg-brand-border/40 px-3 py-1 opacity-70">
+                                        Awaiting deposit
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="py-8 text-center opacity-70">
+                                No referrals yet. Share your link to start earning.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -166,11 +183,12 @@
     <div class="mt-6 rounded-3xl border border-brand-border bg-brand-surface p-4 md:p-8">
         <h3>Referral Rules</h3>
         <ul class="mt-2 space-y-2">
-            <li>✅ Your friend must register using your referral link.</li>
-            <li>✅ The account must complete KYC verification.</li>
-            <li>✅ Your friend must make the first successful deposit.</li>
-            <li>✅ Referral reward is credited automatically.</li>
-            <li>✅ Self-referrals are not allowed.</li>
+            <li>Your friend must register using your referral link.</li>
+            <li>Your friend must make their first successful deposit.</li>
+            <li>You earn {{ number_format((float) ($bonusPercent ?? 5), 0) }}% of that first deposit as bonus.</li>
+            <li>Bonus stays pending until you make at least one deposit yourself.</li>
+            <li>Referral bonus is not withdrawable — only for investments and lottery.</li>
+            <li>Self-referrals are not allowed.</li>
         </ul>
     </div>
 </div>

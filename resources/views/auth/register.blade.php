@@ -53,6 +53,13 @@
                         </p>
                         <form id="registerForm" action="{{ route('auth.register') }}" method="POST" class="mt-4 sm:mt-8">
                             @csrf
+                            <input type="hidden" name="referral_code" value="{{ $referralCode ?? '' }}">
+                            @if(!empty($referralCode))
+                                <div class="mb-4 rounded-xl border border-brand-primary/30 bg-brand-primary/10 px-4 py-3 text-sm">
+                                    Signing up with referral code
+                                    <span class="font-semibold text-brand-primary tracking-widest">{{ $referralCode }}</span>
+                                </div>
+                            @endif
                             <div class="grid gap-3 sm:gap-6 md:grid-cols-2">
                                 {{-- Full Name --}}
                                 <div>

@@ -121,6 +121,11 @@ class LimitedDrawService
         }
 
         $maxPerUser = max(1, (int) $game->configValue('max_per_user', 1));
+        $alreadyJoined = $userEntries >= $maxPerUser;
+        // Countdown is personal: only runs after this user has paid and joined.
+        $timerActive = $alreadyJoined
+            && $round?->ends_at
+            && now()->lt($round->ends_at);
 
         return [
             'game' => $game,
@@ -142,7 +147,8 @@ class LimitedDrawService
             'is_open' => $open,
             'user_entries' => $userEntries,
             'can_join' => $open && $package && $userEntries < $maxPerUser,
-            'already_joined' => $userEntries >= $maxPerUser,
+            'already_joined' => $alreadyJoined,
+            'timer_active' => $timerActive,
         ];
     }
 

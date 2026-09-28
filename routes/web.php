@@ -16,8 +16,45 @@ Route::get('/contact', function () {
 })->name('contact');
 
 Route::get('/user-account', function () {
-    $kyc = Kyc::query()->where('user_id', auth('web')->user()->id)->first();
-    return view('pages.user-account', compact('kyc'));
+    $user = auth('web')->user();
+    $kyc = Kyc::query()->where('user_id', $user->id)->first();
+
+    $referralStats = [
+        'total' => $user->referredUsers()->count(),
+        'active' => $user->referralEarnings()->unlocked()->count(),
+        'pending_bonus' => (float) $user->referralEarnings()->pending()->sum('bonus_amount'),
+        'total_earnings' => (float) $user->referralEarnings()->unlocked()->sum('bonus_amount'),
+    ];
+
+    $earningsByUser = $user->referralEarnings()
+        ->get()
+        ->keyBy('referred_user_id');
+
+    $referrals = $user->referredUsers()
+        ->latest()
+        ->get()
+        ->map(function ($invitee) use ($earningsByUser) {
+            $earning = $earningsByUser->get($invitee->id);
+
+            return (object) [
+                'invitee' => $invitee,
+                'earning' => $earning,
+            ];
+        });
+
+    $referralLink = route('auth.showRegisterForm', ['ref' => $user->referral_code]);
+    $bonusPercent = (float) config(
+        'settings.referral_bonus_percent',
+        config('wallet.referral.bonus_percent', 5)
+    );
+
+    return view('pages.user-account', compact(
+        'kyc',
+        'referralStats',
+        'referrals',
+        'referralLink',
+        'bonusPercent'
+    ));
 })->middleware('auth')->name('user-account');
 
 

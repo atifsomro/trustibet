@@ -6,6 +6,7 @@ namespace App\Services\Wallet;
 
 use App\Actions\Wallet\ApproveWithdrawalAction;
 use App\Actions\Wallet\CreditWalletAction;
+use App\Actions\Wallet\DebitSpendableAction;
 use App\Actions\Wallet\DebitWalletAction;
 use App\Actions\Wallet\GrantBonusAction;
 use App\Actions\Wallet\RequestWithdrawalAction;
@@ -27,6 +28,7 @@ class WalletService
         protected WalletManager $walletManager,
         protected CreditWalletAction $creditWalletAction,
         protected DebitWalletAction $debitWalletAction,
+        protected DebitSpendableAction $debitSpendableAction,
         protected GrantBonusAction $grantBonusAction,
         protected RequestWithdrawalAction $requestWithdrawalAction,
         protected ApproveWithdrawalAction $approveWithdrawalAction,
@@ -143,6 +145,29 @@ class WalletService
             amount: $amount,
             reference: $reference,
             bonus: $bonus,
+            idempotencyKey: $idempotencyKey,
+            meta: $meta
+        );
+    }
+
+    /**
+     * Debit spendable funds (bonus first, then withdrawable).
+     *
+     * For investments and lottery only — never withdrawals or games.
+     */
+    public function debitSpendable(
+        User $user,
+        float $amount,
+        WalletTransactionType $transactionType,
+        ?Model $reference = null,
+        ?string $idempotencyKey = null,
+        array $meta = []
+    ): WalletTransaction {
+        return $this->debitSpendableAction->execute(
+            user: $user,
+            amount: $amount,
+            transactionType: $transactionType,
+            reference: $reference,
             idempotencyKey: $idempotencyKey,
             meta: $meta
         );
