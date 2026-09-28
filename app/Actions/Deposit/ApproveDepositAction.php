@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deposit;
 
+use App\Actions\Referral\ProcessReferralOnDepositAction;
 use App\Enums\BalanceType;
 use App\Enums\WalletTransactionType;
 use App\Models\Deposit;
@@ -14,7 +15,8 @@ use Throwable;
 class ApproveDepositAction
 {
     public function __construct(
-        protected WalletService $walletService
+        protected WalletService $walletService,
+        protected ProcessReferralOnDepositAction $processReferralOnDepositAction
     ) {
     }
 
@@ -25,6 +27,7 @@ class ApproveDepositAction
      * - Ensure deposit is pending
      * - Credit user's withdrawable wallet
      * - Mark deposit as approved
+     * - Process referral bonus (pending / unlock)
      *
      * @throws Throwable
      */
@@ -72,6 +75,13 @@ class ApproveDepositAction
                 adminId: $adminId,
                 remarks: $remarks
             );
+
+            $deposit = $deposit->fresh([
+                'user.wallet',
+            ]);
+
+            $this->processReferralOnDepositAction->execute($deposit);
+
             return $deposit->fresh([
                 'user.wallet',
             ]);

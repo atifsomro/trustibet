@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Auth;
 
 use App\Enums\BonusType;
+use App\Http\Middleware\CaptureReferralCode;
 use App\Models\User;
 use App\Services\Wallet\WalletService;
 use Illuminate\Http\Request;
@@ -38,6 +39,8 @@ class RegisterUserAction
             'phone' => $request->phone,
             'country_id' => $request->country_id,
             'password' => $request->password,
+            'referral_code' => $request->input('referral_code')
+                ?? $request->session()->get(CaptureReferralCode::SESSION_KEY),
         ]);
     }
 
@@ -55,6 +58,7 @@ class RegisterUserAction
      *  - provider_id / google_id
      *  - avatar (optional)
      *  - phone / country_id (optional - nullable on social accounts)
+     *  - referral_code (optional)
      *
      * @return User
      */
@@ -82,6 +86,9 @@ class RegisterUserAction
             $user->phone = $data['phone'] ?? null;
             $user->country_id = $data['country_id'] ?? null;
             $user->referral_code = User::generateUniqueCode('referral_code');
+            $user->referred_by = $this->resolveReferrerId(
+                $data['referral_code'] ?? null
+            );
 
             if ($isSocial) {
                 // Social accounts don't have (or need) a usable password.
@@ -139,5 +146,24 @@ class RegisterUserAction
 
             return $user;
         });
+    }
+
+    /**
+     * Resolve a referral code to a referrer user id.
+     * Invalid / self codes are ignored (register without referrer).
+     */
+    protected function resolveReferrerId(?string $code): ?int
+    {
+        if (! is_string($code) || trim($code) === '') {
+            return null;
+        }
+
+        $code = strtoupper(trim($code));
+
+        $referrer = User::query()
+            ->where('referral_code', $code)
+            ->first();
+
+        return $referrer?->id;
     }
 }

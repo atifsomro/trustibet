@@ -7,6 +7,7 @@ namespace App\Enums;
 enum BonusType: string
 {
     case WELCOME = 'welcome';
+    case REFERRAL = 'referral';
 
     /**
      * Get all enum values.
@@ -23,6 +24,7 @@ enum BonusType: string
     {
         return match ($this) {
             self::WELCOME => 'Welcome Bonus',
+            self::REFERRAL => 'Referral Bonus',
         };
     }
 }

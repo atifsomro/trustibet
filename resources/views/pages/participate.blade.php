@@ -16,21 +16,31 @@
                                     Hurry Up
                                 </small>
                                 <h3 class="mt-2">
-                                    Draw Ends In
+                                    {{ !empty($draw['timer_active']) ? 'Draw Ends In' : 'Countdown Locked' }}
                                 </h3>
                                 <p class="mt-2">
-                                    Don't miss your chance to win the
-                                    <span class="text-brand-primary font-semibold">
-                                        {{ $draw['prize_name'] }}
-                                    </span>.
-                                    Join now before the countdown reaches zero.
+                                    @if (!empty($draw['timer_active']))
+                                        You're in! Watch the countdown for the
+                                        <span class="text-brand-primary font-semibold">
+                                            {{ $draw['prize_name'] }}
+                                        </span>
+                                        draw.
+                                    @else
+                                        Pay {{ $draw['fee_label'] }} to join and start the countdown for the
+                                        <span class="text-brand-primary font-semibold">
+                                            {{ $draw['prize_name'] }}
+                                        </span>
+                                        draw.
+                                    @endif
                                 </p>
                             </div>
 
                             {{-- Right --}}
-                            <div class="grid grid-cols-4 gap-4">
+                            <div id="drawCountdown" class="grid grid-cols-4 gap-4"
+                                data-timer-active="{{ !empty($draw['timer_active']) ? '1' : '0' }}"
+                                data-ends-at="{{ !empty($draw['timer_active']) ? optional($draw['ends_at'])->toIso8601String() : '' }}">
                                 <div class="rounded-2xl border border-brand-border bg-brand-dark text-center py-5">
-                                    <h2 id="days" class="text-brand-primary">
+                                    <h2 data-unit="days" class="text-brand-primary">
                                         00
                                     </h2>
                                     <span class="uppercase text-xs tracking-widest">
@@ -38,7 +48,7 @@
                                     </span>
                                 </div>
                                 <div class="rounded-2xl border border-brand-border bg-brand-dark text-center py-5">
-                                    <h2 id="hours" class="text-brand-primary">
+                                    <h2 data-unit="hours" class="text-brand-primary">
                                         00
                                     </h2>
                                     <span class="uppercase text-xs tracking-widest">
@@ -46,7 +56,7 @@
                                     </span>
                                 </div>
                                 <div class="rounded-2xl border border-brand-border bg-brand-dark text-center py-5">
-                                    <h2 id="minutes" class="text-brand-primary">
+                                    <h2 data-unit="minutes" class="text-brand-primary">
                                         00
                                     </h2>
                                     <span class="uppercase text-xs tracking-widest">
@@ -54,7 +64,7 @@
                                     </span>
                                 </div>
                                 <div class="rounded-2xl border border-brand-border bg-brand-dark text-center py-5">
-                                    <h2 id="seconds" class="text-brand-primary">
+                                    <h2 data-unit="seconds" class="text-brand-primary">
                                         00
                                     </h2>
                                     <span class="uppercase text-xs tracking-widest">
@@ -98,7 +108,11 @@
                             <div class="flex justify-between border-b border-brand-border pb-4">
                                 <span>Draw Date</span>
                                 <strong>
-                                    {{ $draw['ends_at'] ? $draw['ends_at']->format('d M Y, h:i A') : 'Not scheduled' }}
+                                    @if (!empty($draw['timer_active']) && $draw['ends_at'])
+                                        {{ $draw['ends_at']->format('d M Y, h:i A') }}
+                                    @else
+                                        Starts after you join
+                                    @endif
                                 </strong>
                             </div>
                             <div class="flex justify-between">
@@ -204,7 +218,7 @@
                         </p>
                         <div class="mt-8 flex justify-between">
                             <span class="font-medium">
-                                <span id="joinedPlayers" class="text-green-400 font-bold">
+                                <span id="drawJoinedPlayers" class="text-green-400 font-bold">
                                     {{ number_format($draw['entries']) }}
                                 </span>
                                 Players Joined
@@ -296,95 +310,145 @@
 @endsection
 @push('scripts')
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const endAt = @json(optional($draw['ends_at'])->toIso8601String());
-            const daysEl = document.getElementById("days");
-            const hoursEl = document.getElementById("hours");
-            const minutesEl = document.getElementById("minutes");
-            const secondsEl = document.getElementById("seconds");
-
+        (function () {
             function pad(value) {
                 return String(value).padStart(2, "0");
             }
 
-            function tickCountdown() {
-                if (!endAt || !daysEl) return;
-                const diff = Math.max(0, new Date(endAt).getTime() - Date.now());
-                const total = Math.floor(diff / 1000);
-                daysEl.textContent = pad(Math.floor(total / 86400));
-                hoursEl.textContent = pad(Math.floor((total % 86400) / 3600));
-                minutesEl.textContent = pad(Math.floor((total % 3600) / 60));
-                secondsEl.textContent = pad(total % 60);
-            }
-
-            tickCountdown();
-            setInterval(tickCountdown, 1000);
-
-            const checkbox = document.getElementById("agreeTerms");
-            const error = document.getElementById("termsError");
-            const btn = document.getElementById("participateBtn");
-            const modal = document.getElementById("confirmModal");
-            const cancel = document.getElementById("cancelParticipation");
-            const confirm = document.getElementById("confirmParticipation");
-            if (!btn || !modal) return;
-
-            btn.addEventListener("click", () => {
-                if (!checkbox.checked) {
-                    error.textContent = "Please accept Terms & Conditions.";
+            function initDrawCountdown() {
+                const root = document.getElementById("drawCountdown");
+                if (!root || root.dataset.bound === "1") {
                     return;
                 }
-                error.textContent = "";
-                modal.classList.remove("hidden");
-                modal.classList.add("flex");
-                document.body.classList.add("overflow-hidden");
-            });
 
-            function closeModal() {
-                modal.classList.remove("flex");
-                modal.classList.add("hidden");
-                document.body.classList.remove("overflow-hidden");
+                const daysEl = root.querySelector('[data-unit="days"]');
+                const hoursEl = root.querySelector('[data-unit="hours"]');
+                const minutesEl = root.querySelector('[data-unit="minutes"]');
+                const secondsEl = root.querySelector('[data-unit="seconds"]');
+
+                if (!daysEl || !hoursEl || !minutesEl || !secondsEl) {
+                    return;
+                }
+
+                const resetCells = () => {
+                    daysEl.textContent = "00";
+                    hoursEl.textContent = "00";
+                    minutesEl.textContent = "00";
+                    secondsEl.textContent = "00";
+                };
+
+                // Timer must stay frozen until this user has paid and joined.
+                if (root.dataset.timerActive !== "1") {
+                    resetCells();
+                    return;
+                }
+
+                const endAt = root.dataset.endsAt || "";
+                if (!endAt) {
+                    resetCells();
+                    return;
+                }
+
+                const endMs = new Date(endAt).getTime();
+                if (Number.isNaN(endMs)) {
+                    resetCells();
+                    return;
+                }
+
+                root.dataset.bound = "1";
+
+                function tickCountdown() {
+                    const total = Math.max(0, Math.floor((endMs - Date.now()) / 1000));
+                    daysEl.textContent = pad(Math.floor(total / 86400));
+                    hoursEl.textContent = pad(Math.floor((total % 86400) / 3600));
+                    minutesEl.textContent = pad(Math.floor((total % 3600) / 60));
+                    secondsEl.textContent = pad(total % 60);
+                }
+
+                tickCountdown();
+                setInterval(tickCountdown, 1000);
             }
 
-            cancel?.addEventListener("click", closeModal);
-            modal.addEventListener("click", (e) => {
-                if (e.target === modal) closeModal();
-            });
-            document.addEventListener("keydown", (e) => {
-                if (e.key === "Escape") closeModal();
-            });
+            function initParticipateModal() {
+                const checkbox = document.getElementById("agreeTerms");
+                const error = document.getElementById("termsError");
+                const btn = document.getElementById("participateBtn");
+                const modal = document.getElementById("confirmModal");
+                const cancel = document.getElementById("cancelParticipation");
+                const confirm = document.getElementById("confirmParticipation");
+                if (!btn || !modal) {
+                    return;
+                }
 
-            confirm?.addEventListener("click", async () => {
-                confirm.disabled = true;
-                try {
-                    const response = await fetch(@json(route('games.play', $draw['game']->slug)), {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                        },
-                        body: JSON.stringify({
-                            package_id: @json($draw['package']?->id),
-                            idempotency_key: crypto.randomUUID(),
-                        }),
-                    });
-                    const data = await response.json();
-                    if (!response.ok || data.success === false) {
-                        const message = data.message
-                            || Object.values(data.errors || {})[0]?.[0]
-                            || "Unable to join this draw.";
-                        error.textContent = message;
-                        closeModal();
+                btn.addEventListener("click", () => {
+                    if (!checkbox.checked) {
+                        error.textContent = "Please accept Terms & Conditions.";
                         return;
                     }
-                    window.location.reload();
-                } catch (err) {
-                    error.textContent = "Unable to join this draw.";
-                    closeModal();
-                } finally {
-                    confirm.disabled = false;
+                    error.textContent = "";
+                    modal.classList.remove("hidden");
+                    modal.classList.add("flex");
+                    document.body.classList.add("overflow-hidden");
+                });
+
+                function closeModal() {
+                    modal.classList.remove("flex");
+                    modal.classList.add("hidden");
+                    document.body.classList.remove("overflow-hidden");
                 }
-            });
-        });
+
+                cancel?.addEventListener("click", closeModal);
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) closeModal();
+                });
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") closeModal();
+                });
+
+                confirm?.addEventListener("click", async () => {
+                    confirm.disabled = true;
+                    try {
+                        const response = await fetch(@json(route('games.play', $draw['game']->slug)), {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                            },
+                            body: JSON.stringify({
+                                package_id: @json($draw['package']?->id),
+                                idempotency_key: crypto.randomUUID(),
+                            }),
+                        });
+                        const data = await response.json();
+                        if (!response.ok || data.success === false) {
+                            const message = data.message
+                                || Object.values(data.errors || {})[0]?.[0]
+                                || "Unable to join this draw.";
+                            error.textContent = message;
+                            closeModal();
+                            return;
+                        }
+                        window.location.reload();
+                    } catch (err) {
+                        error.textContent = "Unable to join this draw.";
+                        closeModal();
+                    } finally {
+                        confirm.disabled = false;
+                    }
+                });
+            }
+
+            function boot() {
+                initDrawCountdown();
+                initParticipateModal();
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", boot);
+            } else {
+                boot();
+            }
+        })();
     </script>
 @endpush

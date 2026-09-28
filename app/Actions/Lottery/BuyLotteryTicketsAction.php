@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Lottery;
 
-use App\Enums\BalanceType;
 use App\Enums\WalletTransactionType;
 use App\Models\Lottery;
 use App\Models\LotteryTicket;
@@ -147,11 +146,10 @@ class BuyLotteryTicketsAction
              *
              * The money is considered spent immediately.
              */
-            $transaction = $this->walletService->debitWithTransaction(
+            $transaction = $this->walletService->debitSpendable(
                 user: $user,
-                balanceType: BalanceType::WITHDRAWABLE,
-                transactionType: WalletTransactionType::LOTTERY_TICKET_PURCHASE,
                 amount: $totalAmount,
+                transactionType: WalletTransactionType::LOTTERY_TICKET_PURCHASE,
                 reference: $lottery,
                 idempotencyKey: $idempotencyKey,
                 meta: [

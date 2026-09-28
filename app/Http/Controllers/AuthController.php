@@ -61,7 +61,10 @@ class AuthController extends Controller
     {
         $title = 'Register - ' . env('APP_NAME');
         $countries = Country::all();
-        return view('auth.register', compact('title', 'countries'));
+        $referralCode = old('referral_code')
+            ?? session(\App\Http\Middleware\CaptureReferralCode::SESSION_KEY);
+
+        return view('auth.register', compact('title', 'countries', 'referralCode'));
     }
 
     public function register(Request $request)
@@ -78,6 +81,9 @@ class AuthController extends Controller
         // $inserted = (new User())->store($request);
         $inserted = $this->registerUserAction->execute($request);
         if ($inserted) {
+            $request->session()->forget(
+                \App\Http\Middleware\CaptureReferralCode::SESSION_KEY
+            );
             return redirect()
                 ->route('auth.showVerificationForm')
                 ->with('success', 'You have successfully created an account.')
@@ -266,7 +272,13 @@ class AuthController extends Controller
                 'provider' => 'google',
                 'google_id' => $googleUser->getId(),
                 'avatar' => $googleUser->getAvatar(),
+                'referral_code' => $request->session()->get(
+                    \App\Http\Middleware\CaptureReferralCode::SESSION_KEY
+                ),
             ]);
+            $request->session()->forget(
+                \App\Http\Middleware\CaptureReferralCode::SESSION_KEY
+            );
         }
 
         Auth::login($user, true);
