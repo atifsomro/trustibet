@@ -57,7 +57,7 @@ class ConsumeBonusAction
                 ->lockForUpdate()
                 ->findOrFail($bonus->id);
 
-            if ($bonus->wallet_id !== $wallet->id) {
+            if ($bonus->user_id !== $wallet->user_id) {
                 throw new WalletException(
                     'The bonus does not belong to the supplied wallet.'
                 );

@@ -297,20 +297,20 @@
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="invest">
-                                <i class="fa-solid fa-credit-card"></i>
+                                <i class="fa-solid fa-chart-line"></i>
                                 Investments
                             </button>
-                            {{-- <button type="button"
+                            <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="referral">
-                                <i class="fa-solid fa-credit-card"></i>
+                                <i class="fa-solid fa-user-group"></i>
                                 Referral
-                            </button> --}}
+                            </button>
 
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="kyc">
-                                <i class="fa-solid fa-credit-card"></i>
+                                <i class="fa-solid fa-id-card"></i>
                                 KYC
                             </button>
 

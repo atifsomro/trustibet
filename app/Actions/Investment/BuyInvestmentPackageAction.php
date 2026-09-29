@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Investment;
 
-use App\Enums\BalanceType;
 use App\Enums\InvestmentStatus;
 use App\Enums\WalletTransactionType;
 use App\Models\InvestmentPackage;
@@ -46,11 +45,10 @@ class BuyInvestmentPackageAction
             $purchaseId = (string) Str::uuid();
             $idempotencyKey = 'investment-purchase:' . $purchaseId;
 
-            $transaction = $this->walletService->debitWithTransaction(
+            $transaction = $this->walletService->debitSpendable(
                 user: $user,
-                balanceType: BalanceType::WITHDRAWABLE,
-                transactionType: WalletTransactionType::INVESTMENT_PURCHASE,
                 amount: $price,
+                transactionType: WalletTransactionType::INVESTMENT_PURCHASE,
                 reference: $package,
                 idempotencyKey: $idempotencyKey,
                 meta: [

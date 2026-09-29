@@ -25,6 +25,8 @@ class SettingsSeeder extends Seeder
             ['group' => 'social', 'key' => 'site_twitter', 'label' => 'Twitter / X URL', 'type' => 'url', 'value' => null, 'sort_order' => 2],
             ['group' => 'social', 'key' => 'site_instagram', 'label' => 'Instagram URL', 'type' => 'url', 'value' => null, 'sort_order' => 3],
             ['group' => 'social', 'key' => 'site_telegram', 'label' => 'Telegram URL', 'type' => 'url', 'value' => null, 'sort_order' => 4],
+            ['group' => 'referral', 'key' => 'referral_enabled', 'label' => 'Referral Program Enabled', 'type' => 'boolean', 'value' => '1', 'sort_order' => 1],
+            ['group' => 'referral', 'key' => 'referral_bonus_percent', 'label' => 'Referral Bonus Percent', 'type' => 'text', 'value' => '5', 'sort_order' => 2],
         ];
 
         foreach ($defaults as $row) {

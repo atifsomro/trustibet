@@ -24,4 +24,24 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Referral Bonus
+    |--------------------------------------------------------------------------
+    |
+    | Overridden by admin settings (config('settings.referral_*')) when set.
+    |
+    */
+
+    'referral' => [
+
+        'enabled' => true,
+
+        /*
+         * Percentage of the invitee's first approved deposit.
+         */
+        'bonus_percent' => 5,
+
+    ],
+
 ];
