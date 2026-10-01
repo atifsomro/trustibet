@@ -9,7 +9,7 @@
                     <div class="rounded-3xl border border-brand-border bg-brand-surface p-8">
                         <div class="mb-8">
                             <small class="uppercase tracking-[3px] text-brand-primary">
-                                TrustiBet Wallet
+                                Claimrise Wallet
                             </small>
                             <h2 class="mt-3">
                                 Deposit Funds
@@ -49,17 +49,16 @@
                                 @foreach ($banks as $key => $bank)
                                     <label
                                         class="payment-method rounded-2xl border border-brand-border p-6 cursor-pointer transition-all duration-300"
-                                        data-name="{{ $bank->bank_name }}" data-account_name="{{ $bank->account_title }}" data-number="{{ $bank->account_number }}"
-                                        data-network="{{ $bank->bank_name }}" data-currency="{{ $bank->currency }}"
-                                        data-rate="{{ $bank->conversion_rate }}"
+                                        data-name="{{ $bank->bank_name }}" data-account_name="{{ $bank->account_title }}"
+                                        data-number="{{ $bank->account_number }}" data-network="{{ $bank->bank_name }}"
+                                        data-currency="{{ $bank->currency }}" data-rate="{{ $bank->conversion_rate }}"
                                         data-qr="{{ $bank->qr_code_url }}">
                                         <input type="radio" name="bank_account_id" value="{{ $bank->id }}"
                                             @checked($key == 0) class="hidden">
                                         <div
                                             class="bg-white rounded-full w-20 h-20 flex items-center justify-center m-auto overflow-hidden">
-                                            <img src="{{ $bank->picture_url }}"
-                                                 alt="{{ $bank->bank_name }}"
-                                                 class="h-14 w-14 object-contain mx-auto">
+                                            <img src="{{ $bank->picture_url }}" alt="{{ $bank->bank_name }}"
+                                                class="h-14 w-14 object-contain mx-auto">
                                         </div>
                                         <h5 class="text-center mt-4">
                                             {{ $bank->bank_name }}
@@ -81,7 +80,8 @@
                                     placeholder="Enter amount in USD"
                                     class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary">
                                 <small class="opacity-60 mt-2 block">
-                                    Enter how many dollars you want credited. Pay the PKR amount shown above via your selected method.
+                                    Enter how many dollars you want credited. Pay the PKR amount shown above via your
+                                    selected method.
                                 </small>
                             </div>
                             {{-- Payment Details --}}
@@ -329,7 +329,8 @@
                                     </td>
                                     <td class="py-5 text-red-500">
                                         @if ($deposit->bankAccount->conversion_rate > 0)
-                                            Rs. {{ number_format((float) $deposit->amount * (float) $deposit->bankAccount->conversion_rate, 2) }}
+                                            Rs.
+                                            {{ number_format((float) $deposit->amount * (float) $deposit->bankAccount->conversion_rate, 2) }}
                                         @else
                                             —
                                         @endif
@@ -348,154 +349,213 @@
                     </table>
                 </div>
             </div>
+
+            <div id="depositWarningModal"
+                class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 px-4 opacity-0 pointer-events-none transition-all duration-500">
+                <div id="depositWarningBox"
+                    class="w-full max-w-lg scale-95 rounded-3xl border border-yellow-500/20 bg-brand-surface p-6 shadow-2xl transition-all duration-500 sm:p-8">
+                    <div class="text-center">
+                        <div
+                            class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-yellow-500/20 bg-yellow-500/10 text-yellow-400">
+                            <i class="fas fa-triangle-exclamation text-2xl"></i>
+                        </div>
+                        <h2 class="mt-3 md:mt-5 text-lg md:text-2xl font-bold text-white"> Important Deposit Notice </h2>
+                        <p class="mt-2 md:mt-4 text-[12px] md:text-sm leading-7 text-gray-400"> Before making your deposit,
+                            please make sure that the payment account you are using is registered under <span
+                                class="font-semibold text-white">your own name</span>. </p>
+                        <div
+                            class="mt-3 md:mt-5 rounded-2xl border border-yellow-500/20 bg-yellow-500/5 p-2 md:p-4 text-left">
+                            <div class="flex gap-3"> <i class="fas fa-shield-halved mt-1 text-yellow-400"></i>
+                                <p class="text-[12px] md:text-sm leading-6 text-gray-300"> This applies to <span
+                                        class="font-semibold text-white"> JazzCash, EasyPaisa, Bank Accounts, Binance
+                                    </span> and other supported payment methods. </p>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-2xl border border-red-500/20 bg-red-500/5 p-2 md:p-4 text-left">
+                            <div class="flex gap-3"> <i class="fas fa-circle-exclamation mt-1 text-red-400"></i>
+                                <p class="text-[12px] md:text-sm leading-6 text-gray-300"> Deposits made through an account
+                                    that is not registered in your name may <span class="font-semibold text-red-400"> not
+                                        be verified or may be rejected </span> by the administrator. </p>
+                            </div>
+                        </div>
+                        <p class="mt-5 text-xs leading-5 text-gray-500"> Please double-check your payment details before
+                            making your deposit. </p> <button type="button" id="closeDepositWarning"
+                            class="mt-6 w-full rounded-xl bg-brand-primary px-6 py-3.5 font-semibold text-white transition-all duration-300 hover:bg-brand-primary-hover hover:shadow-lg hover:shadow-brand-primary/20">
+                            <i class="fas fa-check mr-2"></i> OK, I Understand </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 @endsection
 @push('scripts')
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
-    const methods = document.querySelectorAll('input[name="bank_account_id"]');
+            const methods = document.querySelectorAll('input[name="bank_account_id"]');
 
-    const accountName = document.getElementById("accountName");
-    const accountNumber = document.getElementById("accountNumber");
-    const networkName = document.getElementById("networkName");
-    const paymentQR = document.getElementById("paymentQR");
+            const accountName = document.getElementById("accountName");
+            const accountNumber = document.getElementById("accountNumber");
+            const networkName = document.getElementById("networkName");
+            const paymentQR = document.getElementById("paymentQR");
 
-    const summaryMethod = document.getElementById("summaryMethod");
-    const depositAmount = document.getElementById("depositAmount");
-    const summaryAmount = document.getElementById("summaryAmount");
-    const summaryPay = document.getElementById("summaryPay");
-    const summaryReceive = document.getElementById("summaryReceive");
-    const pkrEquivalent = document.getElementById("pkrEquivalent");
+            const summaryMethod = document.getElementById("summaryMethod");
+            const depositAmount = document.getElementById("depositAmount");
+            const summaryAmount = document.getElementById("summaryAmount");
+            const summaryPay = document.getElementById("summaryPay");
+            const summaryReceive = document.getElementById("summaryReceive");
+            const pkrEquivalent = document.getElementById("pkrEquivalent");
 
-    const copyAccount = document.getElementById("copyAccount");
-    const paymentProof = document.getElementById("paymentProof");
-    const paymentPreview = document.getElementById("paymentPreview");
+            const copyAccount = document.getElementById("copyAccount");
+            const paymentProof = document.getElementById("paymentProof");
+            const paymentPreview = document.getElementById("paymentPreview");
 
-    const placeholderQR = "{{ asset('images/placeholder/placeholder.webp') }}";
+            const placeholderQR = "{{ asset('images/placeholder/placeholder.webp') }}";
 
-    let currentRate = 0;
+            let currentRate = 0;
 
-    function formatMoney(value) {
-        return Number(value || 0).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
+            function formatMoney(value) {
+                return Number(value || 0).toLocaleString(undefined, {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function updateAmountSummary() {
+                const usd = parseFloat(depositAmount?.value) || 0;
+                const pkr = currentRate > 0 ? usd * currentRate : 0;
+
+                if (summaryAmount) {
+                    summaryAmount.textContent = "$" + formatMoney(usd);
+                }
+
+                if (summaryReceive) {
+                    summaryReceive.textContent = "$" + formatMoney(usd);
+                }
+
+                const pkrText = "Rs. " + formatMoney(pkr);
+
+                if (summaryPay) {
+                    summaryPay.textContent = pkrText;
+                }
+
+                if (pkrEquivalent) {
+                    pkrEquivalent.textContent = currentRate > 0 ?
+                        "Pay: " + pkrText :
+                        "Pay: Rs. 0";
+                }
+            }
+
+            // Update selected payment method
+            function updateSelection(input) {
+
+                // Remove active state from all cards
+                document.querySelectorAll(".payment-method").forEach(card => {
+                    card.classList.remove(
+                        "border-brand-primary",
+                        "shadow-lg",
+                        "shadow-brand-primary/20"
+                    );
+
+                    card.classList.add("border-brand-border");
+                });
+
+                // Selected card
+                const card = input.closest(".payment-method");
+
+                card.classList.remove("border-brand-border");
+
+                card.classList.add(
+                    "border-brand-primary",
+                    "shadow-lg",
+                    "shadow-brand-primary/20"
+                );
+
+                // Update payment details
+                accountName.textContent = card.dataset.account_name || "-";
+                accountNumber.textContent = card.dataset.number || "-";
+                networkName.textContent = card.dataset.network || "-";
+                summaryMethod.textContent = card.dataset.network || "-";
+                currentRate = parseFloat(card.dataset.rate) || 0;
+
+                // Update QR
+                paymentQR.src = card.dataset.qr || placeholderQR;
+
+                paymentQR.onerror = function() {
+                    this.onerror = null;
+                    this.src = placeholderQR;
+                };
+
+                updateAmountSummary();
+            }
+
+            // Payment method change
+            methods.forEach(input => {
+
+                input.addEventListener("change", function() {
+                    updateSelection(this);
+                });
+
+                // First selected card on page load
+                if (input.checked) {
+                    updateSelection(input);
+                }
+
+            });
+
+            // Amount summary
+            depositAmount?.addEventListener("input", updateAmountSummary);
+
+            // Copy account number
+            copyAccount?.addEventListener("click", function() {
+
+                navigator.clipboard.writeText(accountNumber.textContent);
+
+                const originalText = this.innerHTML;
+
+                this.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied';
+
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                }, 2000);
+
+            });
+
+            // Screenshot preview
+            paymentProof?.addEventListener("change", function() {
+
+                const file = this.files[0];
+
+                if (!file) return;
+
+                paymentPreview.src = URL.createObjectURL(file);
+                paymentPreview.classList.remove("hidden");
+
+            });
+
         });
-    }
-
-    function updateAmountSummary() {
-        const usd = parseFloat(depositAmount?.value) || 0;
-        const pkr = currentRate > 0 ? usd * currentRate : 0;
-
-        if (summaryAmount) {
-            summaryAmount.textContent = "$" + formatMoney(usd);
-        }
-
-        if (summaryReceive) {
-            summaryReceive.textContent = "$" + formatMoney(usd);
-        }
-
-        const pkrText = "Rs. " + formatMoney(pkr);
-
-        if (summaryPay) {
-            summaryPay.textContent = pkrText;
-        }
-
-        if (pkrEquivalent) {
-            pkrEquivalent.textContent = currentRate > 0
-                ? "Pay: " + pkrText
-                : "Pay: Rs. 0";
-        }
-    }
-
-    // Update selected payment method
-    function updateSelection(input) {
-
-        // Remove active state from all cards
-        document.querySelectorAll(".payment-method").forEach(card => {
-            card.classList.remove(
-                "border-brand-primary",
-                "shadow-lg",
-                "shadow-brand-primary/20"
-            );
-
-            card.classList.add("border-brand-border");
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('depositWarningModal');
+            const modalBox = document.getElementById('depositWarningBox');
+            const closeButton = document.getElementById('closeDepositWarning');
+            if (!modal || !modalBox || !closeButton) {
+                return;
+            }
+            setTimeout(function() {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.classList.add('opacity-100');
+                modalBox.classList.remove('scale-95');
+                modalBox.classList.add('scale-100');
+            }, 150);
+            closeButton.addEventListener('click', function() {
+                modal.classList.remove('opacity-100');
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                modalBox.classList.remove('scale-100');
+                modalBox.classList.add('scale-95');
+            });
         });
-
-        // Selected card
-        const card = input.closest(".payment-method");
-
-        card.classList.remove("border-brand-border");
-
-        card.classList.add(
-            "border-brand-primary",
-            "shadow-lg",
-            "shadow-brand-primary/20"
-        );
-
-        // Update payment details
-        accountName.textContent = card.dataset.account_name || "-";
-        accountNumber.textContent = card.dataset.number || "-";
-        networkName.textContent = card.dataset.network || "-";
-        summaryMethod.textContent = card.dataset.network || "-";
-        currentRate = parseFloat(card.dataset.rate) || 0;
-
-        // Update QR
-        paymentQR.src = card.dataset.qr || placeholderQR;
-
-        paymentQR.onerror = function () {
-            this.onerror = null;
-            this.src = placeholderQR;
-        };
-
-        updateAmountSummary();
-    }
-
-    // Payment method change
-    methods.forEach(input => {
-
-        input.addEventListener("change", function () {
-            updateSelection(this);
-        });
-
-        // First selected card on page load
-        if (input.checked) {
-            updateSelection(input);
-        }
-
-    });
-
-    // Amount summary
-    depositAmount?.addEventListener("input", updateAmountSummary);
-
-    // Copy account number
-    copyAccount?.addEventListener("click", function () {
-
-        navigator.clipboard.writeText(accountNumber.textContent);
-
-        const originalText = this.innerHTML;
-
-        this.innerHTML = '<i class="fa-solid fa-check mr-2"></i>Copied';
-
-        setTimeout(() => {
-            this.innerHTML = originalText;
-        }, 2000);
-
-    });
-
-    // Screenshot preview
-    paymentProof?.addEventListener("change", function () {
-
-        const file = this.files[0];
-
-        if (!file) return;
-
-        paymentPreview.src = URL.createObjectURL(file);
-        paymentPreview.classList.remove("hidden");
-
-    });
-
-});
-</script>
+    </script>
 @endpush
