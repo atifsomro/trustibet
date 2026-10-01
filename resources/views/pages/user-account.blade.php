@@ -2,8 +2,8 @@
 @push('styles')
     <style>
         /* ===========================
-       dashboard
-    =========================== */
+           dashboard
+        =========================== */
         .dashboard .candle-chart {
             position: relative;
             height: 190px;
@@ -617,12 +617,12 @@
         });
     </script>
     <script>
-        $('#profileImage').on('change', function () {
+        $('#profileImage').on('change', function() {
             const file = this.files[0];
             if (!file) return;
             // Instant local preview (before upload completes)
             const reader = new FileReader();
-            reader.onload = function (e) {
+            reader.onload = function(e) {
                 $('#profilePreview').attr('src', e.target.result);
             };
             reader.readAsDataURL(file);
@@ -637,15 +637,15 @@
                 data: formData,
                 processData: false,
                 contentType: false,
-                beforeSend: function () {
+                beforeSend: function() {
                     // optional: show a small spinner/loading state on the avatar
                 },
-                success: function (response) {
+                success: function(response) {
                     // Replace preview with the actual saved URL (handles CDN paths, cache-busting, etc.)
                     $('#profilePreview').attr('src', response.avatar_url + '?t=' + Date.now());
                     $(".object-cover").attr('src', response.avatar_url + '?t=' + Date.now());
                 },
-                error: function (xhr) {
+                error: function(xhr) {
                     alert(xhr.responseJSON?.message || 'Upload failed. Please try again.');
                     // optionally revert preview to old avatar here
                 }
