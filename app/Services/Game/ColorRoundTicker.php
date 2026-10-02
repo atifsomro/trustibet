@@ -153,9 +153,30 @@ class ColorRoundTicker
     protected function createRound(Game $game): GameRound
     {
         return DB::transaction(function () use ($game) {
+            // Serialize round creation per game to avoid two open rounds.
+            Game::query()->whereKey($game->id)->lockForUpdate()->first();
+
+            $existing = GameRound::query()
+                ->where('game_id', $game->id)
+                ->whereIn('status', [
+                    GameRoundStatus::BETTING,
+                    GameRoundStatus::LOCKED,
+                ])
+                ->orderByDesc('round_number')
+                ->first();
+
+            if ($existing) {
+                if (! $existing->server_seed || ! $existing->server_seed_hash) {
+                    $existing->server_seed = bin2hex(random_bytes(32));
+                    $existing->server_seed_hash = hash('sha256', $existing->server_seed);
+                    $existing->save();
+                }
+
+                return $existing;
+            }
+
             $lastNumber = (int) GameRound::query()
                 ->where('game_id', $game->id)
-                ->lockForUpdate()
                 ->max('round_number');
 
             $roundSeconds = max(5, (int) $game->configValue('round_seconds', 10));

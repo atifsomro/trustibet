@@ -85,7 +85,7 @@
                 </div>
                 <div class="mt-4 sm:mt-8">
                     <h4>History</h4>
-                    <div id="history" class="grid grid-cols-5 gap-3 mt-1 sm:mt-5"></div>
+                    <div id="historyMain" class="history-list grid grid-cols-5 gap-3 mt-1 sm:mt-5"></div>
                 </div>
             </div>
         </div>
@@ -112,15 +112,10 @@
                     <p class="text-gray-400">Last Result</p>
                     <h3 id="result" class="capitalize">Waiting...</h3>
                 </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Fairness Commit</p>
-                    <p id="fairnessHash" class="mt-2 text-xs text-gray-500 break-all font-mono">—</p>
-                    <p id="fairnessSeed" class="mt-2 text-xs text-gray-500 break-all font-mono hidden"></p>
-                </div>
                 <div class="mt-4 sm:mt-8">
                     <h4>Recent</h4>
                     <p class="text-gray-500 text-xs mt-1">Only the latest few results — each draw is random and independent.</p>
-                    <div id="history" class="grid grid-cols-3 gap-3 mt-5"></div>
+                    <div id="historySide" class="history-list grid grid-cols-3 gap-3 mt-5"></div>
                 </div>
             </div>
         </div>
@@ -142,14 +137,11 @@
                 result: document.getElementById("result"),
                 selectedColor: document.getElementById("selectedColor"),
                 deduction: document.getElementById("deduction"),
-                history: document.getElementById("history"),
-                fairnessHash: document.getElementById("fairnessHash"),
-                fairnessSeed: document.getElementById("fairnessSeed"),
+                historyLists: document.querySelectorAll(".history-list"),
                 betInput: document.getElementById("betAmount"),
                 placeBet: document.getElementById("placeBet"),
                 colorButtons: document.querySelectorAll(".color-btn"),
                 chipButtons: document.querySelectorAll(".chip-btn"),
-                walletBalance: document.getElementById("wallet-balance"),
                 walletBet: document.getElementById("wallet-bet"),
                 walletPrize: document.getElementById("wallet-prize"),
             };
@@ -162,14 +154,51 @@
                 loading: false,
                 currentRoundId: null,
                 lastResultShown: null,
+                lastSettledNotifiedId: null,
+                secondsLeft: Number(UI.timer?.textContent || 0),
+                endsAtMs: null,
+            };
+
+            const colorMap = {
+                green: "bg-green-500 text-white",
+                red: "bg-red-500 text-white",
+                blue: "bg-blue-500 text-white",
+                yellow: "bg-yellow-400 text-black",
+                orange: "bg-orange-500 text-white",
+                purple: "bg-purple-600 text-white",
+                pink: "bg-pink-500 text-white",
+                cyan: "bg-cyan-500 text-black",
+                white: "bg-white text-black",
+                black: "bg-black text-white border-gray-500"
             };
 
             function updateTimer(seconds) {
-                UI.timer.textContent = seconds;
-                if (seconds <= 5) {
+                const value = Math.max(0, Number(seconds) || 0);
+                State.secondsLeft = value;
+                UI.timer.textContent = String(value);
+                if (value <= 5) {
                     UI.timer.classList.add("text-red-500", "animate-pulse");
                 } else {
                     UI.timer.classList.remove("text-red-500", "animate-pulse");
+                }
+            }
+
+            function syncTimerFromRound(round) {
+                if (!round) return;
+                if (round.ends_at) {
+                    State.endsAtMs = Date.parse(round.ends_at);
+                    const left = Math.max(0, Math.ceil((State.endsAtMs - Date.now()) / 1000));
+                    updateTimer(left);
+                    return;
+                }
+                updateTimer(round.seconds_left ?? 0);
+            }
+
+            function tickLocalTimer() {
+                if (!State.endsAtMs) return;
+                const left = Math.max(0, Math.ceil((State.endsAtMs - Date.now()) / 1000));
+                if (left !== State.secondsLeft) {
+                    updateTimer(left);
                 }
             }
 
@@ -211,56 +240,77 @@
 
             function resetSelections() {
                 State.selectedColor = null;
+                State.selectedPackageId = null;
+                State.selectedAmount = 0;
+                UI.betInput.value = "";
                 UI.colorButtons.forEach(button => {
                     button.classList.remove("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl",
                         "shadow-brand-primary/40");
                 });
+                UI.chipButtons.forEach(btn => btn.classList.remove("bg-brand-primary", "text-white", "scale-105"));
                 updateSelectedColor("None");
                 updateDeduction(0);
+                if (UI.walletBet) UI.walletBet.textContent = "$0.00";
             }
 
             function addHistory(color) {
-                if (!color || !UI.history) return;
-                const item = document.createElement("div");
-                item.className =
-                    "aspect-square rounded-xl h-10 sm:w-14 h-10 sm:h-14 text-[12px] sm:text-base border border-brand-border flex items-center justify-center capitalize font-semibold";
-                const colorMap = {
-                    green: "bg-green-500 text-white",
-                    red: "bg-red-500 text-white",
-                    blue: "bg-blue-500 text-white",
-                    yellow: "bg-yellow-400 text-black",
-                    orange: "bg-orange-500 text-white",
-                    purple: "bg-purple-600 text-white",
-                    pink: "bg-pink-500 text-white",
-                    cyan: "bg-cyan-500 text-black",
-                    white: "bg-white text-black",
-                    black: "bg-black text-white border-gray-500"
-                };
-                item.classList.add(...(colorMap[color] || "bg-gray-500 text-white").split(" "));
-                item.textContent = color.charAt(0).toUpperCase();
-                UI.history.prepend(item);
-                while (UI.history.children.length > historyLimit) {
-                    UI.history.removeChild(UI.history.lastChild);
-                }
-            }
+                if (!color || !UI.historyLists.length) return;
 
-            function updateFairness(round) {
-                if (!UI.fairnessHash) return;
-                const hash = round?.server_seed_hash || "—";
-                UI.fairnessHash.textContent = hash;
-                if (round?.server_seed && UI.fairnessSeed) {
-                    UI.fairnessSeed.textContent = "Seed: " + round.server_seed;
-                    UI.fairnessSeed.classList.remove("hidden");
-                } else if (UI.fairnessSeed) {
-                    UI.fairnessSeed.textContent = "";
-                    UI.fairnessSeed.classList.add("hidden");
-                }
+                UI.historyLists.forEach((list) => {
+                    const item = document.createElement("div");
+                    item.className =
+                        "aspect-square rounded-xl w-10 sm:w-14 h-10 sm:h-14 text-[12px] sm:text-base border border-brand-border flex items-center justify-center capitalize font-semibold";
+                    item.classList.add(...(colorMap[color] || "bg-gray-500 text-white").split(" "));
+                    item.textContent = color.charAt(0).toUpperCase();
+                    list.prepend(item);
+                    while (list.children.length > historyLimit) {
+                        list.removeChild(list.lastChild);
+                    }
+                });
             }
 
             function setLoading(status) {
                 State.loading = status;
                 UI.placeBet.disabled = status || State.bettingLocked;
                 UI.placeBet.innerHTML = status ? "Processing..." : "Place Bet";
+            }
+
+            function notifySettledBets(bets, resultColor, settledRoundId) {
+                if (!Array.isArray(bets) || !bets.length) return;
+                if (State.lastSettledNotifiedId === settledRoundId) return;
+                State.lastSettledNotifiedId = settledRoundId;
+
+                let totalPrize = 0;
+                let wonAny = false;
+
+                bets.forEach((bet) => {
+                    if (bet.status === "won") {
+                        wonAny = true;
+                        totalPrize += Number(bet.prize_amount || 0);
+                    }
+                });
+
+                if (UI.walletPrize) {
+                    UI.walletPrize.textContent = "$" + Number(totalPrize).toFixed(2);
+                }
+
+                if (typeof showGameNotice !== "function") return;
+
+                if (wonAny) {
+                    showGameNotice({
+                        type: "success",
+                        title: "You won!",
+                        message: "Result was " + resultColor + ". Prize: $" + totalPrize.toFixed(2),
+                        emoji: "🎉",
+                    });
+                } else {
+                    showGameNotice({
+                        type: "info",
+                        title: "Round settled",
+                        message: "Result was " + resultColor + ". Better luck next round.",
+                        emoji: "🎲",
+                    });
+                }
             }
 
             UI.colorButtons.forEach(button => {
@@ -286,8 +336,7 @@
                     State.selectedPackageId = Number(button.dataset.packageId);
                     State.selectedAmount = Number(button.dataset.fee);
                     UI.betInput.value = "$" + State.selectedAmount.toFixed(2);
-                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(
-                        2);
+                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(2);
                 });
             });
 
@@ -352,8 +401,7 @@
                 const isNewRound = State.currentRoundId && State.currentRoundId !== round.id;
                 State.currentRoundId = round.id;
                 updateRound(round.round_number);
-                updateTimer(round.seconds_left);
-                updateFairness(round);
+                syncTimerFromRound(round);
 
                 if (round.betting_open) {
                     unlockBetting();
@@ -388,13 +436,12 @@
 
                     applyRound(data.round);
 
-                    if (data.my_bets && data.my_bets.length) {
-                        const latest = data.my_bets[data.my_bets.length - 1];
-                        if (latest.status === "won" || latest.status === "lost") {
-                            if (UI.walletPrize) {
-                                UI.walletPrize.textContent = "$" + Number(latest.prize_amount || 0).toFixed(2);
-                            }
-                        }
+                    if (data.last_settled && Array.isArray(data.my_last_round_bets)) {
+                        notifySettledBets(
+                            data.my_last_round_bets,
+                            data.last_result || data.last_settled.result_color,
+                            data.last_settled.id
+                        );
                     }
                 } catch (e) {}
             }
@@ -415,6 +462,7 @@
 
             pollRound();
             setInterval(pollRound, 1000);
+            setInterval(tickLocalTimer, 250);
         });
     </script>
 @endpush
