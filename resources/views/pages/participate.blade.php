@@ -100,7 +100,9 @@
                                 </strong>
                             </div>
                             <div class="flex justify-between border-b border-brand-border pb-4">
-                                <span>Participants</span>
+                                <span class="inline-flex items-center gap-2">
+                                    <i class="fa-solid fa-star text-brand-primary"></i>
+                                </span>
                                 <strong>
                                     {{ number_format($draw['entries']) }}
                                 </strong>
@@ -266,13 +268,10 @@
                     <div class="lg:col-span-5">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
-                                <i class="fa-solid fa-users text-3xl text-brand-primary"></i>
+                                <i class="fa-solid fa-star text-3xl text-brand-primary"></i>
                                 <h3 class="mt-4">
                                     {{ number_format($draw['entries']) }}
                                 </h3>
-                                <p class="mt-2 text-sm">
-                                    Participants
-                                </p>
                             </div>
                             <div class="rounded-2xl border border-brand-border bg-brand-dark p-6 text-center">
                                 <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>

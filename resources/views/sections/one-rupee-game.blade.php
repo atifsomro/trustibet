@@ -42,12 +42,11 @@
                                 class="rounded-2xl border border-brand-border bg-brand-dark p-5 text-center transition hover:border-brand-primary">
                                 <div
                                     class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-primary/10">
-                                    <i class="fa-solid fa-users text-brand-primary"></i>
+                                    <i class="fa-solid fa-star text-brand-primary"></i>
                                 </div>
                                 <h4 class="text-xl font-bold text-brand-primary">
                                     {{ number_format($card['entries']) }}
                                 </h4>
-                                <p class="mt-1 text-sm text-gray-400">Players Joined</p>
                             </div>
 
                             <div

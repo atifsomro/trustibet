@@ -18,20 +18,37 @@ class GameRound extends Model
         'round_number',
         'status',
         'result_color',
+        'server_seed_hash',
+        'server_seed',
+        'fairness_roll',
         'starts_at',
         'locks_at',
         'ends_at',
         'settled_at',
     ];
 
+    protected $hidden = [
+        'server_seed',
+    ];
+
     protected $casts = [
         'status' => GameRoundStatus::class,
         'round_number' => 'integer',
+        'fairness_roll' => 'integer',
         'starts_at' => 'datetime',
         'locks_at' => 'datetime',
         'ends_at' => 'datetime',
         'settled_at' => 'datetime',
     ];
+
+    public function revealServerSeed(): ?string
+    {
+        if ($this->status !== GameRoundStatus::SETTLED) {
+            return null;
+        }
+
+        return $this->server_seed;
+    }
 
     public function game(): BelongsTo
     {

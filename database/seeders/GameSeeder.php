@@ -280,6 +280,9 @@ class GameSeeder extends Seeder
                 'config' => [
                     'round_seconds' => 10,
                     'lock_seconds' => 5,
+                    'history_limit' => 3,
+                    'max_bet_per_round' => 2000,
+                    'max_bet_per_day' => 10000,
                     'colors' => $colors,
                 ],
             ]

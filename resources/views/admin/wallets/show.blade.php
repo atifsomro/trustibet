@@ -374,11 +374,11 @@
                             </td>
 
                             <td>
-                                {{ str_replace('_', ' ', ucfirst($transaction->transaction_type->value)) }}
+                                {{ $transaction->type?->label() ?? '—' }}
                             </td>
 
                             <td>
-                                {{ ucfirst($transaction->balance_type->value) }}
+                                {{ $transaction->balance_type?->value ? ucfirst($transaction->balance_type->value) : '—' }}
                             </td>
 
                             <td>

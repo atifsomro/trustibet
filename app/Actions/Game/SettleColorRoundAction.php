@@ -32,11 +32,22 @@ class SettleColorRoundAction
                 return $round;
             }
 
-            $resultColor = $round->result_color ?? $this->pickResultColor($round);
-            $round->result_color = $resultColor;
+            if (! $round->server_seed) {
+                $round->server_seed = bin2hex(random_bytes(32));
+                $round->server_seed_hash = hash('sha256', $round->server_seed);
+            }
+
+            $picked = $round->result_color
+                ? ['color' => $round->result_color, 'roll' => $round->fairness_roll]
+                : $this->pickResultColor($round);
+
+            $round->result_color = $picked['color'];
+            $round->fairness_roll = $picked['roll'];
             $round->status = GameRoundStatus::SETTLED;
             $round->settled_at = now();
             $round->save();
+
+            $resultColor = $round->result_color;
 
             $plays = GamePlay::query()
                 ->where('game_round_id', $round->id)
@@ -95,6 +106,8 @@ class SettleColorRoundAction
                         'selected' => $selected,
                         'label' => $label,
                         'prize_amount' => $prizeAmount,
+                        'fairness_roll' => $round->fairness_roll,
+                        'server_seed_hash' => $round->server_seed_hash,
                     ],
                     'win_transaction_id' => $winTxnId,
                 ]);
@@ -104,7 +117,10 @@ class SettleColorRoundAction
         });
     }
 
-    protected function pickResultColor(GameRound $round): string
+    /**
+     * @return array{color: string, roll: int|null}
+     */
+    protected function pickResultColor(GameRound $round): array
     {
         $game = $round->game;
         $packages = $game->activePackages()->with('activePrizes')->get();
@@ -124,29 +140,19 @@ class SettleColorRoundAction
         }
 
         if ($colorWeights !== []) {
-            $items = collect($colorWeights)
-                ->map(fn ($weight, $color) => (object) [
-                    'id' => $color,
-                    'weight' => $weight,
-                    'label' => $color,
-                    'prize_amount' => 0,
-                    'meta' => ['color' => $color],
-                ]);
-
-            // Inline weighted pick without GamePrize models
-            $total = (int) array_sum($colorWeights);
-            $roll = random_int(1, max(1, $total));
+            $total = max(1, (int) array_sum($colorWeights));
+            $roll = $this->rollFromSeed($round, $total);
             $cursor = 0;
 
             foreach ($colorWeights as $color => $weight) {
                 $cursor += max(0, (int) $weight);
 
                 if ($roll <= $cursor) {
-                    return $color;
+                    return ['color' => $color, 'roll' => $roll];
                 }
             }
 
-            return array_key_first($colorWeights);
+            return ['color' => (string) array_key_first($colorWeights), 'roll' => $roll];
         }
 
         $colors = collect($game->configValue('colors', [
@@ -155,9 +161,25 @@ class SettleColorRoundAction
         ]))->values();
 
         if ($colors->isEmpty()) {
-            return 'green';
+            return ['color' => 'green', 'roll' => 1];
         }
 
-        return strtolower((string) $colors[random_int(0, $colors->count() - 1)]);
+        $roll = $this->rollFromSeed($round, $colors->count());
+        $index = $roll - 1;
+
+        return [
+            'color' => strtolower((string) $colors[$index]),
+            'roll' => $roll,
+        ];
+    }
+
+    protected function rollFromSeed(GameRound $round, int $total): int
+    {
+        $seed = (string) $round->server_seed;
+        $message = $round->id.':'.$round->round_number;
+        $digest = hash_hmac('sha256', $message, $seed);
+        $value = hexdec(substr($digest, 0, 8));
+
+        return ($value % max(1, $total)) + 1;
     }
 }

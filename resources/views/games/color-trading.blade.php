@@ -3,6 +3,7 @@
     $colors = $gameModel->configValue('colors', [
         'green', 'red', 'blue', 'yellow', 'orange', 'purple', 'pink', 'cyan', 'white', 'black',
     ]);
+    $historyLimit = max(1, min(5, (int) $gameModel->configValue('history_limit', 3)));
     $colorClass = [
         'green' => 'bg-green-500',
         'red' => 'bg-red-500',
@@ -25,6 +26,7 @@
                     <div class="text-center sm:text-start">
                         <h2>Earn more from color trading</h2>
                         <p class="text-gray-400 mt-2">Predict the winning color before countdown ends.</p>
+                        <p class="text-gray-500 text-sm mt-1">Each round is independent — past colors do not affect the next result.</p>
                     </div>
                     <span class="text-green-500 font-semibold animate-pulse">LIVE</span>
                 </div>
@@ -97,9 +99,15 @@
                     <p class="text-gray-400">Last Result</p>
                     <h3 id="result" class="capitalize">Waiting...</h3>
                 </div>
+                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
+                    <p class="text-gray-400">Fairness Commit</p>
+                    <p id="fairnessHash" class="mt-2 text-xs text-gray-500 break-all font-mono">—</p>
+                    <p id="fairnessSeed" class="mt-2 text-xs text-gray-500 break-all font-mono hidden"></p>
+                </div>
                 <div class="mt-4 sm:mt-8">
-                    <h4>History</h4>
-                    <div id="history" class="grid grid-cols-5 gap-3 mt-5"></div>
+                    <h4>Recent</h4>
+                    <p class="text-gray-500 text-xs mt-1">Only the latest few results — each draw is random and independent.</p>
+                    <div id="history" class="grid grid-cols-3 gap-3 mt-5"></div>
                 </div>
             </div>
         </div>
@@ -112,6 +120,7 @@
             const roundUrl = @json(route('games.round', $slug));
             const betUrl = @json(route('games.bets', $slug));
             const csrf = "{{ csrf_token() }}";
+            const historyLimit = {{ $historyLimit }};
 
             const UI = {
                 timer: document.getElementById("timer"),
@@ -121,6 +130,8 @@
                 selectedColor: document.getElementById("selectedColor"),
                 deduction: document.getElementById("deduction"),
                 history: document.getElementById("history"),
+                fairnessHash: document.getElementById("fairnessHash"),
+                fairnessSeed: document.getElementById("fairnessSeed"),
                 betInput: document.getElementById("betAmount"),
                 placeBet: document.getElementById("placeBet"),
                 colorButtons: document.querySelectorAll(".color-btn"),
@@ -195,7 +206,7 @@
             }
 
             function addHistory(color) {
-                if (!color) return;
+                if (!color || !UI.history) return;
                 const item = document.createElement("div");
                 item.className = "aspect-square rounded-xl border border-brand-border flex items-center justify-center capitalize font-semibold";
                 const colorMap = {
@@ -213,8 +224,21 @@
                 item.classList.add(...(colorMap[color] || "bg-gray-500 text-white").split(" "));
                 item.textContent = color.charAt(0).toUpperCase();
                 UI.history.prepend(item);
-                while (UI.history.children.length > 20) {
+                while (UI.history.children.length > historyLimit) {
                     UI.history.removeChild(UI.history.lastChild);
+                }
+            }
+
+            function updateFairness(round) {
+                if (!UI.fairnessHash) return;
+                const hash = round?.server_seed_hash || "—";
+                UI.fairnessHash.textContent = hash;
+                if (round?.server_seed && UI.fairnessSeed) {
+                    UI.fairnessSeed.textContent = "Seed: " + round.server_seed;
+                    UI.fairnessSeed.classList.remove("hidden");
+                } else if (UI.fairnessSeed) {
+                    UI.fairnessSeed.textContent = "";
+                    UI.fairnessSeed.classList.add("hidden");
                 }
             }
 
@@ -309,6 +333,7 @@
                 State.currentRoundId = round.id;
                 updateRound(round.round_number);
                 updateTimer(round.seconds_left);
+                updateFairness(round);
 
                 if (round.betting_open) {
                     unlockBetting();
