@@ -70,7 +70,6 @@ class WalletController extends Controller
             'withdrawals' => fn($query) => $query->latest()->limit(10),
         ]);
 
-        dd($wallet->transactions[0]->transaction_type);
         return view('admin.wallets.show', compact('wallet'));
     }
 
@@ -85,7 +84,7 @@ class WalletController extends Controller
                 $query->where('balance_type', $request->balance_type);
             })
             ->when($request->filled('transaction_type'), function ($query) use ($request) {
-                $query->where('transaction_type', $request->transaction_type);
+                $query->where('type', $request->transaction_type);
             })
             ->latest()
             ->paginate(25)

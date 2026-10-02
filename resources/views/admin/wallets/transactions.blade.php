@@ -244,7 +244,7 @@
 
                                 <span class="badge bg-info">
 
-                                    {{ ucwords(str_replace('_', ' ', $transaction->transaction_type->value)) }}
+                                    {{ $transaction->type?->label() ?? '—' }}
 
                                 </span>
 

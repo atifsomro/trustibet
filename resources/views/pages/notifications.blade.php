@@ -59,6 +59,7 @@
                             $unread = is_null($notification->read_at);
                             $won = ($data['result'] ?? null) === 'won';
                             $isNewRound = ($data['type'] ?? null) === 'lottery_new_round';
+                            $isLimitedDraw = ($data['type'] ?? null) === 'limited_draw_result';
                         @endphp
                         <div class="notification-card {{ $unread ? 'unread bg-green-500/5' : '' }} relative border-b border-brand-border p-6">
                             @if ($unread)
@@ -66,7 +67,7 @@
                             @endif
                             <div class="flex gap-5">
                                 <div class="w-14 h-14 rounded-full {{ $won ? 'bg-orange-500/20' : 'bg-green-500/20' }} flex items-center justify-center">
-                                    <i class="fa-solid {{ $won ? 'fa-trophy text-orange-400' : ($isNewRound ? 'fa-rotate text-green-500' : 'fa-ticket text-green-500') }} text-xl"></i>
+                                    <i class="fa-solid {{ $won ? 'fa-trophy text-orange-400' : ($isNewRound ? 'fa-rotate text-green-500' : ($isLimitedDraw ? 'fa-star text-green-500' : 'fa-ticket text-green-500')) }} text-xl"></i>
                                 </div>
                                 <div class="flex-1">
                                     <div class="flex items-center justify-between">
@@ -84,6 +85,11 @@
                                         @if (isset($data['lottery_id']))
                                             <a href="{{ route('lotteries.show', $data['lottery_id']) }}" class="btn-secondary text-sm">
                                                 View lottery
+                                            </a>
+                                        @endif
+                                        @if ($isLimitedDraw)
+                                            <a href="{{ route('participate') }}" class="btn-secondary text-sm">
+                                                View draw
                                             </a>
                                         @endif
                                         @if ($unread)

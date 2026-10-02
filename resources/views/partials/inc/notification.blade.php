@@ -46,16 +46,20 @@
                         $unread = is_null($notification->read_at);
                         $won = ($data['result'] ?? null) === 'won';
                         $isNewRound = ($data['type'] ?? null) === 'lottery_new_round';
+                        $isLimitedDraw = ($data['type'] ?? null) === 'limited_draw_result';
+                        $notificationUrl = isset($data['lottery_id'])
+                            ? route('lotteries.show', $data['lottery_id'])
+                            : ($isLimitedDraw ? route('participate') : route('notifications'));
                     @endphp
                     <div class="notification-item {{ $unread ? 'unread bg-green-500/5' : '' }} relative border-b border-brand-border">
                         @if ($unread)
                             <span class="notification-dot absolute top-5 right-5 h-2.5 w-2.5 rounded-full bg-green-500"></span>
                         @endif
-                        <a href="{{ isset($data['lottery_id']) ? route('lotteries.show', $data['lottery_id']) : route('notifications') }}"
+                        <a href="{{ $notificationUrl }}"
                             class="flex items-start gap-3 p-4 transition hover:bg-brand-dark md:gap-4 md:p-5">
                             <div
                                 class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ $won ? 'bg-orange-500/20' : 'bg-green-500/20' }} md:h-11 md:w-11">
-                                <i class="fa-solid {{ $won ? 'fa-trophy text-orange-400' : ($isNewRound ? 'fa-rotate text-green-500' : 'fa-ticket text-green-500') }}"></i>
+                                <i class="fa-solid {{ $won ? 'fa-trophy text-orange-400' : ($isNewRound ? 'fa-rotate text-green-500' : ($isLimitedDraw ? 'fa-star text-green-500' : 'fa-ticket text-green-500')) }}"></i>
                             </div>
                             <div class="min-w-0 flex-1">
                                 <h6 class="text-sm md:text-base">

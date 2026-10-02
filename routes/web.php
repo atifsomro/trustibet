@@ -2,6 +2,7 @@
 
 use App\Enums\GameType;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Google2faController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\PageController;
@@ -176,6 +177,13 @@ Route::controller(AuthController::class)->group(function () {
     // Google Social Auth
     Route::get('auth/google', 'redirectToGoogle')->name('auth.google');
     Route::get('auth/google/callback', 'handleGoogleCallback')->name('auth.google.callback');
+});
+
+Route::controller(Google2faController::class)->prefix('auth/2fa')->group(function () {
+    Route::get('setup', 'showSetup')->name('auth.google2fa.setup');
+    Route::post('setup', 'confirmSetup')->name('auth.google2fa.setup.confirm');
+    Route::get('challenge', 'showChallenge')->name('auth.google2fa.challenge');
+    Route::post('challenge', 'verifyChallenge')->name('auth.google2fa.challenge.verify');
 });
 
 Route::middleware('auth')->prefix('wallet/deposits')->name('deposits.')->controller(DepositController::class)->group(function () {

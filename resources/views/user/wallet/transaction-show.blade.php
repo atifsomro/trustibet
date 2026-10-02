@@ -65,7 +65,7 @@
                         <span class="font-medium text-gray-600">Transaction Type</span>
 
                         <span class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm">
-                            {{ ucfirst(str_replace('_', ' ', $transaction->transaction_type->value)) }}
+                            {{ $transaction->type?->label() ?? '—' }}
                         </span>
                     </div>
 

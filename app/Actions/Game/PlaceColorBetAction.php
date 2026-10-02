@@ -102,6 +102,8 @@ class PlaceColorBetAction
                 ]);
             }
 
+            $this->assertWithinBetCaps($user, $game, $round, $fee);
+
             $play = GamePlay::create([
                 'uuid' => (string) Str::uuid(),
                 'user_id' => $user->id,
@@ -135,5 +137,38 @@ class PlaceColorBetAction
 
             return $play->fresh(['package', 'round']);
         });
+    }
+
+    protected function assertWithinBetCaps(User $user, Game $game, GameRound $round, float $fee): void
+    {
+        $maxPerRound = (float) $game->configValue('max_bet_per_round', 2000);
+        $maxPerDay = (float) $game->configValue('max_bet_per_day', 10000);
+
+        if ($maxPerRound > 0) {
+            $roundStake = (float) GamePlay::query()
+                ->where('user_id', $user->id)
+                ->where('game_round_id', $round->id)
+                ->sum('fee_amount');
+
+            if (($roundStake + $fee) > $maxPerRound + 0.00001) {
+                throw ValidationException::withMessages([
+                    'package' => 'This bet would exceed the maximum stake allowed for this round.',
+                ]);
+            }
+        }
+
+        if ($maxPerDay > 0) {
+            $dayStake = (float) GamePlay::query()
+                ->where('user_id', $user->id)
+                ->where('game_id', $game->id)
+                ->whereDate('created_at', now()->toDateString())
+                ->sum('fee_amount');
+
+            if (($dayStake + $fee) > $maxPerDay + 0.00001) {
+                throw ValidationException::withMessages([
+                    'package' => 'This bet would exceed the maximum stake allowed for today.',
+                ]);
+            }
+        }
     }
 }

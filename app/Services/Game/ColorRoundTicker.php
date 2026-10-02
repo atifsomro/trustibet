@@ -102,6 +102,12 @@ class ColorRoundTicker
             ->first();
 
         if ($open) {
+            if (! $open->server_seed || ! $open->server_seed_hash) {
+                $open->server_seed = bin2hex(random_bytes(32));
+                $open->server_seed_hash = hash('sha256', $open->server_seed);
+                $open->save();
+            }
+
             return $open;
         }
 
@@ -160,10 +166,14 @@ class ColorRoundTicker
             $locksAt = $startsAt->copy()->addSeconds($roundSeconds - $lockSeconds);
             $endsAt = $startsAt->copy()->addSeconds($roundSeconds);
 
+            $serverSeed = bin2hex(random_bytes(32));
+
             return GameRound::create([
                 'game_id' => $game->id,
                 'round_number' => $lastNumber + 1,
                 'status' => GameRoundStatus::BETTING,
+                'server_seed' => $serverSeed,
+                'server_seed_hash' => hash('sha256', $serverSeed),
                 'starts_at' => $startsAt,
                 'locks_at' => $locksAt,
                 'ends_at' => $endsAt,
