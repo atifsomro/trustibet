@@ -123,42 +123,17 @@ class SettleColorRoundAction
     protected function pickResultColor(GameRound $round): array
     {
         $game = $round->game;
-        $packages = $game->activePackages()->with('activePrizes')->get();
 
-        $colorWeights = [];
-
-        foreach ($packages as $package) {
-            foreach ($package->activePrizes as $prize) {
-                $color = strtolower((string) $prize->metaValue('color', ''));
-
-                if ($color === '') {
-                    continue;
-                }
-
-                $colorWeights[$color] = ($colorWeights[$color] ?? 0) + max(0, (int) $prize->weight);
-            }
-        }
-
-        if ($colorWeights !== []) {
-            $total = max(1, (int) array_sum($colorWeights));
-            $roll = $this->rollFromSeed($round, $total);
-            $cursor = 0;
-
-            foreach ($colorWeights as $color => $weight) {
-                $cursor += max(0, (int) $weight);
-
-                if ($roll <= $cursor) {
-                    return ['color' => $color, 'roll' => $roll];
-                }
-            }
-
-            return ['color' => (string) array_key_first($colorWeights), 'roll' => $roll];
-        }
-
+        // Color trading results must come from the game's configured colors
+        // (equal chance). Prize weights on packages are for payouts only —
+        // aggregating them skewed outcomes when packages were misconfigured.
         $colors = collect($game->configValue('colors', [
             'green', 'red', 'blue', 'yellow', 'orange',
             'purple', 'pink', 'cyan', 'white', 'black',
-        ]))->values();
+        ]))
+            ->map(fn ($color) => strtolower(trim((string) $color)))
+            ->filter()
+            ->values();
 
         if ($colors->isEmpty()) {
             return ['color' => 'green', 'roll' => 1];
@@ -168,7 +143,7 @@ class SettleColorRoundAction
         $index = $roll - 1;
 
         return [
-            'color' => strtolower((string) $colors[$index]),
+            'color' => (string) $colors[$index],
             'roll' => $roll,
         ];
     }

@@ -17,8 +17,8 @@ Schedule::command('investment:generate-daily-roi')
     ->withoutOverlapping();
 
 Schedule::command('games:tick-color-rounds')
-    ->everyMinute()
-    ->withoutOverlapping(2);
+    ->everyFiveSeconds()
+    ->withoutOverlapping(1);
 
 Schedule::command('games:draw-limited')
     ->everyMinute()

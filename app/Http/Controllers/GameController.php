@@ -269,12 +269,22 @@ class GameController extends Controller
             ->latest('round_number')
             ->first();
 
+        $myLastRoundBets = collect();
+        if ($lastSettled) {
+            $myLastRoundBets = GamePlay::query()
+                ->where('user_id', $user->id)
+                ->where('game_round_id', $lastSettled->id)
+                ->get()
+                ->map(fn (GamePlay $play) => $this->playPayload($play));
+        }
+
         return response()->json([
             'success' => true,
             'round' => $this->roundPayload($round),
             'last_result' => $lastSettled?->result_color,
             'last_settled' => $lastSettled ? $this->roundPayload($lastSettled) : null,
             'my_bets' => $myPending,
+            'my_last_round_bets' => $myLastRoundBets->values(),
             'balance' => (float) $balances['withdrawable'],
         ]);
     }
