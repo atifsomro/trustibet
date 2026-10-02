@@ -88,6 +88,17 @@
             <div class="flex items-center gap-3">
                 @include('partials.inc.notification')
 
+                <a href="{{ route('user-account') }}"
+                    class="header-balance rounded-xl md:flex border border-green-500/20 bg-green-500/10 px-2 py-1 md:px-3 md:py-2 text-sm font-medium text-green-400 transition-all hover:bg-green-500/20">
+                    <span class="relative leading-tight">
+                        <span class="block text-[10px] sm:text-[12px] font-medium">
+                            Live Account
+                        </span>
+                        <span class="block text-[8px] sm:text-[10px] font-bold text-white" data-live-balance="header">
+                            $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
+                        </span>
+                    </span>
+                </a>
                 @if (!auth()->check())
                     <a href="{{ route('auth.login') }}" class="btn btn-secondary hidden lg:inline-flex">
                         Login
@@ -95,18 +106,6 @@
                 @else
                     <a href="{{ route('auth.logout') }}" class="btn btn-primary hidden lg:inline-flex">
                         Logout
-                    </a>
-                    <a href="{{ route('user-account') }}"
-                        class="header-balance rounded-xl md:flex border border-green-500/20 bg-green-500/10 px-3 py-2 text-sm font-medium text-green-400 transition-all duration-300 hover:bg-green-500/20 animate-pulse">
-                        <span class="relative leading-tight">
-                            <span class="block text-[12px] font-medium">
-                                Current Balance
-                            </span>
-
-                            <span class="block text-[10px] font-bold text-white" data-live-balance="header">
-                                $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}
-                            </span>
-                        </span>
                     </a>
                 @endif
 

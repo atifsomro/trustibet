@@ -28,13 +28,13 @@
 
                     <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
-                    <div class="relative flex h-60 items-center justify-center bg-brand-dark p-2 sm:p-6">
+                    <div class="relative flex sm:h-60 items-center justify-center bg-brand-dark p-2 sm:p-6">
                         <img src="{{ $featured->imageUrl() }}" alt="{{ $featured->title }}"
-                            class="max-h-full w-full object-contain transition duration-500 group-hover:scale-110">
+                            class="max-h-full w-full object-contain transition duration-500 group-hover:scale-110 mt-4 sm:mt-0">
 
                         @if ($featured->badge)
                             <span
-                                class="absolute left-0 top-0 rounded-full bg-orange-500/15 px-3 py-1 text-[10px] sm:text-xs font-semibold text-orange-400">
+                                class="absolute left-0 top-0 sm:w-fit w-full sm:text-start text-center rounded-full bg-orange-500/15 px-3 py-1 text-[10px] sm:text-xs font-semibold text-orange-400">
                                 {{ $featured->badge }}
                             </span>
                         @endif
@@ -45,23 +45,22 @@
                             {{ $featured->title }}
                         </h4>
 
-                        <p class="mt-3 text-gray-400">
+                        <p class="mt-3 text-gray-400 hidden sm:block"">
                             {{ $featured->description }}
                         </p>
 
-                        <div class="mt-5 flex items-center justify-between">
+                        <div class="mt-2 sm:mt-5 flex items-center justify-between">
                             <span class="flex items-center gap-2 text-[10px] sm:text-sm text-green-500">
                                 <i class="fa-solid fa-circle-check"></i>
                                 Available
                             </span>
-
                             <span class="flex items-center gap-1 text-[10px] sm:text-sm text-orange-400">
                                 <i class="fa-solid fa-star"></i>
                                 {{ number_format((float) $featured->rating, 1) }}
                             </span>
                         </div>
 
-                        <a href="{{ route('game.show', $featured->slug) }}" class="mt-6 btn-orange">
+                        <a href="{{ route('game.show', $featured->slug) }}" class="mt-2 sm:mt-6 btn-orange">
                             <i class="fa-solid fa-play mr-2"></i>
                             Play Now
                         </a>

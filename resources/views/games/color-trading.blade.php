@@ -1,7 +1,16 @@
 @php
     $colorPackages = $packages ?? collect();
     $colors = $gameModel->configValue('colors', [
-        'green', 'red', 'blue', 'yellow', 'orange', 'purple', 'pink', 'cyan', 'white', 'black',
+        'green',
+        'red',
+        'blue',
+        'yellow',
+        'orange',
+        'purple',
+        'pink',
+        'cyan',
+        'white',
+        'black',
     ]);
     $colorClass = [
         'green' => 'bg-green-500',
@@ -24,82 +33,92 @@
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="text-center sm:text-start">
                         <h2>Earn more from color trading</h2>
-                        <p class="text-gray-400 mt-2">Predict the winning color before countdown ends.</p>
+                        <p class="text-gray-400 mt-1 text-[12px] sm:text-lg">Predict the winning color before countdown
+                            ends.</p>
                     </div>
                     <span class="text-green-500 font-semibold animate-pulse">LIVE</span>
                 </div>
 
                 <div class="flex justify-center mt-5 sm:mt-10">
                     <div
-                        class="relative w-56 h-56 rounded-full border-[12px] border-brand-border flex items-center justify-center">
+                        class="relative w-30 sm:w-56 h-30 sm:h-56 rounded-full border-[12px] border-brand-border flex items-center justify-center">
                         <div class="text-center">
-                            <p class="text-gray-400">Time Left</p>
-                            <h1 id="timer" class="text-6xl font-black mt-2">
+                            <p class="text-gray-400 text-[10px] sm:text-sm">Time Left</p>
+                            <h1 id="timer" class="text-xl sm:text-6xl font-black sm:mt-2">
                                 {{ $round?->secondsRemaining() ?? 10 }}
                             </h1>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mt-6 sm:mt-12">
+                <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-1 sm:gap-4 mt-6 sm:mt-12">
                     @foreach ($colors as $color)
                         <button type="button"
-                            class="color-btn {{ $colorClass[$color] ?? 'bg-gray-500' }} rounded-2xl h-10 sm:h-20 font-bold capitalize"
+                            class="color-btn {{ $colorClass[$color] ?? 'bg-gray-500' }} text-[10px] sm:text-sm rounded-2xl h-8 sm:h-20 font-bold capitalize"
                             data-color="{{ $color }}">
                             {{ $color }}
                         </button>
                     @endforeach
                 </div>
 
-                <div class="mt-5 sm:mt-10">
-                    <label class="font-semibold">Quick Bet Packages</label>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-4">
+                <div class="mt-1 sm:mt-10">
+                    <label class="font-semibold text-[12px] sm:text-base">Quick Bet Packages</label>
+                    <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-1 sm:mt-4">
                         @foreach ($colorPackages as $pkg)
-                            <button type="button" class="chip-btn border border-brand-border rounded-xl py-2"
-                                data-package-id="{{ $pkg->id }}"
-                                data-fee="{{ $pkg->fee }}">
+                            <button type="button"
+                                class="text-[10px] sm:text-sm chip-btn border border-brand-border rounded-xl py-2"
+                                data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}">
                                 ${{ number_format((float) $pkg->fee, 0) }}
                             </button>
                         @endforeach
                     </div>
                 </div>
 
-                <div class="mt-4 sm:mt-8">
+                <div class="mt-1 sm:mt-4 flex items-center justify-center gap-1">
                     <input id="betAmount" type="text" readonly placeholder="Select a chip package"
                         class="w-full h-8 sm:h-14 rounded-2xl bg-brand-dark border border-brand-border px-3 sm:px-5 text-[12px] sm:text-sm">
+                    <button id="placeBet" type="button"
+                        class="btn-primary w-full h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
+                        Place Bet
+                    </button>
                 </div>
-                <button id="placeBet" type="button"
-                    class="btn-primary w-full mt-3 sm:mt-6 h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
-                    Place Bet
-                </button>
+                <div class="mt-4 sm:mt-8">
+                    <h4>History</h4>
+                    <div id="history" class="grid grid-cols-5 gap-3 mt-1 sm:mt-5"></div>
+                </div>
             </div>
         </div>
 
         <div class="lg:col-span-4">
-            <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6">
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400">Balance</p>
-                    <h3 id="balance" class="mt-2" data-live-balance>${{ number_format($balance, 2) }}</h3>
-                </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Current Round</p>
-                    <h2 id="round" class="mt-2">#{{ $round?->round_number ?? '—' }}</h2>
-                </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Selected Color</p>
-                    <h3 id="selectedColor" class="mt-2 capitalize">None</h3>
-                </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Balance Deduction</p>
-                    <h3 id="deduction" class="mt-2">$0</h3>
-                </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Last Result</p>
-                    <h3 id="result" class="capitalize">Waiting...</h3>
-                </div>
-                <div class="mt-4 sm:mt-8">
-                    <h4>History</h4>
-                    <div id="history" class="grid grid-cols-5 gap-3 mt-5"></div>
+            <div class="bg-brand-surface border border-brand-border rounded-3xl p-2 sm:p-6">
+                <div class="grid grid-cols-3 md:grid-cols-1 gap-1">
+                    <div
+                        class="rounded-2xl bg-brand-dark p-2 sm:p-5 border border-brand-border text-center sm:text-start">
+                        <p class="text-gray-400 text-[10px] sm:text-sm">Current Balance</p>
+                        <span id="balance" class="mt-2"1 text-[12px]
+                            sm:text-lgdata-live-balance>${{ number_format($balance, 2) }}</span>
+                    </div>
+                    <div
+                        class="rounded-2xl bg-brand-dark p-2 sm:p-5 border border-brand-border text-center sm:text-start">
+                        <p class="text-gray-400 text-[10px] sm:text-sm">Balance Deduction</p>
+                        <span id="deduction" class="mt-1 text-[12px] sm:text-lg">$0</span>
+                    </div>
+                    <div
+                        class="rounded-2xl bg-brand-dark p-2 sm:p-5 border border-brand-border text-center sm:text-start">
+                        <p class="text-gray-400 text-[10px] sm:text-sm">Current Round</p>
+                        <span id="round"
+                            class="mt-1 text-[12px] sm:text-lg">#{{ $round?->round_number ?? '—' }}</span>
+                    </div>
+                    <div
+                        class="rounded-2xl bg-brand-dark p-2 sm:p-5 border border-brand-border text-center sm:text-start">
+                        <p class="text-gray-400 text-[10px] sm:text-sm">Selected Color</p>
+                        <span id="selectedColor" class="mt-1 text-[12px] sm:text-lg capitalize">None</span>
+                    </div>
+                    <div
+                        class="rounded-2xl bg-brand-dark p-2 sm:p-5 border border-brand-border text-center sm:text-start">
+                        <p class="text-gray-400 text-[10px] sm:text-sm">Last Result</p>
+                        <span id="result" class="capitalize">Waiting...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -188,7 +207,8 @@
             function resetSelections() {
                 State.selectedColor = null;
                 UI.colorButtons.forEach(button => {
-                    button.classList.remove("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl", "shadow-brand-primary/40");
+                    button.classList.remove("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl",
+                        "shadow-brand-primary/40");
                 });
                 updateSelectedColor("None");
                 updateDeduction(0);
@@ -197,7 +217,8 @@
             function addHistory(color) {
                 if (!color) return;
                 const item = document.createElement("div");
-                item.className = "aspect-square rounded-xl border border-brand-border flex items-center justify-center capitalize font-semibold";
+                item.className =
+                    "aspect-square rounded-xl h-10 sm:w-14 h-10 sm:h-14 text-[12px] sm:text-base border border-brand-border flex items-center justify-center capitalize font-semibold";
                 const colorMap = {
                     green: "bg-green-500 text-white",
                     red: "bg-red-500 text-white",
@@ -228,9 +249,11 @@
                 button.addEventListener("click", () => {
                     if (State.bettingLocked || State.loading) return;
                     UI.colorButtons.forEach(btn => {
-                        btn.classList.remove("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl", "shadow-brand-primary/40");
+                        btn.classList.remove("ring-4", "ring-brand-primary", "scale-105",
+                            "shadow-2xl", "shadow-brand-primary/40");
                     });
-                    button.classList.add("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl", "shadow-brand-primary/40");
+                    button.classList.add("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl",
+                        "shadow-brand-primary/40");
                     State.selectedColor = button.dataset.color;
                     updateSelectedColor(State.selectedColor);
                 });
@@ -239,12 +262,14 @@
             UI.chipButtons.forEach(button => {
                 button.addEventListener("click", () => {
                     if (State.bettingLocked || State.loading) return;
-                    UI.chipButtons.forEach(btn => btn.classList.remove("bg-brand-primary", "text-white", "scale-105"));
+                    UI.chipButtons.forEach(btn => btn.classList.remove("bg-brand-primary",
+                        "text-white", "scale-105"));
                     button.classList.add("bg-brand-primary", "text-white", "scale-105");
                     State.selectedPackageId = Number(button.dataset.packageId);
                     State.selectedAmount = Number(button.dataset.fee);
                     UI.betInput.value = "$" + State.selectedAmount.toFixed(2);
-                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(2);
+                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(
+                        2);
                 });
             });
 
@@ -286,7 +311,8 @@
                     });
                     const data = await res.json();
                     if (!res.ok || !data.success) {
-                        throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] || "Bet failed");
+                        throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
+                            "Bet failed");
                     }
                     updateBalance(data.balance);
                     updateDeduction(data.play?.fee_amount || State.selectedAmount);
@@ -324,7 +350,9 @@
             async function pollRound() {
                 try {
                     const res = await fetch(roundUrl, {
-                        headers: { "Accept": "application/json" }
+                        headers: {
+                            "Accept": "application/json"
+                        }
                     });
                     const data = await res.json();
                     if (!data.success) return;
@@ -353,9 +381,17 @@
             }
 
             window.ColorTrading = {
-                updateTimer, updateBalance, updateRound, updateResult,
-                updateSelectedColor, updateDeduction, lockBetting, unlockBetting,
-                resetRound: resetSelections, addHistory, setLoading
+                updateTimer,
+                updateBalance,
+                updateRound,
+                updateResult,
+                updateSelectedColor,
+                updateDeduction,
+                lockBetting,
+                unlockBetting,
+                resetRound: resetSelections,
+                addHistory,
+                setLoading
             };
 
             pollRound();
