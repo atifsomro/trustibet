@@ -12,7 +12,7 @@
                                 {{ $game['description'] }}
                             </p>
                         </div>
-                        <div class="p-6">
+                        <div class="p-2 sm:p-6">
                             @includeIf('games.' . $slug)
                         </div>
                     </div>
