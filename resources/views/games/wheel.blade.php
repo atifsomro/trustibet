@@ -19,13 +19,13 @@
 
 <div class="lucky-wheel">
     <div class="wheel_game_wrapper">
-        <div class="grid lg:grid-cols-12 gap-6">
+        <div class="grid lg:grid-cols-12 gap-3 sm:gap-6">
             <div class="lg:col-span-8 order-2 lg:order-1">
                 <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
-                    <div class="flex items-center justify-between mb-8 flex-wrap gap-2">
+                    <div class="flex items-center justify-between mb-4 sm:mb-8 flex-wrap gap-2">
                         <div class="text-center sm:text-start">
                             <h3>Lucky Wheel</h3>
-                            <p class="text-gray-400 mt-2">Spin the wheel and win exciting rewards.</p>
+                            <p class="text-gray-400 mt-1 sm:mt-2 text-[12px] sm:text-sm">Spin the wheel and win exciting rewards.</p>
                         </div>
                         <span class="text-green-500 text-center sm:text-start animate-pulse">Live Game</span>
                     </div>
@@ -42,35 +42,35 @@
                                 <div class="absolute inset-0 rounded-full border-8 border-brand-primary pointer-events-none"></div>
                             </div>
                         </div>
-                        <button id="spinWheel" type="button" class="btn-primary mt-8 min-w-45">Spin Now</button>
+                        <button id="spinWheel" type="button" class="btn-primary mt-4 sm:mt-8 min-w-45">Bet Now</button>
                     </div>
                 </div>
             </div>
             <div class="lg:col-span-4 order-1 lg:order-2">
                 <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
                     <h3 class="text-center sm:text-start">Game Panel</h3>
-                    <div class="mt-6">
+                    <div class="mt-2 sm:mt-6">
                         <label>Spins</label>
-                        <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-4 space-y-3">
+                        <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-2 sm:p-4 space-y-3">
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Free Spins</span>
-                                <strong id="freeSpins">{{ $freeSpinsRemaining ?? 0 }}</strong>
+                                <span class="text-gray-400 text-[10px] sm:text-base">Free Spins</span>
+                                <strong class="text-[10px] sm:text-base" id="freeSpins">{{ $freeSpinsRemaining ?? 0 }}</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">Spins Left</span>
-                                <strong id="packageSpins">0</strong>
+                                <span class="text-gray-400 text-[10px] sm:text-base">Spins Left</span>
+                                <strong class="text-[10px] sm:text-base" id="packageSpins">0</strong>
                             </div>
                             <div class="flex justify-between">
-                                <span class="text-gray-400">This Spin</span>
-                                <strong id="paidSpins">$0.00</strong>
+                                <span class="text-gray-400 text-[10px] sm:text-base">This Spin</span>
+                                <strong class="text-[10px] sm:text-base" id="paidSpins">$0.00</strong>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-6">
+                    <div class="mt-2 sm:mt-6">
                         <div class="text-[12px] sm:text-sm md:text-base text-center sm:text-start">
                             Choose a spin package
                         </div>
-                        <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div class="grid grid-cols-4 sm:grid-cols-2 gap-3 mt-3">
                             @foreach ($wheelPackages as $pkg)
                                 @php
                                     $spins = (int) $pkg->metaValue('spins', 1);
@@ -86,14 +86,14 @@
                                     })->values();
                                 @endphp
                                 <button type="button"
-                                    class="chance-package flex flex-col items-center text-center rounded-xl border border-brand-border p-2 sm:p-4 hover:border-brand-primary {{ $defaultWheel && $pkg->id === $defaultWheel->id ? 'border-brand-primary' : '' }}"
+                                    class="chance-package flex flex-col items-center text-center rounded-sm sm:rounded-xl border border-brand-border p-1 sm:p-4 hover:border-brand-primary {{ $defaultWheel && $pkg->id === $defaultWheel->id ? 'border-brand-primary' : '' }}"
                                     data-package-id="{{ $pkg->id }}"
                                     data-fee="{{ $pkg->fee }}"
                                     data-allowance="{{ $spins }}"
                                     data-remaining="{{ (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0) }}"
                                     data-prizes='@json($pkgPrizes)'>
-                                    <h4>${{ number_format((float) $pkg->fee, 0) }}</h4>
-                                    <p class="package-caption text-[10px] sm:text-sm text-gray-400 mt-1">
+                                    <span class="text-[10px] sm:text-base">${{ number_format((float) $pkg->fee, 0) }}</span>
+                                    <p class="package-caption text-[8px] sm:text-sm text-gray-400 sm:mt-1">
                                         @php $left = (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0); @endphp
                                         @if ($left > 0)
                                             {{ $left }} left

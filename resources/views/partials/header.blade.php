@@ -149,9 +149,9 @@
         <ul class="space-y-3">
             <li>
                 <a href="{{ route('user-account') }}"
-                    class="flex items-center justify-between rounded-xl bg-gradient-to-r from-green-500 to-orange-500 py-4 px-5 font-semibold text-white shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-all duration-300 hover:bg-green-500/20 animate-pulse">
+                    class="flex items-center justify-between rounded-xl bg-gradient-to-r from-green-500 to-orange-500 py-4 px-5 font-semibold text-white shadow-lg shadow-green-500/20 hover:scale-[1.02] transition-all duration-300 hover:bg-green-500/20 ">
                     <span class="block text-sm font-medium">
-                        <i class="fa-solid fa-hand-holding-dollar"></i> Current Balance
+                        <i class="fa-solid fa-hand-holding-dollar"></i> Live Account
                     </span>
                     <span class="block text-[12px] font-bold text-white" data-live-balance="header">
                         $ {{ number_format(auth()->user()->wallet->withdrawable_balance ?? 0, 2) }}

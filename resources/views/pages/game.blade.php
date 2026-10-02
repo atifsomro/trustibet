@@ -1,7 +1,7 @@
 @extends('layouts.master')
 
 @section('content')
-    <section class="py-14">
+    <section class="py-6 sm:py-8 md:py-10 lg:py-14">
         <div class="container">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div class="lg:col-span-3 position-relative lg:sticky lg:top-0 z-3 order-2 lg:order-1">

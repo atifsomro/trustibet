@@ -33,9 +33,10 @@
             <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6 shadow-2xl">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div class="text-center sm:text-start">
-                        <h2>Earn more from color trading</h2>
-                        <p class="text-gray-400 mt-2">Predict the winning color before countdown ends.</p>
-                        <p class="text-gray-500 text-sm mt-1">Each round is independent — past colors do not affect the next result.</p>
+                        <h3>Earn more from color trading</h3>
+                        <p class="text-gray-400 text-[12px] sm:text-sm mt-2">Predict the winning color before countdown ends.</p>
+                        <p class="text-gray-500 text-[12px] sm:text-sm mt-1">Each round is independent — past colors do not affect the
+                            next result.</p>
                     </div>
                     <span class="text-green-500 font-semibold animate-pulse">LIVE</span>
                 </div>
@@ -90,32 +91,33 @@
             </div>
         </div>
 
-        <div class="lg:col-span-4">
-            <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6">
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400">Balance</p>
-                    <h3 id="balance" class="mt-2" data-live-balance>${{ number_format($balance, 2) }}</h3>
+        <div class="lg:col-span-4 gap-2 bg-brand-surface border border-brand-border rounded-3xl p-2 sm:p-3">
+            <div class="grid grid-cols-2 md:grid-cols-1 gap-2">
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400 text-[10px] sm:text-base">Current Balance</p>
+                    <span id="balance" class="mt-2 text-[10px] sm:text-base"
+                        data-live-balance>${{ number_format($balance, 2) }}</span>
                 </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Current Round</p>
-                    <h2 id="round" class="mt-2">#{{ $round?->round_number ?? '—' }}</h2>
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400 text-[10px] sm:text-base">Balance Deduction</p>
+                    <span id="deduction" class="mt-2 text-[10px] sm:text-base">$0</span>
                 </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Selected Color</p>
-                    <h3 id="selectedColor" class="mt-2 capitalize">None</h3>
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400 text-[10px] sm:text-base">Current Round</p>
+                    <span id="round"
+                        class="mt-2 text-[10px] sm:text-base">#{{ $round?->round_number ?? '—' }}</span>
                 </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Balance Deduction</p>
-                    <h3 id="deduction" class="mt-2">$0</h3>
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400 text-[10px] sm:text-base">Selected Color</p>
+                    <span id="selectedColor" class="mt-2 text-[10px] sm:text-base capitalize">None</span>
                 </div>
-                <div class="rounded-2xl bg-brand-dark p-3 sm:p-5 border border-brand-border mt-3 sm:mt-5">
-                    <p class="text-gray-400">Last Result</p>
-                    <h3 id="result" class="capitalize">Waiting...</h3>
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <p class="text-gray-400 mt-2 text-[10px] sm:text-base">Last Result</p>
+                    <span id="result" class="capitalize">Waiting...</span>
                 </div>
-                <div class="mt-4 sm:mt-8">
-                    <h4>Recent</h4>
-                    <p class="text-gray-500 text-xs mt-1">Only the latest few results — each draw is random and independent.</p>
-                    <div id="historySide" class="history-list grid grid-cols-3 gap-3 mt-5"></div>
+                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                    <span class="text-[10px] sm:text-base">Recent Result</span>
+                    <div id="historySide" class="history-list grid grid-cols-3 gap-1 sm:gap-3 mt-5"></div>
                 </div>
             </div>
         </div>
@@ -259,7 +261,7 @@
                 UI.historyLists.forEach((list) => {
                     const item = document.createElement("div");
                     item.className =
-                        "aspect-square rounded-xl w-10 sm:w-14 h-10 sm:h-14 text-[12px] sm:text-base border border-brand-border flex items-center justify-center capitalize font-semibold";
+                        "aspect-square rounded-xl w-8 sm:w-14 h-8 sm:h-14 text-[8px] sm:text-base border border-brand-border flex items-center justify-center capitalize font-semibold";
                     item.classList.add(...(colorMap[color] || "bg-gray-500 text-white").split(" "));
                     item.textContent = color.charAt(0).toUpperCase();
                     list.prepend(item);
@@ -336,7 +338,8 @@
                     State.selectedPackageId = Number(button.dataset.packageId);
                     State.selectedAmount = Number(button.dataset.fee);
                     UI.betInput.value = "$" + State.selectedAmount.toFixed(2);
-                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(2);
+                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(
+                        2);
                 });
             });
 
