@@ -20,13 +20,16 @@ use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
 use Illuminate\Support\Facades\Log;
+use App\Services\Auth\Google2faService;
 use App\Services\Wallet\WalletService;
+use Illuminate\Http\RedirectResponse;
 
 class AuthController extends Controller
 {
     public function __construct(
         protected RegisterUserAction $registerUserAction,
-        protected WalletService $walletService
+        protected WalletService $walletService,
+        protected Google2faService $google2fa
     ) {}
     public function showLoginForm()
     {
@@ -50,6 +53,11 @@ class AuthController extends Controller
                     ->with('email', $user->email)
                     ->with('error', 'Please verify your email address before logging in.');
             }
+
+            if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
+                return $challenge;
+            }
+
             return redirect()->route('home');
         }
         return back()
@@ -152,6 +160,35 @@ class AuthController extends Controller
         Auth::guard('web')->logout();
         Session::flush();
         return redirect()->route('auth.login');
+    }
+
+    /**
+     * Start the Google Authenticator challenge/setup after password (or social) login.
+     */
+    protected function beginGoogle2faChallenge(Request $request, User $user): ?RedirectResponse
+    {
+        if (! $this->google2fa->requiresChallenge($user)) {
+            $request->session()->forget([
+                Google2faService::SESSION_USER_ID,
+                Google2faService::SESSION_PASSED,
+            ]);
+
+            return null;
+        }
+
+        Auth::logout();
+        $request->session()->forget(Google2faService::SESSION_PASSED);
+        $request->session()->put(Google2faService::SESSION_USER_ID, $user->id);
+
+        if ($this->google2fa->isSetupPending($user)) {
+            return redirect()
+                ->route('auth.google2fa.setup')
+                ->with('info', 'Scan the QR code with Google Authenticator to finish signing in.');
+        }
+
+        return redirect()
+            ->route('auth.google2fa.challenge')
+            ->with('info', 'Enter the code from your authenticator app to continue.');
     }
 
     public function forgotPasswordForm()
@@ -282,6 +319,10 @@ class AuthController extends Controller
         }
 
         Auth::login($user, true);
+
+        if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
+            return $challenge;
+        }
 
         return redirect()
             ->route('home')

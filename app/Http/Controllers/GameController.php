@@ -273,6 +273,7 @@ class GameController extends Controller
             'success' => true,
             'round' => $this->roundPayload($round),
             'last_result' => $lastSettled?->result_color,
+            'last_settled' => $lastSettled ? $this->roundPayload($lastSettled) : null,
             'my_bets' => $myPending,
             'balance' => (float) $balances['withdrawable'],
         ]);
@@ -416,6 +417,11 @@ class GameController extends Controller
             'round_number' => $round->round_number,
             'status' => $round->status->value,
             'result_color' => $round->result_color,
+            'server_seed_hash' => $round->server_seed_hash,
+            'server_seed' => $round->revealServerSeed(),
+            'fairness_roll' => $round->status === \App\Enums\GameRoundStatus::SETTLED
+                ? $round->fairness_roll
+                : null,
             'starts_at' => $round->starts_at?->toIso8601String(),
             'locks_at' => $round->locks_at?->toIso8601String(),
             'ends_at' => $round->ends_at?->toIso8601String(),

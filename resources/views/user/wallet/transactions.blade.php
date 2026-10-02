@@ -188,7 +188,7 @@
                             <span
                                 class="inline-flex px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs">
 
-                                {{ ucfirst(str_replace('_',' ',$transaction->transaction_type->value)) }}
+                                {{ $transaction->type?->label() ?? '—' }}
 
                             </span>
 

@@ -7,9 +7,12 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\GameType;
 use App\Http\Controllers\Controller;
 use App\Models\Game;
+use App\Models\GamePlay;
+use App\Models\User;
 use App\Services\Game\LimitedDrawService;
 use App\Models\GamePackage;
 use App\Models\GamePrize;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -93,11 +96,196 @@ class GameController extends Controller
             ]),
         ]);
 
+        $limitedDraw = null;
+
+        if ($game->type === GameType::LIMITED_DRAW) {
+            $limitedDraw = $this->limitedDrawSnapshot($game);
+        }
+
         return view('admin.games.edit', [
             'game' => $game,
             'types' => GameType::cases(),
+            'limitedDraw' => $limitedDraw,
             'active' => 'games',
         ]);
+    }
+
+    public function participants(Game $game): JsonResponse
+    {
+        abort_unless($game->type === GameType::LIMITED_DRAW, 404);
+
+        $snapshot = $this->limitedDrawSnapshot($game);
+        $round = $snapshot['round'];
+        $favoriteUserId = (int) ($snapshot['favorite_user']['id'] ?? 0);
+
+        $plays = collect();
+
+        if ($round) {
+            $plays = GamePlay::query()
+                ->where('game_id', $game->id)
+                ->where('game_round_id', $round->id)
+                ->with(['user:id,name,username,email,phone'])
+                ->orderBy('id')
+                ->get()
+                ->map(function (GamePlay $play, int $index) use ($favoriteUserId) {
+                    return [
+                        'id' => $play->id,
+                        'entry_number' => (int) data_get($play->selection, 'entry', $index + 1),
+                        'user_id' => $play->user_id,
+                        'name' => $play->user?->name ?: '—',
+                        'username' => $play->user?->username ?: '—',
+                        'email' => $play->user?->email ?: '—',
+                        'phone' => $play->user?->phone ?: '—',
+                        'fee' => (float) $play->fee_amount,
+                        'status' => $play->status?->value,
+                        'status_label' => $play->status?->label() ?? '—',
+                        'is_favorite' => $favoriteUserId > 0 && (int) $play->user_id === $favoriteUserId,
+                        'joined_at' => $play->created_at?->format('d M Y, h:i:s A'),
+                        'joined_at_iso' => $play->created_at?->toIso8601String(),
+                    ];
+                })
+                ->values();
+        }
+
+        return response()->json([
+            'success' => true,
+            'game_id' => $game->id,
+            'round' => $snapshot['round_payload'],
+            'live_participants' => $snapshot['entries'],
+            'max_entries' => $snapshot['max_entries'],
+            'is_open' => $snapshot['is_open'],
+            'favorite_user' => $snapshot['favorite_user'],
+            'participants' => $plays,
+            'count' => $plays->count(),
+            'server_now' => now()->toIso8601String(),
+        ]);
+    }
+
+    public function updateFavoriteUser(Request $request, Game $game): JsonResponse
+    {
+        abort_unless($game->type === GameType::LIMITED_DRAW, 404);
+
+        $validated = $request->validate([
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+        ]);
+
+        $userId = isset($validated['user_id']) ? (int) $validated['user_id'] : 0;
+        $snapshot = $this->limitedDrawSnapshot($game);
+        $round = $snapshot['round'];
+
+        if ($userId > 0) {
+            if (! $round) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No active round found for this draw.',
+                ], 422);
+            }
+
+            $joined = GamePlay::query()
+                ->where('game_id', $game->id)
+                ->where('game_round_id', $round->id)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (! $joined) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Favourite user must already be a participant in this round.',
+                ], 422);
+            }
+        }
+
+        $config = $game->config ?? [];
+
+        if ($userId > 0) {
+            $config['favorite_user_id'] = $userId;
+        } else {
+            unset($config['favorite_user_id']);
+        }
+
+        $game->update(['config' => $config]);
+
+        $fresh = $this->limitedDrawSnapshot($game->fresh());
+
+        return response()->json([
+            'success' => true,
+            'message' => $userId > 0
+                ? 'Favourite winner selected.'
+                : 'Favourite winner cleared. Draw will run normally.',
+            'favorite_user' => $fresh['favorite_user'],
+            'live_participants' => $fresh['entries'],
+            'round' => $fresh['round_payload'],
+            'is_open' => $fresh['is_open'],
+        ]);
+    }
+
+    /**
+     * Accurate live snapshot for the current (or latest) limited-draw round.
+     *
+     * @return array{
+     *     round: ?\App\Models\GameRound,
+     *     round_payload: ?array,
+     *     entries: int,
+     *     max_entries: int,
+     *     is_open: bool,
+     *     favorite_user: ?array
+     * }
+     */
+    protected function limitedDrawSnapshot(Game $game): array
+    {
+        $service = app(LimitedDrawService::class);
+        $round = $service->sync($game);
+        $present = $service->present($game);
+
+        // Prefer the synced round; present() re-syncs and may return the same row.
+        $round = $present['round'] ?? $round;
+        $entries = (int) ($present['entries'] ?? 0);
+
+        // Double-check count directly from plays for the active round so admin stays exact.
+        if ($round) {
+            $entries = $round->plays()->count();
+        }
+
+        return [
+            'round' => $round,
+            'round_payload' => $round ? [
+                'id' => $round->id,
+                'round_number' => $round->round_number,
+                'status' => $round->status?->value,
+                'starts_at' => $round->starts_at?->toIso8601String(),
+                'ends_at' => $round->ends_at?->toIso8601String(),
+                'ends_at_label' => $round->ends_at?->format('d M Y, h:i A'),
+            ] : null,
+            'entries' => $entries,
+            'max_entries' => (int) ($present['max_entries'] ?? 0),
+            'is_open' => (bool) ($present['is_open'] ?? false),
+            'favorite_user' => $this->favoriteUserPayload($game),
+        ];
+    }
+
+    protected function favoriteUserPayload(Game $game): ?array
+    {
+        $userId = (int) $game->configValue('favorite_user_id', 0);
+
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $user = User::query()
+            ->select(['id', 'name', 'username', 'email'])
+            ->find($userId);
+
+        if (! $user) {
+            return null;
+        }
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name ?: '—',
+            'username' => $user->username ?: '—',
+            'email' => $user->email ?: '—',
+            'label' => trim(($user->name ?: $user->username ?: 'User').' #'.$user->id),
+        ];
     }
 
     public function update(Request $request, Game $game)
@@ -108,7 +296,8 @@ class GameController extends Controller
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
         $validated['config'] = $this->normalizeConfig(
             GameType::from($validated['type']),
-            $validated['config'] ?? []
+            $validated['config'] ?? [],
+            $game
         );
         $validated = $this->applyUploads($request, $validated, $game);
 
@@ -277,6 +466,9 @@ class GameController extends Controller
             'config.free_spins_daily' => ['nullable', 'integer', 'min:0'],
             'config.round_seconds' => ['nullable', 'integer', 'min:5', 'max:300'],
             'config.lock_seconds' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'config.history_limit' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'config.max_bet_per_round' => ['nullable', 'numeric', 'min:0'],
+            'config.max_bet_per_day' => ['nullable', 'numeric', 'min:0'],
             'config.colors' => ['nullable', 'string'],
             'config.headline' => ['nullable', 'string', 'max:160'],
             'config.prize_name' => ['nullable', 'string', 'max:160'],
@@ -302,7 +494,7 @@ class GameController extends Controller
             ->all();
     }
 
-    protected function normalizeConfig(GameType $type, array $config): array
+    protected function normalizeConfig(GameType $type, array $config, ?Game $existing = null): array
     {
         $normalized = [];
 
@@ -317,6 +509,9 @@ class GameController extends Controller
         if ($type === GameType::COLOR_TRADING) {
             $normalized['round_seconds'] = (int) ($config['round_seconds'] ?? 10);
             $normalized['lock_seconds'] = (int) ($config['lock_seconds'] ?? 5);
+            $normalized['history_limit'] = max(1, min(5, (int) ($config['history_limit'] ?? 3)));
+            $normalized['max_bet_per_round'] = max(0, (float) ($config['max_bet_per_round'] ?? 2000));
+            $normalized['max_bet_per_day'] = max(0, (float) ($config['max_bet_per_day'] ?? 10000));
             $colors = $config['colors'] ?? '';
 
             if (is_string($colors)) {
@@ -345,6 +540,14 @@ class GameController extends Controller
             $normalized['max_entries'] = (int) ($config['max_entries'] ?? 0);
             $normalized['winner_count'] = max(1, (int) ($config['winner_count'] ?? 1));
             $normalized['max_per_user'] = max(1, (int) ($config['max_per_user'] ?? 1));
+
+            $favoriteUserId = (int) ($config['favorite_user_id']
+                ?? $existing?->configValue('favorite_user_id', 0)
+                ?? 0);
+
+            if ($favoriteUserId > 0) {
+                $normalized['favorite_user_id'] = $favoriteUserId;
+            }
         }
 
         return $normalized;

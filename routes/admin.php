@@ -73,6 +73,10 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
         Route::resource('games', GameController::class)->except(['show', 'destroy']);
+        Route::get('games/{game}/participants', [GameController::class, 'participants'])
+            ->name('games.participants');
+        Route::post('games/{game}/favorite-user', [GameController::class, 'updateFavoriteUser'])
+            ->name('games.favorite-user');
         Route::post('games/{game}/packages', [GameController::class, 'storePackage'])
             ->name('games.packages.store');
         Route::put('games/{game}/packages/{package}', [GameController::class, 'updatePackage'])
@@ -103,6 +107,10 @@ Route::prefix('admin')
         Route::controller(UserController::class)->group(function () {
             Route::get('/users', 'index')
                 ->name('users.index');
+            Route::post('/users/{user}/google2fa/enable', 'enableGoogle2fa')
+                ->name('users.google2fa.enable');
+            Route::post('/users/{user}/google2fa/disable', 'disableGoogle2fa')
+                ->name('users.google2fa.disable');
         });
     });
 

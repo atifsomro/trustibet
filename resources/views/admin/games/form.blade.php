@@ -88,6 +88,26 @@
                     value="{{ old('config.lock_seconds', $config['lock_seconds'] ?? 5) }}"
                     @disabled($selectedType !== 'color_trading')>
             </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">History Limit</label>
+                <input type="number" min="1" max="5" name="config[history_limit]" class="form-control"
+                    value="{{ old('config.history_limit', $config['history_limit'] ?? 3) }}"
+                    @disabled($selectedType !== 'color_trading')>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Max Bet / Round</label>
+                <input type="number" min="0" step="0.01" name="config[max_bet_per_round]" class="form-control"
+                    value="{{ old('config.max_bet_per_round', $config['max_bet_per_round'] ?? 2000) }}"
+                    @disabled($selectedType !== 'color_trading')>
+                <small class="text-muted">0 = unlimited</small>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Max Bet / Day</label>
+                <input type="number" min="0" step="0.01" name="config[max_bet_per_day]" class="form-control"
+                    value="{{ old('config.max_bet_per_day', $config['max_bet_per_day'] ?? 10000) }}"
+                    @disabled($selectedType !== 'color_trading')>
+                <small class="text-muted">0 = unlimited</small>
+            </div>
             <div class="col-md-12 mb-3">
                 <label class="form-label">Colors (comma separated)</label>
                 <input type="text" name="config[colors]" class="form-control"
