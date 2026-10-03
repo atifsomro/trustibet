@@ -29,95 +29,136 @@
 
 <div class="color-trading">
     <div class="grid lg:grid-cols-12 gap-6">
-        <div class="lg:col-span-8">
-            <div class="bg-brand-surface border border-brand-border rounded-3xl p-3 sm:p-6 shadow-2xl">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                    <div class="text-center sm:text-start">
-                        <h3>Earn more from color trading</h3>
-                        <p class="text-gray-400 text-[12px] sm:text-sm mt-2">Predict the winning color before countdown ends.</p>
-                        <p class="text-gray-500 text-[12px] sm:text-sm mt-1">Each round is independent — past colors do not affect the
-                            next result.</p>
-                    </div>
-                    <span class="text-green-500 font-semibold animate-pulse">LIVE</span>
-                </div>
 
-                <div class="flex justify-center mt-5 sm:mt-10">
-                    <div
-                        class="relative w-30 sm:w-56 h-30 sm:h-56 rounded-full border-[12px] border-brand-border flex items-center justify-center">
-                        <div class="text-center">
-                            <p class="text-gray-400 text-[10px] sm:text-sm">Time Left</p>
-                            <h1 id="timer" class="text-xl sm:text-6xl font-black sm:mt-2">
-                                {{ $round?->secondsRemaining() ?? 10 }}
-                            </h1>
+        {{-- Left: Main game --}}
+        <div class="lg:col-span-8">
+            <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface shadow-2xl">
+
+                <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                <div class="p-3 sm:p-6">
+                    <div class="flex items-center justify-between flex-wrap gap-2">
+                        <div class="text-center sm:text-start">
+                            <span
+                                class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs sm:text-sm font-medium text-green-500">
+                                <i class="fa-solid fa-palette"></i>
+                                Color Trading
+                            </span>
+                            <h3 class="mt-2">Earn more from color trading</h3>
+                            <p class="text-gray-400 text-[12px] sm:text-sm mt-2">Predict the winning color before
+                                countdown ends.</p>
+                            <p class="text-gray-500 text-[12px] sm:text-sm mt-1">Each round is independent — past
+                                colors do not affect the next result.</p>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-[10px] sm:text-sm font-semibold text-orange-400 animate-pulse">
+                            <span class="h-2 w-2 rounded-full bg-orange-400"></span>
+                            LIVE
+                        </span>
+                    </div>
+
+                    {{-- Timer --}}
+                    <div class="flex justify-center mt-5 sm:mt-10">
+                        <div
+                            class="relative w-30 sm:w-56 h-30 sm:h-56 rounded-full border-[12px] border-green-500 flex items-center justify-center shadow-[0_0_35px_rgba(34,197,94,.18),0_0_60px_rgba(249,115,22,.10)]">
+                            <div class="text-center">
+                                <p class="text-gray-400 text-[10px] sm:text-sm">Time Left</p>
+                                <h1 id="timer" class="text-xl sm:text-6xl font-black sm:mt-2 text-orange-400">
+                                    {{ $round?->secondsRemaining() ?? 10 }}
+                                </h1>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-1 sm:gap-4 mt-6 sm:mt-12">
-                    @foreach ($colors as $color)
-                        <button type="button"
-                            class="color-btn {{ $colorClass[$color] ?? 'bg-gray-500' }} text-[10px] sm:text-sm rounded-2xl h-8 sm:h-20 font-bold capitalize"
-                            data-color="{{ $color }}">
-                            {{ $color }}
-                        </button>
-                    @endforeach
-                </div>
-
-                <div class="mt-1 sm:mt-10">
-                    <label class="font-semibold text-[12px] sm:text-base">Quick Bet Packages</label>
-                    <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-1 sm:mt-4">
-                        @foreach ($colorPackages as $pkg)
+                    {{-- Colors --}}
+                    <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-1 sm:gap-4 mt-6 sm:mt-12">
+                        @foreach ($colors as $color)
                             <button type="button"
-                                class="text-[10px] sm:text-sm chip-btn border border-brand-border rounded-xl py-2"
-                                data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}">
-                                ${{ number_format((float) $pkg->fee, 0) }}
+                                class="color-btn {{ $colorClass[$color] ?? 'bg-gray-500' }} text-[10px] sm:text-sm rounded-2xl h-8 sm:h-20 font-bold capitalize transition-all duration-300 hover:-translate-y-1"
+                                data-color="{{ $color }}">
+                                {{ $color }}
                             </button>
                         @endforeach
                     </div>
-                </div>
 
-                <div class="mt-1 sm:mt-4 flex items-center justify-center gap-1">
-                    <input id="betAmount" type="text" readonly placeholder="Select a chip package"
-                        class="w-full h-8 sm:h-14 rounded-2xl bg-brand-dark border border-brand-border px-3 sm:px-5 text-[12px] sm:text-sm">
-                    <button id="placeBet" type="button"
-                        class="btn-primary w-full h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
-                        Place Bet
-                    </button>
-                </div>
-                <div class="mt-4 sm:mt-8">
-                    <h4>History</h4>
-                    <div id="historyMain" class="history-list grid grid-cols-5 gap-3 mt-1 sm:mt-5"></div>
+                    {{-- Packages --}}
+                    <div class="mt-1 sm:mt-10">
+                        <label class="font-semibold text-[12px] sm:text-base text-green-500">Quick Bet
+                            Packages</label>
+                        <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-1 sm:mt-4">
+                            @foreach ($colorPackages as $pkg)
+                                <button type="button"
+                                    class="text-[10px] sm:text-sm chip-btn border border-brand-border bg-brand-dark rounded-xl py-2 font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:text-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,.18)]"
+                                    data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}">
+                                    ${{ number_format((float) $pkg->fee, 0) }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Bet --}}
+                    <div class="mt-1 sm:mt-4 flex items-center justify-center gap-1 sm:gap-3">
+                        <input id="betAmount" type="text" readonly placeholder="Select a chip package"
+                            class="w-full h-8 sm:h-14 rounded-2xl bg-brand-dark border border-green-500/30 px-3 sm:px-5 text-[12px] sm:text-sm text-orange-400 placeholder:text-gray-500 focus:outline-none focus:border-green-500">
+                        <button id="placeBet" type="button"
+                            class="btn-orange w-full h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
+                            <i class="fa-solid fa-play mr-2"></i>
+                            Place Bet
+                        </button>
+                    </div>
+
+                    {{-- History --}}
+                    <div class="mt-4 sm:mt-8">
+                        <h4 class="text-green-500">History</h4>
+                        <div id="historyMain" class="history-list grid grid-cols-5 gap-3 mt-1 sm:mt-5"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="lg:col-span-4 gap-2 bg-brand-surface border border-brand-border rounded-3xl p-2 sm:p-3">
-            <div class="grid grid-cols-2 md:grid-cols-1 gap-2">
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400 text-[10px] sm:text-base">Current Balance</p>
-                    <span id="balance" class="mt-2 text-[10px] sm:text-base"
-                        data-live-balance>${{ number_format($balance, 2) }}</span>
-                </div>
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400 text-[10px] sm:text-base">Balance Deduction</p>
-                    <span id="deduction" class="mt-2 text-[10px] sm:text-base">$0</span>
-                </div>
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400 text-[10px] sm:text-base">Current Round</p>
-                    <span id="round"
-                        class="mt-2 text-[10px] sm:text-base">#{{ $round?->round_number ?? '—' }}</span>
-                </div>
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400 text-[10px] sm:text-base">Selected Color</p>
-                    <span id="selectedColor" class="mt-2 text-[10px] sm:text-base capitalize">None</span>
-                </div>
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <p class="text-gray-400 mt-2 text-[10px] sm:text-base">Last Result</p>
-                    <span id="result" class="capitalize">Waiting...</span>
-                </div>
-                <div class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
-                    <span class="text-[10px] sm:text-base">Recent Result</span>
-                    <div id="historySide" class="history-list grid grid-cols-3 gap-1 sm:gap-3 mt-5"></div>
+        {{-- Right: Stats --}}
+        <div class="lg:col-span-4">
+            <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                <div class="p-2 sm:p-3">
+                    <div class="grid grid-cols-2 md:grid-cols-1 gap-2">
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-green-500/20">
+                            <p class="text-gray-400 text-[10px] sm:text-base">Current Balance</p>
+                            <span id="balance" class="mt-2 text-[10px] sm:text-base font-semibold text-green-500"
+                                data-live-balance>${{ number_format($balance, 2) }}</span>
+                        </div>
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-orange-500/20">
+                            <p class="text-gray-400 text-[10px] sm:text-base">Balance Deduction</p>
+                            <span id="deduction"
+                                class="mt-2 text-[10px] sm:text-base font-semibold text-orange-400">$0</span>
+                        </div>
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                            <p class="text-gray-400 text-[10px] sm:text-base">Current Round</p>
+                            <span id="round"
+                                class="mt-2 text-[10px] sm:text-base text-green-500">#{{ $round?->round_number ?? '—' }}</span>
+                        </div>
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                            <p class="text-gray-400 text-[10px] sm:text-base">Selected Color</p>
+                            <span id="selectedColor"
+                                class="mt-2 text-[10px] sm:text-base capitalize text-orange-400">None</span>
+                        </div>
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                            <p class="text-gray-400 mt-2 text-[10px] sm:text-base">Last Result</p>
+                            <span id="result" class="capitalize text-green-500">Waiting...</span>
+                        </div>
+                        <div
+                            class="rounded-2xl text-center sm:text-start bg-brand-dark p-2 sm:p-5 border border-brand-border">
+                            <span class="text-[10px] sm:text-base text-green-500">Recent Result</span>
+                            <div id="historySide" class="history-list grid grid-cols-3 gap-1 sm:gap-3 mt-5"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -310,7 +351,7 @@
                         type: "info",
                         title: "Round settled",
                         message: "Result was " + resultColor + ". Better luck next round.",
-                        emoji: "🎲",
+                        emoji: "😔",
                     });
                 }
             }

@@ -6,176 +6,213 @@
             ? $dicePackages->firstWhere('id', $resumePackageId) ?? $dicePackages->first()
             : $dicePackages->first();
 @endphp
-
 <div class="dice-game">
     <div class="dice_game_wrapper">
         <div class="grid lg:grid-cols-12 gap-3 sm:gap-6">
+
+            {{-- Left: Dice --}}
             <div class="lg:col-span-8 order-2 lg:order-1">
-                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 md:p-6">
-                    <div class="flex items-center justify-between mb-2 sm:mb-6 flex-wrap gap-2">
-                        <div class="text-center sm:text-start">
-                            <h3>Dice Game</h3>
-                            <p class="text-gray-400 mt-1 text-[10px] sm:text-base">
-                                Predict the dice roll and multiply your winnings.
-                            </p>
+                <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                    <div class="p-3 md:p-6">
+                        <div class="flex items-center justify-between mb-2 sm:mb-6 flex-wrap gap-2">
+                            <div class="text-center sm:text-start">
+                                <span
+                                    class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs sm:text-sm font-medium text-green-500">
+                                    <i class="fa-solid fa-dice"></i>
+                                    Dice Game
+                                </span>
+                                <p class="text-gray-400 mt-2 text-[10px] sm:text-base">
+                                    Predict the dice roll and multiply your winnings.
+                                </p>
+                            </div>
+                            <span
+                                class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-[10px] sm:text-sm font-semibold text-orange-400 animate-pulse">
+                                <span class="h-2 w-2 rounded-full bg-orange-400"></span>
+                                Live Game
+                            </span>
                         </div>
-                        <span class="text-green-500 animate-pulse text-[10px] sm:text-sm">Live Game</span>
-                    </div>
-                    <div class="flex justify-center py-2 sm:py-6 md:py-12">
-                        <div id="dice" class="dice-stage" data-face="1" aria-label="Dice showing 1"
-                            style="width:min(55vw,150px);height:min(55vw,150px);border-radius:1.1rem;background:#0b1220;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-                            <svg id="diceSvg" viewBox="0 0 220 220" width="125" height="125"
-                                xmlns="http://www.w3.org/2000/svg"
-                                style="max-width:82%;max-height:82%;display:block;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));">
-                                <defs>
-                                    <linearGradient id="topFaceGrad" x1="0.15" y1="0" x2="0.9"
-                                        y2="1">
-                                        <stop offset="0%" stop-color="#ffffff"></stop>
-                                        <stop offset="45%" stop-color="#f4f0fb"></stop>
-                                        <stop offset="100%" stop-color="#ddd4ef"></stop>
-                                    </linearGradient>
-                                    <linearGradient id="leftFaceGrad" x1="0" y1="0" x2="1"
-                                        y2="1">
-                                        <stop offset="0%" stop-color="#cfc4e4"></stop>
-                                        <stop offset="55%" stop-color="#b4a6cf"></stop>
-                                        <stop offset="100%" stop-color="#8f7fb0"></stop>
-                                    </linearGradient>
-                                    <linearGradient id="rightFaceGrad" x1="0.2" y1="0" x2="0.7"
-                                        y2="1">
-                                        <stop offset="0%" stop-color="#ebe3f6"></stop>
-                                        <stop offset="50%" stop-color="#d2c6e6"></stop>
-                                        <stop offset="100%" stop-color="#a897c4"></stop>
-                                    </linearGradient>
-                                    <radialGradient id="pipRedGrad" cx="32%" cy="28%" r="70%">
-                                        <stop offset="0%" stop-color="#ff8aa3"></stop>
-                                        <stop offset="55%" stop-color="#ef4444"></stop>
-                                        <stop offset="100%" stop-color="#b91c1c"></stop>
-                                    </radialGradient>
-                                    <radialGradient id="pipPurpleGrad" cx="32%" cy="28%" r="70%">
-                                        <stop offset="0%" stop-color="#c4b5fd"></stop>
-                                        <stop offset="55%" stop-color="#7c3aed"></stop>
-                                        <stop offset="100%" stop-color="#4c1d95"></stop>
-                                    </radialGradient>
-                                    <filter id="pipDepth" x="-40%" y="-40%" width="180%" height="180%">
-                                        <feDropShadow dx="0.6" dy="1.1" stdDeviation="0.7"
-                                            flood-color="#000" flood-opacity="0.35"></feDropShadow>
-                                    </filter>
-                                    <clipPath id="topFaceClip">
-                                        <path d="M110 28 L188 70 L110 112 L32 70 Z"></path>
-                                    </clipPath>
-                                    <clipPath id="leftFaceClip">
-                                        <path d="M32 70 L110 112 L110 188 L32 146 Z"></path>
-                                    </clipPath>
-                                    <clipPath id="rightFaceClip">
-                                        <path d="M110 112 L188 70 L188 146 L110 188 Z"></path>
-                                    </clipPath>
-                                </defs>
 
-                                <path d="M110 28 L188 70 L110 112 L32 70 Z" fill="url(#topFaceGrad)" stroke="#cfc4e3"
-                                    stroke-width="1.2"></path>
-                                <path d="M32 70 L110 112 L110 188 L32 146 Z" fill="url(#leftFaceGrad)" stroke="#9b8bb8"
-                                    stroke-width="1.2"></path>
-                                <path d="M110 112 L188 70 L188 146 L110 188 Z" fill="url(#rightFaceGrad)"
-                                    stroke="#b5a6cf" stroke-width="1.2"></path>
+                        <div class="flex justify-center py-2 sm:py-6 md:py-12">
+                            <div id="dice" class="dice-stage" data-face="1" aria-label="Dice showing 1"
+                                style="width:min(55vw,150px);height:min(55vw,150px);border-radius:1.1rem;background:#0b1220;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(34,197,94,.18), 0 0 60px rgba(249,115,22,.10);border:1px solid rgba(34,197,94,.25);">
+                                <svg id="diceSvg" viewBox="0 0 220 220" width="125" height="125"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    style="max-width:82%;max-height:82%;display:block;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));">
+                                    <defs>
+                                        <linearGradient id="topFaceGrad" x1="0.15" y1="0" x2="0.9"
+                                            y2="1">
+                                            <stop offset="0%" stop-color="#ffffff"></stop>
+                                            <stop offset="45%" stop-color="#f4f0fb"></stop>
+                                            <stop offset="100%" stop-color="#ddd4ef"></stop>
+                                        </linearGradient>
+                                        <linearGradient id="leftFaceGrad" x1="0" y1="0" x2="1"
+                                            y2="1">
+                                            <stop offset="0%" stop-color="#cfc4e4"></stop>
+                                            <stop offset="55%" stop-color="#b4a6cf"></stop>
+                                            <stop offset="100%" stop-color="#8f7fb0"></stop>
+                                        </linearGradient>
+                                        <linearGradient id="rightFaceGrad" x1="0.2" y1="0" x2="0.7"
+                                            y2="1">
+                                            <stop offset="0%" stop-color="#ebe3f6"></stop>
+                                            <stop offset="50%" stop-color="#d2c6e6"></stop>
+                                            <stop offset="100%" stop-color="#a897c4"></stop>
+                                        </linearGradient>
+                                        <radialGradient id="pipRedGrad" cx="32%" cy="28%" r="70%">
+                                            <stop offset="0%" stop-color="#ff8aa3"></stop>
+                                            <stop offset="55%" stop-color="#ef4444"></stop>
+                                            <stop offset="100%" stop-color="#b91c1c"></stop>
+                                        </radialGradient>
+                                        <radialGradient id="pipPurpleGrad" cx="32%" cy="28%" r="70%">
+                                            <stop offset="0%" stop-color="#c4b5fd"></stop>
+                                            <stop offset="55%" stop-color="#7c3aed"></stop>
+                                            <stop offset="100%" stop-color="#4c1d95"></stop>
+                                        </radialGradient>
+                                        <filter id="pipDepth" x="-40%" y="-40%" width="180%" height="180%">
+                                            <feDropShadow dx="0.6" dy="1.1" stdDeviation="0.7"
+                                                flood-color="#000" flood-opacity="0.35"></feDropShadow>
+                                        </filter>
+                                        <clipPath id="topFaceClip">
+                                            <path d="M110 28 L188 70 L110 112 L32 70 Z"></path>
+                                        </clipPath>
+                                        <clipPath id="leftFaceClip">
+                                            <path d="M32 70 L110 112 L110 188 L32 146 Z"></path>
+                                        </clipPath>
+                                        <clipPath id="rightFaceClip">
+                                            <path d="M110 112 L188 70 L188 146 L110 188 Z"></path>
+                                        </clipPath>
+                                    </defs>
 
-                                {{-- Soft edge highlights --}}
-                                <path d="M110 28 L188 70 L110 112" fill="none" stroke="rgba(255,255,255,0.45)"
-                                    stroke-width="1.4"></path>
-                                <path d="M110 28 L32 70 L110 112" fill="none" stroke="rgba(255,255,255,0.2)"
-                                    stroke-width="1"></path>
+                                    <path d="M110 28 L188 70 L110 112 L32 70 Z" fill="url(#topFaceGrad)"
+                                        stroke="#cfc4e3" stroke-width="1.2"></path>
+                                    <path d="M32 70 L110 112 L110 188 L32 146 Z" fill="url(#leftFaceGrad)"
+                                        stroke="#9b8bb8" stroke-width="1.2"></path>
+                                    <path d="M110 112 L188 70 L188 146 L110 188 Z" fill="url(#rightFaceGrad)"
+                                        stroke="#b5a6cf" stroke-width="1.2"></path>
 
-                                <g id="topPips" clip-path="url(#topFaceClip)" filter="url(#pipDepth)"
-                                    fill="url(#pipRedGrad)">
-                                    <circle class="pip" data-slot="1" cx="88" cy="57" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="2" cx="110" cy="57" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="3" cx="132" cy="57" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="4" cx="88" cy="70" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="5" cx="110" cy="70" r="7"
-                                        opacity="1"></circle>
-                                    <circle class="pip" data-slot="6" cx="132" cy="70" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="7" cx="88" cy="83" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="8" cx="110" cy="83" r="6.5"
-                                        opacity="0"></circle>
-                                    <circle class="pip" data-slot="9" cx="132" cy="83" r="6.5"
-                                        opacity="0"></circle>
-                                </g>
+                                    {{-- Soft edge highlights --}}
+                                    <path d="M110 28 L188 70 L110 112" fill="none" stroke="rgba(255,255,255,0.45)"
+                                        stroke-width="1.4"></path>
+                                    <path d="M110 28 L32 70 L110 112" fill="none" stroke="rgba(255,255,255,0.2)"
+                                        stroke-width="1"></path>
 
-                                <g clip-path="url(#leftFaceClip)" filter="url(#pipDepth)" fill="url(#pipPurpleGrad)">
-                                    <circle cx="58" cy="108" r="5.5"></circle>
-                                    <circle cx="78" cy="148" r="5.5"></circle>
-                                </g>
-                                <g clip-path="url(#rightFaceClip)" filter="url(#pipDepth)"
-                                    fill="url(#pipPurpleGrad)">
-                                    <circle cx="160" cy="108" r="5.5"></circle>
-                                    <circle cx="149" cy="132" r="5.5"></circle>
-                                    <circle cx="138" cy="156" r="5.5"></circle>
-                                </g>
-                            </svg>
+                                    <g id="topPips" clip-path="url(#topFaceClip)" filter="url(#pipDepth)"
+                                        fill="url(#pipRedGrad)">
+                                        <circle class="pip" data-slot="1" cx="88" cy="57" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="2" cx="110" cy="57" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="3" cx="132" cy="57" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="4" cx="88" cy="70" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="5" cx="110" cy="70" r="7"
+                                            opacity="1"></circle>
+                                        <circle class="pip" data-slot="6" cx="132" cy="70" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="7" cx="88" cy="83" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="8" cx="110" cy="83" r="6.5"
+                                            opacity="0"></circle>
+                                        <circle class="pip" data-slot="9" cx="132" cy="83" r="6.5"
+                                            opacity="0"></circle>
+                                    </g>
+
+                                    <g clip-path="url(#leftFaceClip)" filter="url(#pipDepth)"
+                                        fill="url(#pipPurpleGrad)">
+                                        <circle cx="58" cy="108" r="5.5"></circle>
+                                        <circle cx="78" cy="148" r="5.5"></circle>
+                                    </g>
+                                    <g clip-path="url(#rightFaceClip)" filter="url(#pipDepth)"
+                                        fill="url(#pipPurpleGrad)">
+                                        <circle cx="160" cy="108" r="5.5"></circle>
+                                        <circle cx="149" cy="132" r="5.5"></circle>
+                                        <circle cx="138" cy="156" r="5.5"></circle>
+                                    </g>
+                                </svg>
+                            </div>
                         </div>
-                    </div>
-                    <button id="rollDice" type="button" class="btn-primary w-full mb-2">
-                        Roll Dice
-                    </button>
-                    <div class="grid grid-cols-3 gap-2 sm:gap-4">
-                        @for ($i = 1; $i <= $faces; $i++)
-                            <button type="button"
-                                class="dice-number rounded-xl border border-brand-border bg-brand-dark py-2 sm:py-4 hover:border-brand-primary transition"
-                                data-number="{{ $i }}">
-                                {{ $i }}
-                            </button>
-                        @endfor
+
+                        <button id="rollDice" type="button" class="btn-orange w-full mb-3">
+                            <i class="fa-solid fa-dice mr-2"></i>
+                            Roll Dice
+                        </button>
+
+                        <div class="grid grid-cols-3 gap-2 sm:gap-4">
+                            @for ($i = 1; $i <= $faces; $i++)
+                                <button type="button"
+                                    class="dice-number rounded-xl border border-brand-border bg-brand-dark py-2 sm:py-4 font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:text-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,.18)]"
+                                    data-number="{{ $i }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {{-- Right: Game Panel --}}
             <div class="lg:col-span-4 order-1 lg:order-2">
-                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 md:p-6">
-                    <h3>Game Panel</h3>
-                    <div class="mt-3 md:mt-6">
-                        <label>Chances Left</label>
-                        <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-4">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400 text-[10px] sm:text-base">This Roll</span>
-                                <strong class="text-[10px] sm:text-sm" id="diceCharge">$0.00</strong>
+                <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                    <div class="p-3 md:p-6">
+                        <h3 class="text-green-500">Game Panel</h3>
+
+                        <div class="mt-3 md:mt-6">
+                            <label>Chances Left</label>
+                            <div class="mt-2 rounded-xl bg-brand-dark border border-green-500/20 p-4">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400 text-[10px] sm:text-base">This Roll</span>
+                                    <strong class="text-[10px] sm:text-sm text-orange-400"
+                                        id="diceCharge">$0.00</strong>
+                                </div>
+                                <div class="flex justify-between mt-2">
+                                    <span class="text-gray-400 text-[10px] sm:text-base">Remaining</span>
+                                    <strong class="text-[10px] sm:text-sm text-green-500" id="diceChances">0</strong>
+                                </div>
                             </div>
-                            <div class="flex justify-between mt-2">
-                                <span class="text-gray-400 text-[10px] sm:text-base">Remaining</span>
-                                <strong class="text-[10px] sm:text-sm" id="diceChances">0</strong>
-                            </div>
+                            <input id="amount" class="text-[10px] sm:text-base" type="hidden"
+                                value="{{ $defaultDice ? number_format((float) $defaultDice->fee, 2) : '0.00' }}">
                         </div>
-                        <input id="amount" class="text-[10px] sm:text-base" type="hidden"
-                            value="{{ $defaultDice ? number_format((float) $defaultDice->fee, 2) : '0.00' }}">
-                    </div>
-                    <div id="diceResult"
-                        class="mt-3 md:mt-6 border border-brand-border rounded-xl p-2 sm:p-3 md:p-5 bg-brand-dark text-center text-[10px] sm:text-sm md:text-base">
-                        Choose a number &amp; package, then Roll
-                    </div>
-                    <div class="grid grid-cols-4 sm:grid-cols-2 gap-3 mt-2">
-                        @foreach ($dicePackages as $pkg)
-                            @php
-                                $chances = (int) $pkg->metaValue('chances', 1);
-                            @endphp
-                            <button type="button"
-                                class="chance-package border border-brand-border rounded-xl p-2 sm:p-3 text-center hover:border-brand-primary {{ $defaultDice && $pkg->id === $defaultDice->id ? 'border-brand-primary' : '' }}"
-                                data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}"
-                                data-chances="{{ $chances }}"
-                                data-remaining="{{ (int) data_get($packageCredits ?? [], $pkg->id . '.remaining', 0) }}">
-                                <h5>${{ number_format((float) $pkg->fee, 0) }}</h5>
-                                <p class="package-caption text-gray-400 text-[8px] sm:text-sm mt-1">
-                                    @php $left = (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0); @endphp
-                                    @if ($left > 0)
-                                        {{ $left }} left
-                                    @else
-                                        {{ $chances }} {{ $chances === 1 ? 'Chance' : 'Chances' }}
-                                    @endif
-                                </p>
-                            </button>
-                        @endforeach
+
+                        <div id="diceResult"
+                            class="mt-3 md:mt-6 border border-orange-500/30 rounded-xl p-2 sm:p-3 md:p-5 bg-brand-dark text-center text-[10px] sm:text-sm md:text-base">
+                            Choose a number &amp; package, then Roll
+                        </div>
+
+                        <div class="grid grid-cols-4 sm:grid-cols-2 gap-3 mt-3">
+                            @foreach ($dicePackages as $pkg)
+                                @php
+                                    $chances = (int) $pkg->metaValue('chances', 1);
+                                @endphp
+                                <button type="button"
+                                    class="chance-package group relative overflow-hidden rounded-2xl border border-brand-border bg-brand-dark text-center transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:shadow-[0_0_25px_rgba(34,197,94,.18)] {{ $defaultDice && $pkg->id === $defaultDice->id ? 'border-brand-primary' : '' }}"
+                                    data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}"
+                                    data-chances="{{ $chances }}"
+                                    data-remaining="{{ (int) data_get($packageCredits ?? [], $pkg->id . '.remaining', 0) }}">
+
+                                    <div class="h-1 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500">
+                                    </div>
+
+                                    <div class="p-2 sm:p-3">
+                                        <h5 class="transition group-hover:text-green-500">
+                                            ${{ number_format((float) $pkg->fee, 0) }}</h5>
+                                        <p class="package-caption text-orange-400 text-[8px] sm:text-sm mt-1">
+                                            @php $left = (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0); @endphp
+                                            @if ($left > 0)
+                                                {{ $left }} left
+                                            @else
+                                                {{ $chances }} {{ $chances === 1 ? 'Chance' : 'Chances' }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
                 </div>
             </div>

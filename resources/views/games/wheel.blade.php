@@ -1,108 +1,169 @@
 @php
     $wheelPackages = $packages ?? collect();
-    $defaultWheel = ($resumePackageId ?? null)
-        ? ($wheelPackages->firstWhere('id', $resumePackageId) ?? $wheelPackages->first())
-        : $wheelPackages->first();
+    $defaultWheel =
+        $resumePackageId ?? null
+            ? $wheelPackages->firstWhere('id', $resumePackageId) ?? $wheelPackages->first()
+            : $wheelPackages->first();
     $wheelSlices = $defaultWheel
-        ? $defaultWheel->activePrizes->map(function ($prize, $index) {
-            return [
-                'id' => $prize->id,
-                'label' => $prize->label,
-                'color' => $prize->metaValue('color') ?: ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#06b6d4', '#9333ea'][$index % 6],
-                'weight' => (int) $prize->weight,
-                'prize_amount' => (float) $prize->prize_amount,
-                'segment' => (int) ($prize->metaValue('segment') ?? $index),
-            ];
-        })->values()
+        ? $defaultWheel->activePrizes
+            ->map(function ($prize, $index) {
+                return [
+                    'id' => $prize->id,
+                    'label' => $prize->label,
+                    'color' =>
+                        $prize->metaValue('color') ?:
+                        ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#06b6d4', '#9333ea'][$index % 6],
+                    'weight' => (int) $prize->weight,
+                    'prize_amount' => (float) $prize->prize_amount,
+                    'segment' => (int) ($prize->metaValue('segment') ?? $index),
+                ];
+            })
+            ->values()
         : collect();
 @endphp
 
 <div class="lucky-wheel">
     <div class="wheel_game_wrapper">
         <div class="grid lg:grid-cols-12 gap-3 sm:gap-6">
+
+            {{-- Left: Wheel --}}
             <div class="lg:col-span-8 order-2 lg:order-1">
-                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
-                    <div class="flex items-center justify-between mb-4 sm:mb-8 flex-wrap gap-2">
-                        <div class="text-center sm:text-start">
-                            <h3>Lucky Wheel</h3>
-                            <p class="text-gray-400 mt-1 sm:mt-2 text-[12px] sm:text-sm">Spin the wheel and win exciting rewards.</p>
-                        </div>
-                        <span class="text-green-500 text-center sm:text-start animate-pulse">Live Game</span>
-                    </div>
-                    <div class="flex flex-col items-center">
-                        <div class="relative z-20">
-                            <div class="w-0 h-0 border-l-18 border-r-18 border-t-32 border-l-transparent border-r-transparent border-t-brand-primary"></div>
-                        </div>
-                        <div class="relative -mt-2">
-                            <div class="relative w-50 sm:w-80 md:w-96 lg:w-105 aspect-square">
-                                <div class="absolute left-1/2 -translate-x-1/2 -top-4 z-20 w-0 h-0 border-l-16 border-r-16 border-t-28 border-l-transparent border-r-transparent border-t-red-500"></div>
-                                <svg id="wheel" viewBox="0 0 420 420" class="duration-6000">
-                                    <g id="wheelGroup"></g>
-                                </svg>
-                                <div class="absolute inset-0 rounded-full border-8 border-brand-primary pointer-events-none"></div>
+                <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                    <div class="p-3 sm:p-6">
+                        <div class="flex items-center justify-between mb-4 sm:mb-8 flex-wrap gap-2">
+                            <div class="text-center sm:text-start">
+                                <span
+                                    class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs sm:text-sm font-medium text-green-500">
+                                    <i class="fa-solid fa-circle-notch"></i>
+                                    Lucky Wheel
+                                </span>
+                                <p class="text-gray-400 mt-2 text-[12px] sm:text-sm">Spin the wheel and win exciting
+                                    rewards.</p>
                             </div>
+                            <span
+                                class="inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-3 py-1 text-[10px] sm:text-sm font-semibold text-orange-400 animate-pulse">
+                                <span class="h-2 w-2 rounded-full bg-orange-400"></span>
+                                Live Game
+                            </span>
                         </div>
-                        <button id="spinWheel" type="button" class="btn-primary mt-4 sm:mt-8 min-w-45">Bet Now</button>
+
+                        <div class="flex flex-col items-center">
+                            <div class="relative z-20">
+                                <div
+                                    class="w-0 h-0 border-l-18 border-r-18 border-t-32 border-l-transparent border-r-transparent border-t-green-500">
+                                </div>
+                            </div>
+                            <div class="relative -mt-2">
+                                <div
+                                    class="relative w-50 sm:w-80 md:w-96 lg:w-105 aspect-square rounded-full shadow-[0_0_45px_rgba(34,197,94,.18),0_0_70px_rgba(249,115,22,.10)]">
+                                    <div
+                                        class="absolute left-1/2 -translate-x-1/2 -top-4 z-20 w-0 h-0 border-l-16 border-r-16 border-t-28 border-l-transparent border-r-transparent border-t-orange-500">
+                                    </div>
+                                    <svg id="wheel" viewBox="0 0 420 420" class="duration-6000">
+                                        <g id="wheelGroup"></g>
+                                    </svg>
+                                    <div
+                                        class="absolute inset-0 rounded-full border-8 border-green-500 pointer-events-none">
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="spinWheel" type="button" class="btn-orange mt-4 sm:mt-8 min-w-45">
+                                <i class="fa-solid fa-play mr-2"></i>
+                                Bet Now
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {{-- Right: Game Panel --}}
             <div class="lg:col-span-4 order-1 lg:order-2">
-                <div class="bg-brand-surface border border-brand-border rounded-2xl p-3 sm:p-6">
-                    <h3 class="text-center sm:text-start">Game Panel</h3>
-                    <div class="mt-2 sm:mt-6">
-                        <label>Spins</label>
-                        <div class="mt-2 rounded-xl bg-brand-dark border border-brand-border p-2 sm:p-4 space-y-3">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400 text-[10px] sm:text-base">Free Spins</span>
-                                <strong class="text-[10px] sm:text-base" id="freeSpins">{{ $freeSpinsRemaining ?? 0 }}</strong>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400 text-[10px] sm:text-base">Spins Left</span>
-                                <strong class="text-[10px] sm:text-base" id="packageSpins">0</strong>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-400 text-[10px] sm:text-base">This Spin</span>
-                                <strong class="text-[10px] sm:text-base" id="paidSpins">$0.00</strong>
+                <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                    <div class="p-3 sm:p-6">
+                        <h3 class="text-center sm:text-start text-green-500">Game Panel</h3>
+
+                        <div class="mt-2 sm:mt-6">
+                            <label>Spins</label>
+                            <div class="mt-2 rounded-xl bg-brand-dark border border-green-500/20 p-2 sm:p-4 space-y-3">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400 text-[10px] sm:text-base">Free Spins</span>
+                                    <strong class="text-[10px] sm:text-base text-green-500"
+                                        id="freeSpins">{{ $freeSpinsRemaining ?? 0 }}</strong>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400 text-[10px] sm:text-base">Spins Left</span>
+                                    <strong class="text-[10px] sm:text-base text-green-500" id="packageSpins">0</strong>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400 text-[10px] sm:text-base">This Spin</span>
+                                    <strong class="text-[10px] sm:text-base text-orange-400"
+                                        id="paidSpins">$0.00</strong>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="mt-2 sm:mt-6">
-                        <div class="text-[12px] sm:text-sm md:text-base text-center sm:text-start">
-                            Choose a spin package
-                        </div>
-                        <div class="grid grid-cols-4 sm:grid-cols-2 gap-3 mt-3">
-                            @foreach ($wheelPackages as $pkg)
-                                @php
-                                    $spins = (int) $pkg->metaValue('spins', 1);
-                                    $pkgPrizes = $pkg->activePrizes->map(function ($p, $i) {
-                                        return [
-                                            'id' => $p->id,
-                                            'label' => $p->label,
-                                            'color' => $p->metaValue('color') ?: ['#ef4444', '#22c55e', '#3b82f6', '#f59e0b', '#06b6d4', '#9333ea'][$i % 6],
-                                            'weight' => (int) $p->weight,
-                                            'prize_amount' => (float) $p->prize_amount,
-                                            'segment' => (int) ($p->metaValue('segment') ?? $i),
-                                        ];
-                                    })->values();
-                                @endphp
-                                <button type="button"
-                                    class="chance-package flex flex-col items-center text-center rounded-sm sm:rounded-xl border border-brand-border p-1 sm:p-4 hover:border-brand-primary {{ $defaultWheel && $pkg->id === $defaultWheel->id ? 'border-brand-primary' : '' }}"
-                                    data-package-id="{{ $pkg->id }}"
-                                    data-fee="{{ $pkg->fee }}"
-                                    data-allowance="{{ $spins }}"
-                                    data-remaining="{{ (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0) }}"
-                                    data-prizes='@json($pkgPrizes)'>
-                                    <span class="text-[10px] sm:text-base">${{ number_format((float) $pkg->fee, 0) }}</span>
-                                    <p class="package-caption text-[8px] sm:text-sm text-gray-400 sm:mt-1">
-                                        @php $left = (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0); @endphp
-                                        @if ($left > 0)
-                                            {{ $left }} left
-                                        @else
-                                            {{ $spins }} {{ $spins === 1 ? 'Spin' : 'Spins' }}
-                                        @endif
-                                    </p>
-                                </button>
-                            @endforeach
+
+                        <div class="mt-2 sm:mt-6">
+                            <div class="text-[12px] sm:text-sm md:text-base text-center sm:text-start">
+                                Choose a spin package
+                            </div>
+                            <div class="grid grid-cols-4 sm:grid-cols-2 gap-3 mt-3">
+                                @foreach ($wheelPackages as $pkg)
+                                    @php
+                                        $spins = (int) $pkg->metaValue('spins', 1);
+                                        $pkgPrizes = $pkg->activePrizes
+                                            ->map(function ($p, $i) {
+                                                return [
+                                                    'id' => $p->id,
+                                                    'label' => $p->label,
+                                                    'color' =>
+                                                        $p->metaValue('color') ?:
+                                                        [
+                                                            '#ef4444',
+                                                            '#22c55e',
+                                                            '#3b82f6',
+                                                            '#f59e0b',
+                                                            '#06b6d4',
+                                                            '#9333ea',
+                                                        ][$i % 6],
+                                                    'weight' => (int) $p->weight,
+                                                    'prize_amount' => (float) $p->prize_amount,
+                                                    'segment' => (int) ($p->metaValue('segment') ?? $i),
+                                                ];
+                                            })
+                                            ->values();
+                                    @endphp
+                                    <button type="button"
+                                        class="chance-package group relative flex flex-col items-center overflow-hidden text-center rounded-lg sm:rounded-2xl border border-brand-border bg-brand-dark transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:shadow-[0_0_25px_rgba(34,197,94,.18)] {{ $defaultWheel && $pkg->id === $defaultWheel->id ? 'border-brand-primary' : '' }}"
+                                        data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}"
+                                        data-allowance="{{ $spins }}"
+                                        data-remaining="{{ (int) data_get($packageCredits ?? [], $pkg->id . '.remaining', 0) }}"
+                                        data-prizes='@json($pkgPrizes)'>
+
+                                        <div
+                                            class="h-1 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500">
+                                        </div>
+
+                                        <div class="p-1 sm:p-4">
+                                            <span
+                                                class="text-[10px] sm:text-base font-semibold transition group-hover:text-green-500">${{ number_format((float) $pkg->fee, 0) }}</span>
+                                            <p class="package-caption text-[8px] sm:text-sm text-orange-400 sm:mt-1">
+                                                @php $left = (int) data_get($packageCredits ?? [], $pkg->id.'.remaining', 0); @endphp
+                                                @if ($left > 0)
+                                                    {{ $left }} left
+                                                @else
+                                                    {{ $spins }} {{ $spins === 1 ? 'Spin' : 'Spins' }}
+                                                @endif
+                                            </p>
+                                        </div>
+                                    </button>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -112,7 +173,8 @@
 </div>
 
 <div id="winPopup" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50">
-    <div class="bg-brand-surface border border-brand-border rounded-2xl p-4 sm:p-8 w-[280px] sm:w-[320px] md:w-[380px] text-center">
+    <div
+        class="bg-brand-surface border border-brand-border rounded-2xl p-4 sm:p-8 w-[280px] sm:w-[320px] md:w-[380px] text-center">
         <div class="text-6xl mb-5">🎉</div>
         <h3 id="popupTitle">Congratulations</h3>
         <p id="popupReward" class="mt-3 text-gray-400">You Won</p>
@@ -171,7 +233,9 @@
                         "Accept": "application/json",
                         "X-CSRF-TOKEN": "{{ csrf_token() }}"
                     },
-                    body: JSON.stringify({ package_id: selectedPackageId })
+                    body: JSON.stringify({
+                        package_id: selectedPackageId
+                    })
                 }).catch(() => {});
             }
 
@@ -197,9 +261,9 @@
 
                 const caption = btn ? btn.querySelector(".package-caption") : null;
                 if (caption) {
-                    caption.textContent = remaining > 0
-                        ? (remaining + " left")
-                        : (allowance + (allowance === 1 ? " Spin" : " Spins"));
+                    caption.textContent = remaining > 0 ?
+                        (remaining + " left") :
+                        (allowance + (allowance === 1 ? " Spin" : " Spins"));
                 }
 
                 let chargeLabel = "$" + fee.toFixed(2);
@@ -221,7 +285,9 @@
                 wheelGroup.innerHTML = "";
                 const count = Math.max(slices.length, 1);
                 const step = 360 / count;
-                const cx = 210, cy = 210, r = 190;
+                const cx = 210,
+                    cy = 210,
+                    r = 190;
 
                 slices.forEach((slice, index) => {
                     const start = index * step;
@@ -276,7 +342,8 @@
 
             const resumed = selectedPackageButton();
             if (resumed) {
-                document.querySelectorAll(".chance-package").forEach(b => b.classList.remove("border-brand-primary"));
+                document.querySelectorAll(".chance-package").forEach(b => b.classList.remove(
+                    "border-brand-primary"));
                 resumed.classList.add("border-brand-primary");
                 try {
                     slices = JSON.parse(resumed.dataset.prizes || "[]");
@@ -288,7 +355,8 @@
 
             document.querySelectorAll(".chance-package").forEach(btn => {
                 btn.addEventListener("click", () => {
-                    document.querySelectorAll(".chance-package").forEach(b => b.classList.remove("border-brand-primary"));
+                    document.querySelectorAll(".chance-package").forEach(b => b.classList.remove(
+                        "border-brand-primary"));
                     btn.classList.add("border-brand-primary");
                     selectedPackageId = Number(btn.dataset.packageId);
                     saveWheelSession();
@@ -327,7 +395,8 @@
                     .then(async res => {
                         const data = await res.json();
                         if (!res.ok || !data.success) {
-                            throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] || "Spin failed");
+                            throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
+                                "Spin failed");
                         }
                         return data;
                     })
@@ -339,7 +408,8 @@
                             selectedBtn.dataset.remaining = String(data.package_credits_remaining);
                         }
                         refreshSpinCost();
-                        if (typeof data.balance !== "undefined" && typeof syncWalletBalance === "function") {
+                        if (typeof data.balance !== "undefined" && typeof syncWalletBalance ===
+                            "function") {
                             syncWalletBalance(data.balance);
                         }
 
@@ -352,8 +422,12 @@
                         }
                         if (index < 0) index = 0;
 
-                        const reward = slices[index] || { stopAngle: 0, label };
-                        const targetAngle = reward.stopAngle || ((360 / Math.max(slices.length, 1)) * index + 15);
+                        const reward = slices[index] || {
+                            stopAngle: 0,
+                            label
+                        };
+                        const targetAngle = reward.stopAngle || ((360 / Math.max(slices.length, 1)) *
+                            index + 15);
                         const randomOffset = (Math.random() * 8) - 4;
                         const finalAngle = 360 - targetAngle + randomOffset;
                         currentRotation = Math.ceil(currentRotation / 360) * 360 + (360 * 8) + finalAngle;
@@ -365,9 +439,11 @@
                         setTimeout(() => {
                             spinning = false;
                             if (prizeAmount <= 0) {
-                                showModal("😔 Oops!", `<strong>${label}</strong>. Try Again!`, "😔");
+                                showModal("😔 Oops!", `<strong>${label}</strong>. Try Again!`,
+                                "😔");
                             } else {
-                                showModal("🎉 Congratulations", `You won <strong>${label}</strong>.`, "🏆");
+                                showModal("🎉 Congratulations",
+                                    `You won <strong>${label}</strong>.`, "🏆");
                             }
                         }, 6000);
                     })
