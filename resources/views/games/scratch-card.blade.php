@@ -4,7 +4,7 @@
     $cardCount = 6;
 @endphp
 
-<div class="py-0 md:py-6 lg:py-10">
+<div class="py-0 md:py-6 lg:py-10 scratch_card">
     <div class="scratch_cards_wrapper space-y-3 md:space-y-8">
 
         {{-- Header --}}
