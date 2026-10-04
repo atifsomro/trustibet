@@ -24,7 +24,7 @@
                         About Us
                     </a>
 
-                    <a href="{{ url('page/contact-us') }}"
+                    <a href="{{ route('contact.send') }}"
                         class="text-gray-400 transition-all duration-300 hover:text-green-500">
                         Contact Us
                     </a>

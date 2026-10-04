@@ -2,6 +2,7 @@
 
 use App\Enums\GameType;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\Google2faController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\DepositController;
@@ -13,10 +14,13 @@ use App\Services\Auth\Google2faService;
 use Illuminate\Support\Facades\Route;
 use App\Models\Kyc;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\LotteryController;
+use App\Http\Controllers\User\InvestmentController;
+use App\Models\Game;
+use App\Services\Game\LimitedDrawService;
 
-Route::get('/contact', function () {
-    return view('pages.contact');
-})->name('contact');
+Route::get('/contact-us', [ContactController::class, 'show'])->name('contact');
+Route::post('/contact-us', [ContactController::class, 'send'])->name('contact.send');
 
 Route::get('/user-account', function (Google2faService $google2fa) {
     $user = auth('web')->user();
@@ -115,13 +119,7 @@ Route::get('/404', function () {
 // CMS pages managed from Admin > Pages. Served at /page/{slug} so the
 // existing hardcoded routes above (/about, /privacy-policy, etc.) are
 // left completely untouched.
-Route::get('/page/{slug}', [PageController::class, 'show'])
-    ->name('page.show');
-
-use App\Http\Controllers\LotteryController;
-use App\Http\Controllers\User\InvestmentController;
-use App\Models\Game;
-use App\Services\Game\LimitedDrawService;
+Route::get('/page/{slug}', [PageController::class, 'show'])->name('page.show');
 
 Route::get('/', function (LimitedDrawService $limitedDraws) {
     $featuredGames = Game::query()
