@@ -17,47 +17,6 @@ class Google2faController extends Controller
         protected Google2faService $google2fa
     ) {}
 
-    public function showSetup(Request $request): View|RedirectResponse
-    {
-        $user = $this->pendingUser($request);
-
-        if (! $user) {
-            return redirect()->route('auth.login');
-        }
-
-        if (! $this->google2fa->isSetupPending($user)) {
-            return redirect()->route('auth.google2fa.challenge');
-        }
-
-        return view('auth.google2fa-setup', [
-            'title' => 'Set Up Authenticator - '.config('app.name'),
-            'user' => $user,
-            'qrSvg' => $this->google2fa->qrCodeSvg($user),
-            'secret' => $user->google2fa_secret,
-        ]);
-    }
-
-    public function confirmSetup(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'code' => ['required', 'string', 'regex:/^\d{6}$/'],
-        ]);
-
-        $user = $this->pendingUser($request);
-
-        if (! $user || ! $this->google2fa->isSetupPending($user)) {
-            return redirect()->route('auth.login');
-        }
-
-        if (! $this->google2fa->verify($user, $request->string('code')->toString())) {
-            return back()->with('error', 'Invalid authenticator code. Please try again.');
-        }
-
-        $this->google2fa->markConfirmed($user);
-
-        return $this->completeLogin($request, $user);
-    }
-
     public function showChallenge(Request $request): View|RedirectResponse
     {
         $user = $this->pendingUser($request);
@@ -66,11 +25,18 @@ class Google2faController extends Controller
             return redirect()->route('auth.login');
         }
 
-        if ($this->google2fa->isSetupPending($user)) {
-            return redirect()->route('auth.google2fa.setup');
+        if ($this->google2fa->isAdminLocked($user)) {
+            $this->google2fa->clearSessionFlags();
+
+            return redirect()
+                ->route('auth.login')
+                ->with(
+                    'error',
+                    'This account is locked by administrator authenticator. Contact support to regain access.'
+                );
         }
 
-        if (! $this->google2fa->requiresChallenge($user)) {
+        if (! $this->google2fa->requiresLoginChallenge($user)) {
             return redirect()->route('auth.login');
         }
 
@@ -88,19 +54,34 @@ class Google2faController extends Controller
 
         $user = $this->pendingUser($request);
 
-        if (! $user || ! $this->google2fa->requiresChallenge($user)) {
-            return redirect()->route('auth.login');
+        if (! $user || $this->google2fa->isAdminLocked($user)) {
+            $this->google2fa->clearSessionFlags();
+
+            return redirect()
+                ->route('auth.login')
+                ->with(
+                    'error',
+                    'This account is locked by administrator authenticator. Contact support to regain access.'
+                );
         }
 
-        if ($this->google2fa->isSetupPending($user)) {
-            return redirect()->route('auth.google2fa.setup');
+        if (! $this->google2fa->requiresLoginChallenge($user)) {
+            return redirect()->route('auth.login');
         }
 
         if (! $this->google2fa->verify($user, $request->string('code')->toString())) {
             return back()->with('error', 'Invalid authenticator code. Please try again.');
         }
 
-        return $this->completeLogin($request, $user);
+        $request->session()->forget(Google2faService::SESSION_USER_ID);
+        $this->google2fa->markSessionPassed($user);
+
+        Auth::login($user, true);
+        $request->session()->regenerate();
+
+        return redirect()
+            ->route('home')
+            ->with('success', 'You have successfully signed in.');
     }
 
     protected function pendingUser(Request $request): ?User
@@ -112,18 +93,5 @@ class Google2faController extends Controller
         }
 
         return User::query()->find($userId);
-    }
-
-    protected function completeLogin(Request $request, User $user): RedirectResponse
-    {
-        $request->session()->forget(Google2faService::SESSION_USER_ID);
-        $request->session()->put(Google2faService::SESSION_PASSED, $user->id);
-
-        Auth::login($user, true);
-        $request->session()->regenerate();
-
-        return redirect()
-            ->route('home')
-            ->with('success', 'You have successfully signed in.');
     }
 }

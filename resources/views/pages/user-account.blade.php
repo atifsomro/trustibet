@@ -314,6 +314,13 @@
                                 KYC
                             </button>
 
+                            <button type="button"
+                                class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
+                                data-tab="security">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                Security
+                            </button>
+
                             {{-- <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="settings">
@@ -362,74 +369,76 @@
 
                     <div class="mt-6">
 
-                        <div id="dashboard-panel" class="account-tab-panel grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
-                                <i class="fa-solid fa-wallet text-3xl text-brand-primary"></i>
-                                <p class="mt-5 text-sm">Wallet Balance</p>
-                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->withdrawable_balance, 2) }}
-                                </h3>
-                            </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
-                                <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
-                                <p class="mt-5 text-sm">Active Entries</p>
-                                <h3 class="mt-2">14</h3>
-                            </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
-                                <i class="fa-solid fa-trophy text-3xl text-brand-primary"></i>
-                                <p class="mt-5 text-sm">Total Wins</p>
-                                <h3 class="mt-2">5</h3>
-                            </div>
-                            <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
-                                <i class="fa-solid fa-gift text-3xl text-brand-primary"></i>
-                                <p class="mt-5 text-sm">Bonus Balance</p>
-                                <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->bonus_balance, 2) }}</h3>
-                            </div>
-                        </div>
-                        {{-- Candlestick --}}
-                        <div
-                            class="mt-5 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-4 sm:p-6">
-                            <div class="mb-4 flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs uppercase tracking-wider opacity-50">Live Activity</span>
-                                    <h3 class="mt-1 text-lg font-semibold">Winning Trends</h3>
+                        <div id="dashboard-panel" class="account-tab-panel">
+                            <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
+                                <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
+                                    <i class="fa-solid fa-wallet text-3xl text-brand-primary"></i>
+                                    <p class="mt-5 text-sm">Wallet Balance</p>
+                                    <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->withdrawable_balance, 2) }}
+                                    </h3>
                                 </div>
-
-                                <div class="flex items-center gap-4 text-xs opacity-60">
-                                    <span class="flex items-center gap-1.5">
-                                        <span class="h-2 w-2 rounded-full bg-green-500"></span>
-                                        Up
-                                    </span>
-                                    <span class="flex items-center gap-1.5">
-                                        <span class="h-2 w-2 rounded-full bg-red-500"></span>
-                                        Down
-                                    </span>
+                                <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
+                                    <i class="fa-solid fa-ticket text-3xl text-brand-primary"></i>
+                                    <p class="mt-5 text-sm">Active Entries</p>
+                                    <h3 class="mt-2">14</h3>
+                                </div>
+                                <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
+                                    <i class="fa-solid fa-trophy text-3xl text-brand-primary"></i>
+                                    <p class="mt-5 text-sm">Total Wins</p>
+                                    <h3 class="mt-2">5</h3>
+                                </div>
+                                <div class="rounded-2xl border border-brand-border bg-brand-surface p-3 sm:p-6">
+                                    <i class="fa-solid fa-gift text-3xl text-brand-primary"></i>
+                                    <p class="mt-5 text-sm">Bonus Balance</p>
+                                    <h3 class="mt-2">$ {{ number_format(auth()->user()->wallet->bonus_balance, 2) }}</h3>
                                 </div>
                             </div>
+                            {{-- Candlestick --}}
+                            <div
+                                class="mt-5 overflow-hidden rounded-2xl border border-brand-border bg-brand-surface p-4 sm:p-6">
+                                <div class="mb-4 flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs uppercase tracking-wider opacity-50">Live Activity</span>
+                                        <h3 class="mt-1 text-lg font-semibold">Winning Trends</h3>
+                                    </div>
 
-                            <div class="candle-chart">
-                                <div class="chart-line chart-line-1"></div>
-                                <div class="chart-line chart-line-2"></div>
-                                <div class="chart-line chart-line-3"></div>
+                                    <div class="flex items-center gap-4 text-xs opacity-60">
+                                        <span class="flex items-center gap-1.5">
+                                            <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                                            Up
+                                        </span>
+                                        <span class="flex items-center gap-1.5">
+                                            <span class="h-2 w-2 rounded-full bg-red-500"></span>
+                                            Down
+                                        </span>
+                                    </div>
+                                </div>
 
-                                <div class="candles">
-                                    <div class="candle green c1"><span></span></div>
-                                    <div class="candle red c2"><span></span></div>
-                                    <div class="candle green c3"><span></span></div>
-                                    <div class="candle green c4"><span></span></div>
-                                    <div class="candle red c5"><span></span></div>
-                                    <div class="candle green c6"><span></span></div>
-                                    <div class="candle red c7"><span></span></div>
-                                    <div class="candle green c8"><span></span></div>
-                                    <div class="candle green c9"><span></span></div>
-                                    <div class="candle red c10"><span></span></div>
-                                    <div class="candle green c11"><span></span></div>
-                                    <div class="candle green c12"><span></span></div>
-                                    <div class="candle red c13"><span></span></div>
-                                    <div class="candle green c14"><span></span></div>
-                                    <div class="candle green c15"><span></span></div>
-                                    <div class="candle red c16"><span></span></div>
-                                    <div class="candle green c17"><span></span></div>
-                                    <div class="candle green c18"><span></span></div>
+                                <div class="candle-chart">
+                                    <div class="chart-line chart-line-1"></div>
+                                    <div class="chart-line chart-line-2"></div>
+                                    <div class="chart-line chart-line-3"></div>
+
+                                    <div class="candles">
+                                        <div class="candle green c1"><span></span></div>
+                                        <div class="candle red c2"><span></span></div>
+                                        <div class="candle green c3"><span></span></div>
+                                        <div class="candle green c4"><span></span></div>
+                                        <div class="candle red c5"><span></span></div>
+                                        <div class="candle green c6"><span></span></div>
+                                        <div class="candle red c7"><span></span></div>
+                                        <div class="candle green c8"><span></span></div>
+                                        <div class="candle green c9"><span></span></div>
+                                        <div class="candle red c10"><span></span></div>
+                                        <div class="candle green c11"><span></span></div>
+                                        <div class="candle green c12"><span></span></div>
+                                        <div class="candle red c13"><span></span></div>
+                                        <div class="candle green c14"><span></span></div>
+                                        <div class="candle green c15"><span></span></div>
+                                        <div class="candle red c16"><span></span></div>
+                                        <div class="candle green c17"><span></span></div>
+                                        <div class="candle green c18"><span></span></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -471,6 +480,11 @@
                         <div id="kyc-panel"
                             class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
                             @include('user.kyc.kyc')
+                        </div>
+
+                        <div id="security-panel"
+                            class="account-tab-panel hidden rounded-3xl border border-brand-border bg-brand-surface p-3 sm:p-5 overflow-hidden">
+                            @include('pages.inc.security')
                         </div>
 
                         <div id="settings-panel"
@@ -565,6 +579,11 @@
                     label: 'KYC',
                     title: 'KYC',
                     description: 'View your full KYC activity.'
+                },
+                security: {
+                    label: 'Security',
+                    title: 'Account Security',
+                    description: 'Manage Google Authenticator and protect your withdrawals.'
                 },
                 settings: {
                     label: 'Settings',

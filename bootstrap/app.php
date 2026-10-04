@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('auth.login'));
         $middleware->web(append: [
             \App\Http\Middleware\CaptureReferralCode::class,
+            \App\Http\Middleware\EnsureUserAccountIsActive::class,
             \App\Http\Middleware\EnsureGoogle2faIsVerified::class,
         ]);
     })

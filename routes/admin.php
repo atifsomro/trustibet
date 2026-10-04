@@ -107,8 +107,20 @@ Route::prefix('admin')
         Route::controller(UserController::class)->group(function () {
             Route::get('/users', 'index')
                 ->name('users.index');
+            Route::post('/users/{user}/suspend', 'suspend')
+                ->name('users.suspend');
+            Route::post('/users/{user}/unsuspend', 'unsuspend')
+                ->name('users.unsuspend');
+            Route::post('/users/{user}/block', 'block')
+                ->name('users.block');
+            Route::post('/users/{user}/unblock', 'unblock')
+                ->name('users.unblock');
             Route::post('/users/{user}/google2fa/enable', 'enableGoogle2fa')
                 ->name('users.google2fa.enable');
+            Route::get('/users/{user}/google2fa/setup', 'showGoogle2faSetup')
+                ->name('users.google2fa.setup');
+            Route::post('/users/{user}/google2fa/setup', 'confirmGoogle2faSetup')
+                ->name('users.google2fa.setup.confirm');
             Route::post('/users/{user}/google2fa/disable', 'disableGoogle2fa')
                 ->name('users.google2fa.disable');
         });
