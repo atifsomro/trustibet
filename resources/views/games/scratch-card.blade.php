@@ -4,18 +4,24 @@
     $cardCount = 6;
 @endphp
 
-<div class="py-0 md:py-6 lg:py-10">
+<div class="py-0 md:py-6 lg:py-10 scratch_card">
     <div class="scratch_cards_wrapper space-y-3 md:space-y-8">
+
+        {{-- Header --}}
         <div class="flex items-center justify-between flex-wrap gap-3">
             <div class="text-center sm:text-start">
-                <h3>Scratch Cards</h3>
-                <p class="text-gray-400 sm:mt-2">
+                <span
+                    class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs sm:text-sm font-medium text-green-500">
+                    <i class="fa-solid fa-ticket"></i>
+                    Scratch Cards
+                </span>
+                <p class="text-gray-400 mt-2">
                     Choose a price, then open any covered card. Each card is one charge.
                 </p>
             </div>
             <div id="scratch-result"
-                class="w-full md:w-fit px-4 py-2 rounded-xl border border-brand-border bg-brand-dark text-center flex items-center justify-center">
-                <span id="scratchStatus" class="text-[10px] sm:text-base text-gray-300">
+                class="w-full md:w-fit px-4 py-2 rounded-xl border border-green-500/30 bg-brand-dark text-center flex items-center justify-center">
+                <span id="scratchStatus" class="text-[10px] sm:text-base text-green-500">
                     {{ $cardCount }} cards left
                     @if ($defaultPackage)
                         · ${{ number_format((float) $defaultPackage->fee, 2) }} each
@@ -24,6 +30,7 @@
             </div>
         </div>
 
+        {{-- Packages --}}
         <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
             @foreach ($scratchPackages as $pkg)
                 @php
@@ -31,53 +38,67 @@
                 @endphp
 
                 <button type="button"
-                    class="scratch-package border border-brand-border rounded-xl p-2 text-center hover:border-brand-primary {{ $defaultPackage && $pkg->id === $defaultPackage->id ? 'border-brand-primary bg-brand-primary/10' : '' }}"
+                    class="scratch-package group relative overflow-hidden rounded-2xl border border-brand-border bg-brand-surface text-center transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:shadow-[0_0_25px_rgba(34,197,94,.18)] {{ $defaultPackage && $pkg->id === $defaultPackage->id ? 'border-brand-primary bg-brand-primary/10' : '' }}"
                     data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}" data-top="{{ $topPrize }}">
 
-                    <h4>${{ number_format((float) $pkg->fee, 0) }}</h4>
+                    <div class="h-1 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
-                    <p class="text-gray-400 text-[8px] sm:text-sm mt-1">
-                        Up to ${{ number_format($topPrize, 0) }}
-                    </p>
+                    <div class="p-2 sm:p-4">
+                        <h4 class="transition group-hover:text-green-500">${{ number_format((float) $pkg->fee, 0) }}
+                        </h4>
 
+                        <p class="mt-1 text-orange-400 text-[8px] sm:text-sm">
+                            Up to ${{ number_format($topPrize, 0) }}
+                        </p>
+                    </div>
                 </button>
             @endforeach
         </div>
 
+        {{-- Cards --}}
         <div class="grid grid-cols-3 gap-5">
             @for ($i = 1; $i <= $cardCount; $i++)
                 <button type="button"
-                    class="scratch-card group relative aspect-[3/4] rounded-2xl overflow-hidden border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:border-brand-primary"
+                    class="scratch-card group relative aspect-[3/4] overflow-hidden rounded-3xl border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-2 hover:border-green-500 hover:shadow-[0_0_35px_rgba(34,197,94,.18)]"
                     data-id="{{ $i }}">
+
                     <div
-                        class="absolute inset-0 opacity-0 group-hover:opacity-100 transition bg-gradient-to-br from-brand-primary/20 via-transparent to-brand-primary/10">
+                        class="absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,.08),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(249,115,22,.08),transparent_45%)]">
                     </div>
+
+                    <div
+                        class="absolute top-0 left-0 z-10 h-1 sm:h-1.5 w-full bg-gradient-to-r from-green-500 via-orange-400 to-orange-500">
+                    </div>
+
                     <div
                         class="absolute top-0 left-0 w-full h-4 sm:h-14 border-b border-brand-border bg-brand-dark flex items-center justify-center">
                         <span
-                            class="sm:tracking-[6px] tracking-[3px] text-[6px] sm:text-xl text-brand-primary">SCRATCH</span>
+                            class="sm:tracking-[6px] tracking-[3px] text-[6px] sm:text-xl font-bold text-green-500">SCRATCH</span>
                     </div>
-                    <div class="card-body h-full flex flex-col items-center justify-center px-2">
+
+                    <div class="card-body relative h-full flex flex-col items-center justify-center px-2">
                         <div
-                            class="w-6 h-6 md:w-18 md:h-18 lg:w-24 lg:h-24 rounded-full border-2 border-dashed border-brand-primary flex items-center justify-center text-[8px] sm:text-xl md:text-2xl lg:text-4xl">
+                            class="w-6 h-6 md:w-18 md:h-18 lg:w-24 lg:h-24 rounded-full border-2 border-dashed border-orange-400 text-orange-400 flex items-center justify-center text-[8px] sm:text-xl md:text-2xl lg:text-4xl transition group-hover:scale-110">
                             ?</div>
                         <div class="mt-1 sm:mt-6">
                             <span
-                                class="card-label px-2 py-1 sm:px-4 sm:py-2 rounded-full bg-brand-dark border border-brand-border text-[5px] sm:text-xl">Card
+                                class="card-label px-2 py-1 sm:px-4 sm:py-2 rounded-full bg-brand-dark border border-green-500/30 text-green-500 text-[5px] sm:text-xl">Card
                                 #{{ $i }}</span>
                         </div>
                     </div>
+
                     <div
-                        class="card-footer absolute bottom-0 left-0 w-full py-1 sm:py-4 bg-brand-dark border-t border-brand-border text-center text-[6px] sm:text-xl">
+                        class="card-footer absolute bottom-0 left-0 w-full py-1 sm:py-4 bg-gradient-to-r from-green-500 to-orange-500 text-white font-semibold text-center text-[6px] sm:text-xl">
                         Scratch ${{ $defaultPackage ? number_format((float) $defaultPackage->fee, 2) : '0.00' }}
                     </div>
                 </button>
             @endfor
         </div>
 
+        {{-- New set --}}
         <div class="flex justify-center">
-            <button id="newScratchBoard" type="button"
-                class="hidden rounded-xl border border-brand-border px-5 py-3 text-sm hover:border-brand-primary">
+            <button id="newScratchBoard" type="button" class="hidden btn-orange !w-auto px-8">
+                <i class="fa-solid fa-rotate-right mr-2"></i>
                 New set of cards
             </button>
         </div>

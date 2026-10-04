@@ -1,46 +1,72 @@
 @extends('layouts.master')
 
 @section('content')
-    <section class="py-14">
+    <section class="py-6 sm:py-8 md:py-10 lg:py-14">
         <div class="container">
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+                {{-- Game area --}}
                 <div class="lg:col-span-3 position-relative lg:sticky lg:top-0 z-3 order-2 lg:order-1">
-                    <div class="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden">
-                        <div class="p-6 border-b border-brand-border">
-                            <h2>{{ $game['title'] }}</h2>
+                    <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                        <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                        <div
+                            class="p-6 border-b border-brand-border bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,.08),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(249,115,22,.08),transparent_45%)]">
+                            <span
+                                class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs sm:text-sm font-medium text-green-500">
+                                <i class="fa-solid fa-gamepad"></i>
+                                Now Playing
+                            </span>
+                            <h2 class="mt-3">{{ $game['title'] }}</h2>
                             <p class="text-gray-400 mt-2">
                                 {{ $game['description'] }}
                             </p>
                         </div>
+
                         <div class="p-2 sm:p-6">
                             @includeIf('games.' . $slug)
                         </div>
                     </div>
                 </div>
+
+                {{-- Wallet --}}
                 <div class="order-1 lg:order-2">
-                    <div class="bg-brand-surface border border-brand-border rounded-2xl p-6">
-                        <h3>Wallet</h3>
-                        <div class="mt-4">
-                            <div class="flex justify-between">
-                                <span class="text-gray-400">Name :</span>
-                                <span>{{ $user->name }}</span>
+                    <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+
+                        <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+
+                        <div class="p-6">
+                            <h3 class="flex items-center gap-2 text-green-500">
+                                <i class="fa-solid fa-wallet"></i>
+                                Wallet
+                            </h3>
+
+                            <div class="mt-4 rounded-2xl bg-brand-dark border border-green-500/20 p-4">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Name :</span>
+                                    <span>{{ $user->name }}</span>
+                                </div>
+                                <div class="flex justify-between mt-3">
+                                    <span class="text-gray-400">Balance</span>
+                                    <span id="wallet-balance" class="font-semibold text-green-500"
+                                        data-live-balance>${{ number_format($balance, 2) }}</span>
+                                </div>
+                                <div class="flex justify-between mt-3">
+                                    <span class="text-gray-400">Bet</span>
+                                    <span id="wallet-bet" class="text-orange-400">—</span>
+                                </div>
+                                <div class="flex justify-between mt-3">
+                                    <span class="text-gray-400">Prize</span>
+                                    <span id="wallet-prize" class="font-semibold text-orange-400">—</span>
+                                </div>
                             </div>
-                            <div class="flex justify-between mt-3">
-                                <span class="text-gray-400">Balance</span>
-                                <span id="wallet-balance" data-live-balance>${{ number_format($balance, 2) }}</span>
-                            </div>
-                            <div class="flex justify-between mt-3">
-                                <span class="text-gray-400">Bet</span>
-                                <span id="wallet-bet">—</span>
-                            </div>
-                            <div class="flex justify-between mt-3">
-                                <span class="text-gray-400">Prize</span>
-                                <span id="wallet-prize">—</span>
-                            </div>
+
+                            <a href="{{ route('deposit') }}" class="btn-orange w-full mt-6">
+                                <i class="fa-solid fa-plus mr-2"></i>
+                                Deposit
+                            </a>
                         </div>
-                        <a href="{{ route('deposit') }}" class="btn-primary w-full mt-6">
-                            Deposit
-                        </a>
                     </div>
                 </div>
             </div>
@@ -134,16 +160,34 @@
 @push('scripts')
     <script>
         window.showGameNotice = function(options) {
-            const opts = typeof options === 'string'
-                ? { message: options }
-                : (options || {});
+            const opts = typeof options === 'string' ?
+                {
+                    message: options
+                } :
+                (options || {});
 
             const type = opts.type || 'warning';
             const defaults = {
-                warning: { title: 'Hold on', emoji: '🎯', confirm: 'Got it' },
-                error: { title: 'Unable to continue', emoji: '😔', confirm: 'Try again' },
-                success: { title: 'Nice!', emoji: '🎉', confirm: 'Continue' },
-                info: { title: 'Heads up', emoji: '✨', confirm: 'OK' },
+                warning: {
+                    title: 'Hold on',
+                    emoji: '🎯',
+                    confirm: 'Got it'
+                },
+                error: {
+                    title: 'Unable to continue',
+                    emoji: '😔',
+                    confirm: 'Try again'
+                },
+                success: {
+                    title: 'Nice!',
+                    emoji: '🎉',
+                    confirm: 'Continue'
+                },
+                info: {
+                    title: 'Heads up',
+                    emoji: '✨',
+                    confirm: 'OK'
+                },
             };
             const preset = defaults[type] || defaults.warning;
 
