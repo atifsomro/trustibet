@@ -180,7 +180,7 @@ class ColorRoundTicker
                 ->max('round_number');
 
             $roundSeconds = max(5, (int) $game->configValue('round_seconds', 10));
-            $lockSeconds = max(1, (int) $game->configValue('lock_seconds', 5));
+            $lockSeconds = max(1, (int) $game->configValue('lock_seconds', 2));
             $lockSeconds = min($lockSeconds, $roundSeconds - 1);
 
             $startsAt = now();

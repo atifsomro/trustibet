@@ -12,9 +12,9 @@
 
             {{-- Left: Dice --}}
             <div class="lg:col-span-8 order-2 lg:order-1">
-                <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
+                <div class="relative overflow-visible rounded-3xl border border-brand-border bg-brand-surface">
 
-                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
+                    <div class="h-1.5 overflow-hidden rounded-t-3xl bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
 
                     <div class="p-3 md:p-6">
                         <div class="flex items-center justify-between mb-2 sm:mb-6 flex-wrap gap-2">
@@ -35,12 +35,11 @@
                             </span>
                         </div>
 
-                        <div class="flex justify-center py-2 sm:py-6 md:py-12">
-                            <div id="dice" class="dice-stage" data-face="1" aria-label="Dice showing 1"
-                                style="width:min(55vw,150px);height:min(55vw,150px);border-radius:1.1rem;background:#0b1220;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 0 35px rgba(34,197,94,.18), 0 0 60px rgba(249,115,22,.10);border:1px solid rgba(34,197,94,.25);">
+                        <div class="flex justify-center py-6 sm:py-10 md:py-14">
+                            <div id="dice" class="dice-stage" data-face="1" aria-label="Dice showing 1">
+                                <div class="dice-shadow" aria-hidden="true"></div>
                                 <svg id="diceSvg" viewBox="0 0 220 220" width="125" height="125"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    style="max-width:82%;max-height:82%;display:block;filter:drop-shadow(0 10px 14px rgba(0,0,0,.45));">
+                                    xmlns="http://www.w3.org/2000/svg">
                                     <defs>
                                         <linearGradient id="topFaceGrad" x1="0.15" y1="0" x2="0.9"
                                             y2="1">
@@ -220,6 +219,138 @@
     </div>
 </div>
 
+@push('styles')
+    <style>
+        @keyframes diceThrowSpin {
+            0% {
+                transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+                filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+            }
+            12% {
+                transform: translate3d(-8%, -55%, 0) rotate(-120deg) scale(1.12);
+            }
+            28% {
+                transform: translate3d(14%, -78%, 0) rotate(240deg) scale(1.18);
+                filter: drop-shadow(0 28px 18px rgba(0, 0, 0, 0.28));
+            }
+            45% {
+                transform: translate3d(-12%, -42%, 0) rotate(-420deg) scale(1.08);
+            }
+            62% {
+                transform: translate3d(10%, -18%, 0) rotate(620deg) scale(1.02);
+            }
+            78% {
+                transform: translate3d(-6%, 10%, 0) rotate(-700deg) scale(0.94);
+                filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.5));
+            }
+            88% {
+                transform: translate3d(4%, -8%, 0) rotate(-680deg) scale(1.04);
+            }
+            95% {
+                transform: translate3d(-2%, 3%, 0) rotate(-725deg) scale(0.98);
+            }
+            100% {
+                transform: translate3d(0, 0, 0) rotate(-720deg) scale(1);
+                filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+            }
+        }
+
+        @keyframes diceShadowPulse {
+            0%,
+            100% {
+                transform: translateX(-50%) scale(1);
+                opacity: 0.45;
+            }
+            28% {
+                transform: translateX(-50%) scale(0.55);
+                opacity: 0.18;
+            }
+            78% {
+                transform: translateX(-50%) scale(1.15);
+                opacity: 0.55;
+            }
+            88% {
+                transform: translateX(-50%) scale(0.9);
+                opacity: 0.35;
+            }
+        }
+
+        @keyframes diceSettle {
+            0% { transform: translate3d(0, 0, 0) rotate(-8deg) scale(1.03); }
+            40% { transform: translate3d(0, 4%, 0) rotate(5deg) scale(0.97); }
+            70% { transform: translate3d(0, -1%, 0) rotate(-2deg) scale(1.01); }
+            100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+        }
+
+        .dice-stage {
+            width: min(55vw, 150px);
+            height: min(55vw, 150px);
+            border-radius: 1.1rem;
+            background:
+                radial-gradient(circle at 50% 42%, rgba(34, 197, 94, 0.08), transparent 55%),
+                #0b1220;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: visible;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            box-shadow:
+                0 0 35px rgba(34, 197, 94, 0.18),
+                0 0 60px rgba(249, 115, 22, 0.1);
+            perspective: 600px;
+        }
+
+        .dice-shadow {
+            position: absolute;
+            left: 50%;
+            bottom: 14%;
+            width: 58%;
+            height: 12%;
+            border-radius: 50%;
+            background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .dice-stage #diceSvg {
+            position: relative;
+            z-index: 1;
+            max-width: 82%;
+            max-height: 82%;
+            display: block;
+            transform-origin: 50% 55%;
+            will-change: transform, filter;
+            filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45));
+        }
+
+        .dice-rolling #diceSvg {
+            animation: diceThrowSpin 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        }
+
+        .dice-rolling .dice-shadow {
+            animation: diceShadowPulse 1.2s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+        }
+
+        .dice-settling #diceSvg {
+            animation: diceSettle 0.35s ease-out both;
+        }
+
+        .dice-rolling #topPips {
+            visibility: visible;
+        }
+
+        @media (min-width: 768px) {
+            .dice-stage {
+                width: 150px;
+                height: 150px;
+                border-radius: 1.15rem;
+            }
+        }
+    </style>
+@endpush
+
 @push('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -228,7 +359,10 @@
             let selected = @json($resumeNumber ?? null);
             let selectedPackageId = serverResumeId || {{ $defaultDice?->id ?? 'null' }};
             let rolling = false;
+            let faceCycleTimer = null;
+            let settleTimer = null;
             const dice = document.getElementById("dice");
+            const diceSvg = document.getElementById("diceSvg");
             const topPips = dice.querySelectorAll("#topPips .pip");
             const resultBox = document.getElementById("diceResult");
             const amountInput = document.getElementById("amount");
@@ -238,7 +372,19 @@
             const walletBalance = document.getElementById("wallet-balance");
             const walletBet = document.getElementById("wallet-bet");
             const walletPrize = document.getElementById("wallet-prize");
-
+            const rollMinMs = 1200;
+            const rollSoundUrls = [
+                @json(asset('sounds/dice-roll.wav')),
+                @json(asset('sounds/dice-roll-2.wav')),
+                @json(asset('sounds/dice-roll-3.wav')),
+                @json(asset('sounds/dice-roll-4.wav')),
+            ];
+            const rollSounds = rollSoundUrls.map((url) => {
+                const audio = new Audio(url);
+                audio.preload = "auto";
+                audio.volume = 0.95;
+                return audio;
+            });
             // Which pip slots light up for each face value
             const faceSlots = {
                 1: [5],
@@ -263,8 +409,78 @@
                 });
             }
 
+            function playRollSound() {
+                rollSounds.forEach((audio) => {
+                    try {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    } catch (e) {}
+                });
+                const audio = rollSounds[Math.floor(Math.random() * rollSounds.length)];
+                try {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    const playPromise = audio.play();
+                    if (playPromise && typeof playPromise.catch === "function") {
+                        playPromise.catch(() => {});
+                    }
+                } catch (e) {}
+            }
+
+            function clearFaceCycle() {
+                if (faceCycleTimer) {
+                    clearTimeout(faceCycleTimer);
+                    faceCycleTimer = null;
+                }
+            }
+
+            function cycleFaces(elapsed = 0) {
+                showDiceFace(Math.floor(Math.random() * 6) + 1);
+                // Fast at first, then slow as the die settles
+                const nextDelay = elapsed < 700 ? 55 : elapsed < 1050 ? 95 : 140;
+                faceCycleTimer = setTimeout(() => cycleFaces(elapsed + nextDelay), nextDelay);
+            }
+
+            function startRollAnimation() {
+                if (settleTimer) {
+                    clearTimeout(settleTimer);
+                    settleTimer = null;
+                }
+                dice.classList.remove("dice-settling");
+                // Retrigger CSS animation cleanly
+                if (diceSvg) {
+                    diceSvg.style.animation = "none";
+                    void diceSvg.offsetWidth;
+                    diceSvg.style.animation = "";
+                }
+                dice.classList.add("dice-rolling");
+                clearFaceCycle();
+                cycleFaces(0);
+                playRollSound();
+            }
+
+            function stopRollAnimation(finalFace = null) {
+                clearFaceCycle();
+                dice.classList.remove("dice-rolling");
+                if (finalFace != null) {
+                    showDiceFace(finalFace);
+                    dice.classList.add("dice-settling");
+                    settleTimer = setTimeout(() => {
+                        dice.classList.remove("dice-settling");
+                        settleTimer = null;
+                    }, 360);
+                }
+            }
+
             function resetDiceVisual() {
-                showDiceFace(1);
+                try {
+                    rollSounds.forEach((audio) => {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    });
+                } catch (e) {}
+                stopRollAnimation(1);
+                dice.classList.remove("dice-settling");
             }
 
             function saveDiceSession() {
@@ -398,7 +614,8 @@
                 }
 
                 rolling = true;
-                dice.classList.add("dice-rolling");
+                const rollStartedAt = Date.now();
+                startRollAnimation();
                 resultBox.innerHTML = "Rolling... 🎲";
 
                 fetch(playUrl, {
@@ -424,12 +641,12 @@
                         return data;
                     })
                     .then(data => {
+                        const waitMs = Math.max(0, rollMinMs - (Date.now() - rollStartedAt));
                         setTimeout(() => {
                             const roll = Number(data.play?.outcome?.roll || 0);
                             const prize = Number(data.play?.prize_amount || 0);
                             const won = data.play?.status === "won";
-                            dice.classList.remove("dice-rolling");
-                            showDiceFace(roll);
+                            stopRollAnimation(roll);
                             rolling = false;
 
                             if (typeof data.balance !== "undefined" &&
@@ -446,6 +663,9 @@
                             }
                             refreshDiceCost();
 
+                            if (typeof playGameOutcomeSound === "function") {
+                                playGameOutcomeSound(won);
+                            }
                             if (won) {
                                 resultBox.innerHTML = "🎉 You Win $" + prize.toFixed(2);
                                 showWin("You Win!", "Prize: <strong>$" + prize.toFixed(2) +
@@ -455,12 +675,11 @@
                                 resultBox.innerHTML = "😔 Better Luck Next Time (rolled " +
                                     roll + ")";
                             }
-                        }, 700);
+                        }, waitMs);
                     })
                     .catch(err => {
                         rolling = false;
                         resetDiceVisual();
-                        dice.classList.remove("dice-rolling");
                         resultBox.innerHTML = err.message || "Unable to roll";
                         showGameNotice({
                             type: 'error',

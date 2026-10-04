@@ -158,6 +158,23 @@
 @endpush
 
 @push('scripts')
+    @php
+        $gameSoundVersion = max(
+            file_exists(public_path('sounds/win-coins.wav')) ? filemtime(public_path('sounds/win-coins.wav')) : 0,
+            file_exists(public_path('sounds/lose.ogg')) ? filemtime(public_path('sounds/lose.ogg')) : 0,
+            file_exists(public_path('sounds/scratch-loop.mp3')) ? filemtime(public_path('sounds/scratch-loop.mp3')) : 0,
+            file_exists(public_path('sounds/wheel-tick.wav')) ? filemtime(public_path('sounds/wheel-tick.wav')) : 0,
+            file_exists(public_path('sounds/ui-select.mp3')) ? filemtime(public_path('sounds/ui-select.mp3')) : 0,
+            file_exists(public_path('sounds/ui-confirm.mp3')) ? filemtime(public_path('sounds/ui-confirm.mp3')) : 0,
+            file_exists(public_path('sounds/countdown-tick.mp3')) ? filemtime(public_path('sounds/countdown-tick.mp3')) : 0,
+            file_exists(public_path('sounds/result-reveal.mp3')) ? filemtime(public_path('sounds/result-reveal.mp3')) : 0,
+        );
+    @endphp
+    <script>
+        window.GAME_SOUND_BASE = @json(asset('sounds'));
+        window.GAME_SOUND_VERSION = @json((string) $gameSoundVersion);
+    </script>
+    <script src="{{ asset('js/game-sounds.js') }}?v={{ filemtime(public_path('js/game-sounds.js')) }}"></script>
     <script>
         window.showGameNotice = function(options) {
             const opts = typeof options === 'string' ?

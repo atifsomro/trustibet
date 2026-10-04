@@ -9,10 +9,10 @@ use App\Enums\GamePlayStatus;
 use App\Enums\GameType;
 use App\Enums\WalletTransactionType;
 use App\Models\Game;
-use App\Models\GamePackage;
 use App\Models\GamePlay;
 use App\Models\GameRound;
 use App\Models\User;
+use App\Services\Game\ColorPayoutSchedule;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,15 +22,17 @@ class PlaceColorBetAction
 {
     public function __construct(
         protected WalletService $walletService,
+        protected ColorPayoutSchedule $payoutSchedule,
     ) {
     }
 
     public function execute(
         User $user,
         Game $game,
-        GamePackage $package,
         GameRound $round,
         string $color,
+        float $amount,
+        string $mode = 'dollar',
         ?string $idempotencyKey = null,
     ): GamePlay {
         if ($game->type !== GameType::COLOR_TRADING) {
@@ -39,9 +41,9 @@ class PlaceColorBetAction
             ]);
         }
 
-        if (! $game->is_active || ! $package->is_active || $package->game_id !== $game->id) {
+        if (! $game->is_active) {
             throw ValidationException::withMessages([
-                'package' => 'This chip package is not available.',
+                'game' => 'This game is not available.',
             ]);
         }
 
@@ -64,23 +66,27 @@ class PlaceColorBetAction
             ]);
         }
 
-        $fee = (float) $package->fee;
+        $minBet = (float) $game->configValue('min_bet', 1);
+        $fee = round($amount, 2);
 
-        if ($fee <= 0) {
+        if ($fee < $minBet) {
             throw ValidationException::withMessages([
-                'package' => 'Chip package fee must be greater than zero.',
+                'amount' => "Minimum bet is \${$minBet}.",
             ]);
         }
 
+        $mode = in_array($mode, ['dollar', 'percent'], true) ? $mode : 'dollar';
         $idempotencyKey ??= (string) Str::uuid();
+        $payout = $this->payoutSchedule->current($game);
 
         return DB::transaction(function () use (
             $user,
             $game,
-            $package,
             $round,
             $color,
             $fee,
+            $mode,
+            $payout,
             $idempotencyKey
         ) {
             $existing = GamePlay::query()
@@ -108,12 +114,17 @@ class PlaceColorBetAction
                 'uuid' => (string) Str::uuid(),
                 'user_id' => $user->id,
                 'game_id' => $game->id,
-                'game_package_id' => $package->id,
+                'game_package_id' => null,
                 'game_round_id' => $round->id,
                 'fee_amount' => $fee,
                 'prize_amount' => 0,
                 'status' => GamePlayStatus::PENDING,
-                'selection' => ['color' => $color],
+                'selection' => [
+                    'color' => $color,
+                    'mode' => $mode,
+                    'payout_rate' => $payout['rate'],
+                    'payout_multiplier' => $payout['multiplier'],
+                ],
                 'idempotency_key' => $idempotencyKey,
             ]);
 
@@ -128,6 +139,7 @@ class PlaceColorBetAction
                     'game' => $game->slug,
                     'round_id' => $round->id,
                     'color' => $color,
+                    'payout_rate' => $payout['rate'],
                 ]
             );
 
@@ -152,7 +164,7 @@ class PlaceColorBetAction
 
             if (($roundStake + $fee) > $maxPerRound + 0.00001) {
                 throw ValidationException::withMessages([
-                    'package' => 'This bet would exceed the maximum stake allowed for this round.',
+                    'amount' => 'This bet would exceed the maximum stake allowed for this round.',
                 ]);
             }
         }
@@ -166,7 +178,7 @@ class PlaceColorBetAction
 
             if (($dayStake + $fee) > $maxPerDay + 0.00001) {
                 throw ValidationException::withMessages([
-                    'package' => 'This bet would exceed the maximum stake allowed for today.',
+                    'amount' => 'This bet would exceed the maximum stake allowed for today.',
                 ]);
             }
         }

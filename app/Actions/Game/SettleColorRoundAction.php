@@ -65,16 +65,26 @@ class SettleColorRoundAction
                 $label = 'Lose';
 
                 if ($won) {
-                    $winPrize = $play->package->winPrize();
-                    $multiplier = (float) $play->package->metaValue('multiplier', 2);
+                    $selectionMultiplier = (float) data_get($play->selection, 'payout_multiplier', 0);
 
-                    if ($winPrize) {
-                        $prizeAmount = (float) $winPrize->prize_amount;
-                        $prizeId = $winPrize->id;
-                        $label = $winPrize->label;
+                    if ($selectionMultiplier > 0) {
+                        $prizeAmount = round((float) $play->fee_amount * $selectionMultiplier, 2);
+                        $rate = data_get($play->selection, 'payout_rate');
+                        $label = $rate !== null
+                            ? "{$rate}% Win"
+                            : number_format($selectionMultiplier, 2).'x Win';
                     } else {
-                        $prizeAmount = round((float) $play->fee_amount * $multiplier, 2);
-                        $label = "{$multiplier}x Win";
+                        $winPrize = $play->package?->winPrize();
+                        $multiplier = (float) ($play->package?->metaValue('multiplier', 2) ?? 2);
+
+                        if ($winPrize) {
+                            $prizeAmount = (float) $winPrize->prize_amount;
+                            $prizeId = $winPrize->id;
+                            $label = $winPrize->label;
+                        } else {
+                            $prizeAmount = round((float) $play->fee_amount * $multiplier, 2);
+                            $label = "{$multiplier}x Win";
+                        }
                     }
 
                     if ($prizeAmount > 0) {

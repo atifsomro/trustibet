@@ -1,5 +1,4 @@
 @php
-    $colorPackages = $packages ?? collect();
     $colors = $gameModel->configValue('colors', [
         'green',
         'red',
@@ -13,6 +12,9 @@
         'black',
     ]);
     $historyLimit = max(1, min(5, (int) $gameModel->configValue('history_limit', 3)));
+    $minBet = (float) ($minBet ?? $gameModel->configValue('min_bet', 1));
+    $payoutRate = (float) data_get($payout ?? [], 'rate', 93);
+    $payoutMultiplier = (float) data_get($payout ?? [], 'multiplier', 1.93);
     $colorClass = [
         'green' => 'bg-green-500',
         'red' => 'bg-red-500',
@@ -81,30 +83,72 @@
                         @endforeach
                     </div>
 
-                    {{-- Packages --}}
-                    <div class="mt-1 sm:mt-10">
-                        <label class="font-semibold text-[12px] sm:text-base text-green-500">Quick Bet
-                            Packages</label>
-                        <div class="grid grid-cols-5 sm:grid-cols-3 md:grid-cols-5 gap-3 mt-1 sm:mt-4">
-                            @foreach ($colorPackages as $pkg)
-                                <button type="button"
-                                    class="text-[10px] sm:text-sm chip-btn border border-brand-border bg-brand-dark rounded-xl py-2 font-semibold transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:text-green-500 hover:shadow-[0_0_20px_rgba(34,197,94,.18)]"
-                                    data-package-id="{{ $pkg->id }}" data-fee="{{ $pkg->fee }}">
-                                    ${{ number_format((float) $pkg->fee, 0) }}
+                    {{-- Bet amount (simple trading-style field) --}}
+                    <div class="mt-4 sm:mt-10 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <label for="betInput" class="font-semibold text-[12px] sm:text-base text-green-500">Investment</label>
+                            <div class="flex items-center gap-3">
+                                <button id="autoBetToggle" type="button" aria-pressed="false"
+                                    class="inline-flex items-center gap-2 rounded-full border border-brand-border bg-brand-dark px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-gray-400 transition hover:border-green-500/50">
+                                    <span id="autoBetKnob"
+                                        class="relative h-4 w-7 rounded-full bg-brand-surface border border-brand-border transition">
+                                        <span
+                                            class="absolute top-0.5 left-0.5 h-3 w-3 rounded-full bg-gray-500 transition-all duration-200"></span>
+                                    </span>
+                                    Auto Bet
                                 </button>
-                            @endforeach
+                                <span class="text-[11px] sm:text-sm text-orange-400 font-semibold">
+                                    Win <span id="payoutRateText">+{{ number_format($payoutRate, 0) }}%</span>
+                                </span>
+                            </div>
                         </div>
-                    </div>
 
-                    {{-- Bet --}}
-                    <div class="mt-1 sm:mt-4 flex items-center justify-center gap-1 sm:gap-3">
-                        <input id="betAmount" type="text" readonly placeholder="Select a chip package"
-                            class="w-full h-8 sm:h-14 rounded-2xl bg-brand-dark border border-green-500/30 px-3 sm:px-5 text-[12px] sm:text-sm text-orange-400 placeholder:text-gray-500 focus:outline-none focus:border-green-500">
-                        <button id="placeBet" type="button"
-                            class="btn-orange w-full h-8 sm:h-14 rounded-2xl text-[12px] sm:text-base md:text-lg">
-                            <i class="fa-solid fa-play mr-2"></i>
-                            Place Bet
-                        </button>
+                        <div class="flex items-start gap-2 sm:gap-3">
+                            <div class="relative flex-1 pb-3">
+                                <div id="betControl"
+                                    class="flex items-center h-12 sm:h-14 rounded-xl border border-brand-border bg-brand-dark overflow-hidden focus-within:border-green-500">
+                                    <button id="betMinus" type="button" aria-label="Decrease"
+                                        class="h-full w-11 sm:w-14 shrink-0 text-green-500 hover:bg-green-500/10 transition">
+                                        <i class="fa-solid fa-minus"></i>
+                                    </button>
+
+                                    <div class="flex flex-1 items-center justify-center gap-0.5 border-x border-brand-border px-2">
+                                        <input id="betInput" type="text" inputmode="numeric" autocomplete="off"
+                                            value="{{ number_format($minBet, 0) }}"
+                                            class="w-auto min-w-[2ch] max-w-[8rem] bg-transparent text-right text-lg sm:text-2xl font-semibold text-white outline-none"
+                                            aria-label="Investment amount"
+                                            size="3">
+                                        <span id="betSuffix" class="text-base sm:text-xl font-semibold text-green-500">$</span>
+                                    </div>
+
+                                    <button id="betPlus" type="button" aria-label="Increase"
+                                        class="h-full w-11 sm:w-14 shrink-0 text-orange-400 hover:bg-orange-500/10 transition">
+                                        <i class="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
+
+                                <button id="betModeToggle" type="button" aria-label="Convert dollar and percent"
+                                    class="absolute left-1/2 -translate-x-1/2 bottom-0 z-10 inline-flex items-center gap-1.5 rounded-full border border-brand-border bg-brand-surface px-2.5 py-0.5 text-[10px] sm:text-xs font-semibold text-gray-300 hover:border-green-500 hover:text-green-400 transition">
+                                    <i class="fa-solid fa-right-left text-[10px] sm:text-xs"></i>
+                                    <span>convert</span>
+                                </button>
+                            </div>
+
+                            <button id="placeBet" type="button"
+                                class="shrink-0 h-12 sm:h-14 px-4 sm:px-8 rounded-xl bg-gradient-to-r from-green-500 to-orange-500 text-white text-[12px] sm:text-base font-semibold hover:opacity-90 transition">
+                                Trade
+                            </button>
+                        </div>
+
+                        <p class="text-[11px] sm:text-sm text-gray-400 text-right">
+                            Stake <span id="actualStake" class="text-green-400 font-semibold">${{ number_format($minBet, 2) }}</span>
+                            <span class="mx-1 text-gray-600">·</span>
+                            Payout <span id="payoutAmount" class="text-orange-400 font-semibold">${{ number_format($minBet * $payoutMultiplier, 2) }}</span>
+                        </p>
+                        <p id="betHint" class="hidden"></p>
+                        <p id="modeCaption" class="hidden"></p>
+                        <span id="modeDollarLabel" class="hidden"></span>
+                        <span id="modePercentLabel" class="hidden"></span>
                     </div>
 
                     {{-- History --}}
@@ -172,6 +216,7 @@
             const betUrl = @json(route('games.bets', $slug));
             const csrf = "{{ csrf_token() }}";
             const historyLimit = {{ $historyLimit }};
+            const minBet = {{ $minBet }};
 
             const UI = {
                 timer: document.getElementById("timer"),
@@ -181,18 +226,36 @@
                 selectedColor: document.getElementById("selectedColor"),
                 deduction: document.getElementById("deduction"),
                 historyLists: document.querySelectorAll(".history-list"),
-                betInput: document.getElementById("betAmount"),
                 placeBet: document.getElementById("placeBet"),
                 colorButtons: document.querySelectorAll(".color-btn"),
-                chipButtons: document.querySelectorAll(".chip-btn"),
+                betMinus: document.getElementById("betMinus"),
+                betPlus: document.getElementById("betPlus"),
+                betInput: document.getElementById("betInput"),
+                betSuffix: document.getElementById("betSuffix"),
+                betHint: document.getElementById("betHint"),
+                betModeToggle: document.getElementById("betModeToggle"),
+                autoBetToggle: document.getElementById("autoBetToggle"),
+                autoBetKnob: document.getElementById("autoBetKnob"),
+                modeDollarLabel: document.getElementById("modeDollarLabel"),
+                modePercentLabel: document.getElementById("modePercentLabel"),
+                modeCaption: document.getElementById("modeCaption"),
+                payoutAmount: document.getElementById("payoutAmount"),
+                actualStake: document.getElementById("actualStake"),
+                payoutRateText: document.getElementById("payoutRateText"),
                 walletBet: document.getElementById("wallet-bet"),
                 walletPrize: document.getElementById("wallet-prize"),
             };
 
             const State = {
                 selectedColor: null,
-                selectedPackageId: null,
-                selectedAmount: 0,
+                mode: "dollar",
+                units: minBet,
+                walletBalance: {{ (float) $balance }},
+                payoutRate: {{ $payoutRate }},
+                payoutMultiplier: {{ $payoutMultiplier }},
+                autoBet: false,
+                autoBetTimer: null,
+                lastAutoBetRoundId: null,
                 bettingLocked: false,
                 loading: false,
                 currentRoundId: null,
@@ -217,12 +280,17 @@
 
             function updateTimer(seconds) {
                 const value = Math.max(0, Number(seconds) || 0);
+                const prev = State.secondsLeft;
                 State.secondsLeft = value;
                 UI.timer.textContent = String(value);
-                if (value <= 5) {
+                if (value <= 2) {
                     UI.timer.classList.add("text-red-500", "animate-pulse");
                 } else {
                     UI.timer.classList.remove("text-red-500", "animate-pulse");
+                }
+                // Soft clock tick on the final seconds of each round
+                if (value !== prev && value > 0 && value <= 3 && typeof playCountdownTickSound === "function") {
+                    playCountdownTickSound();
                 }
             }
 
@@ -246,9 +314,114 @@
             }
 
             function updateBalance(balance) {
+                State.walletBalance = Number(balance) || 0;
                 if (typeof syncWalletBalance === "function") {
                     syncWalletBalance(balance);
                 }
+                refreshBetUI();
+            }
+
+            function money(value) {
+                return "$" + Number(value || 0).toFixed(2);
+            }
+
+            function currentStake() {
+                if (State.mode === "percent") {
+                    return Math.max(0, (State.walletBalance * State.units) / 100);
+                }
+                return Math.max(0, State.units);
+            }
+
+            function maxUnits() {
+                if (State.mode === "percent") {
+                    return 100;
+                }
+                const walletMax = Math.floor(State.walletBalance);
+                return Math.max(minBet, walletMax || minBet);
+            }
+
+            function syncModeToggle() {
+                const isPercent = State.mode === "percent";
+                if (UI.betSuffix) {
+                    UI.betSuffix.textContent = isPercent ? "%" : "$";
+                    UI.betSuffix.className = isPercent
+                        ? "text-base sm:text-xl font-semibold text-orange-400"
+                        : "text-base sm:text-xl font-semibold text-green-500";
+                }
+                if (UI.betModeToggle) {
+                    UI.betModeToggle.classList.toggle("border-orange-500", isPercent);
+                    UI.betModeToggle.classList.toggle("text-orange-400", isPercent);
+                    UI.betModeToggle.classList.toggle("border-brand-border", !isPercent);
+                }
+            }
+
+            function formatUnits(value) {
+                const num = Number(value) || 0;
+                return Number.isInteger(num) ? String(num) : String(Math.round(num * 100) / 100);
+            }
+
+            function syncInputWidth() {
+                if (!UI.betInput) return;
+                const length = Math.max(1, String(UI.betInput.value || "0").length);
+                UI.betInput.size = Math.min(8, length);
+                UI.betInput.style.width = `${Math.max(2, length)}ch`;
+            }
+
+            function refreshBetUI(options = {}) {
+                const keepInputFocus = options.keepInputFocus === true;
+                const max = maxUnits();
+                if (State.units > max) State.units = max;
+                if (State.units < minBet && !keepInputFocus) State.units = minBet;
+
+                if (!keepInputFocus || document.activeElement !== UI.betInput) {
+                    UI.betInput.value = formatUnits(State.units);
+                }
+                syncInputWidth();
+
+                if (State.mode === "percent") {
+                    UI.betHint.textContent = "Of wallet (" + money(State.walletBalance) + ") · type %";
+                } else {
+                    UI.betHint.textContent = "Tap to type · or use + / −";
+                }
+
+                const stake = currentStake();
+                const payout = stake * State.payoutMultiplier;
+                UI.actualStake.textContent = money(stake);
+                UI.payoutAmount.textContent = money(payout);
+                UI.payoutRateText.textContent = "+" + Number(State.payoutRate).toFixed(0) + "%";
+
+                if (UI.walletBet) {
+                    UI.walletBet.textContent = money(stake);
+                }
+
+                syncModeToggle();
+            }
+
+            function commitBetInput() {
+                let raw = String(UI.betInput.value || "").replace(/[^0-9.]/g, "");
+                if (raw === "" || raw === ".") {
+                    State.units = minBet;
+                } else {
+                    let value = Number(raw);
+                    if (!Number.isFinite(value)) value = minBet;
+                    value = Math.floor(value);
+                    State.units = Math.min(maxUnits(), Math.max(minBet, value));
+                }
+                refreshBetUI();
+            }
+
+            function adjustBet(delta) {
+                if (State.bettingLocked || State.loading) return;
+                commitBetInput();
+                State.units = Math.min(maxUnits(), Math.max(minBet, State.units + delta));
+                refreshBetUI();
+            }
+
+            function applyPayout(payout) {
+                if (!payout) return;
+                State.payoutRate = Number(payout.rate) || State.payoutRate;
+                State.payoutMultiplier = Number(payout.multiplier) || State.payoutMultiplier;
+                refreshBetUI();
             }
 
             function updateRound(round) {
@@ -271,29 +444,168 @@
                 State.bettingLocked = true;
                 UI.placeBet.disabled = true;
                 UI.placeBet.classList.add("opacity-50", "cursor-not-allowed");
+                if (UI.betInput) UI.betInput.disabled = true;
+                if (UI.betMinus) UI.betMinus.disabled = true;
+                if (UI.betPlus) UI.betPlus.disabled = true;
+                if (UI.betModeToggle) UI.betModeToggle.disabled = true;
             }
 
             function unlockBetting() {
                 State.bettingLocked = false;
                 State.loading = false;
                 UI.placeBet.disabled = false;
-                UI.placeBet.innerHTML = "Place Bet";
+                UI.placeBet.textContent = "Trade";
                 UI.placeBet.classList.remove("opacity-50", "cursor-not-allowed");
+                if (UI.betInput) UI.betInput.disabled = false;
+                if (UI.betMinus) UI.betMinus.disabled = false;
+                if (UI.betPlus) UI.betPlus.disabled = false;
+                if (UI.betModeToggle) UI.betModeToggle.disabled = false;
             }
 
             function resetSelections() {
                 State.selectedColor = null;
-                State.selectedPackageId = null;
-                State.selectedAmount = 0;
-                UI.betInput.value = "";
                 UI.colorButtons.forEach(button => {
                     button.classList.remove("ring-4", "ring-brand-primary", "scale-105", "shadow-2xl",
                         "shadow-brand-primary/40");
                 });
-                UI.chipButtons.forEach(btn => btn.classList.remove("bg-brand-primary", "text-white", "scale-105"));
                 updateSelectedColor("None");
+
+                if (!State.autoBet) {
+                    State.units = minBet;
+                    State.mode = "dollar";
+                }
+
                 updateDeduction(0);
-                if (UI.walletBet) UI.walletBet.textContent = "$0.00";
+                refreshBetUI();
+            }
+
+            function syncAutoBetToggle() {
+                if (!UI.autoBetToggle || !UI.autoBetKnob) return;
+                const knob = UI.autoBetKnob.querySelector("span");
+                UI.autoBetToggle.setAttribute("aria-pressed", State.autoBet ? "true" : "false");
+                UI.autoBetToggle.classList.toggle("border-green-500", State.autoBet);
+                UI.autoBetToggle.classList.toggle("text-green-400", State.autoBet);
+                UI.autoBetToggle.classList.toggle("bg-green-500/10", State.autoBet);
+                UI.autoBetToggle.classList.toggle("text-gray-400", !State.autoBet);
+                UI.autoBetKnob.classList.toggle("bg-green-500", State.autoBet);
+                UI.autoBetKnob.classList.toggle("border-green-500", State.autoBet);
+                if (knob) {
+                    knob.style.left = State.autoBet ? "0.85rem" : "0.125rem";
+                    knob.classList.toggle("bg-white", State.autoBet);
+                    knob.classList.toggle("bg-gray-500", !State.autoBet);
+                }
+            }
+
+            function scheduleAutoBet(delayMs = 350) {
+                if (!State.autoBet) return;
+                clearTimeout(State.autoBetTimer);
+                State.autoBetTimer = setTimeout(() => {
+                    maybeAutoBet();
+                }, delayMs);
+            }
+
+            function maybeAutoBet() {
+                if (!State.autoBet || State.bettingLocked || State.loading) return;
+                if (!State.selectedColor) return;
+                if (State.lastAutoBetRoundId && State.lastAutoBetRoundId === State.currentRoundId) return;
+
+                commitBetInput();
+                const stake = Number(currentStake().toFixed(2));
+                if (stake < minBet || stake > State.walletBalance + 0.00001) return;
+
+                placeBet({ auto: true });
+            }
+
+            async function placeBet(options = {}) {
+                const auto = options.auto === true;
+                if (State.bettingLocked || State.loading) return;
+                commitBetInput();
+
+                if (!State.selectedColor) {
+                    if (!auto) {
+                        showGameNotice({
+                            type: 'warning',
+                            title: 'Pick a color',
+                            message: 'Select a color before placing your bet.',
+                            emoji: '🎨',
+                        });
+                    }
+                    return;
+                }
+
+                const stake = Number(currentStake().toFixed(2));
+                if (stake < minBet) {
+                    if (!auto) {
+                        showGameNotice({
+                            type: 'warning',
+                            title: 'Bet too small',
+                            message: 'Minimum bet is $' + minBet.toFixed(2) + '.',
+                            emoji: '🪙',
+                        });
+                    }
+                    return;
+                }
+
+                if (stake > State.walletBalance + 0.00001) {
+                    if (!auto) {
+                        showGameNotice({
+                            type: 'warning',
+                            title: 'Insufficient balance',
+                            message: 'Your wallet does not cover this stake.',
+                            emoji: '💼',
+                        });
+                    }
+                    return;
+                }
+
+                if (auto && State.currentRoundId) {
+                    State.lastAutoBetRoundId = State.currentRoundId;
+                }
+
+                setLoading(true);
+                try {
+                    const res = await fetch(betUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json",
+                            "X-CSRF-TOKEN": csrf
+                        },
+                        body: JSON.stringify({
+                            amount: stake,
+                            mode: State.mode,
+                            color: State.selectedColor,
+                            idempotency_key: crypto.randomUUID()
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) {
+                        throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
+                            "Bet failed");
+                    }
+                    if (auto && State.currentRoundId) {
+                        State.lastAutoBetRoundId = State.currentRoundId;
+                    }
+                    updateBalance(data.balance);
+                    updateDeduction(data.play?.fee_amount || stake);
+                    applyPayout(data.payout);
+                    applyRound(data.round);
+                    if (typeof playColorBetSound === "function") {
+                        playColorBetSound();
+                    }
+                } catch (err) {
+                    if (auto && State.currentRoundId && State.lastAutoBetRoundId === State.currentRoundId) {
+                        State.lastAutoBetRoundId = null;
+                    }
+                    showGameNotice({
+                        type: 'error',
+                        title: 'Bet failed',
+                        message: err.message || 'Unable to place bet right now.',
+                        emoji: '😔',
+                    });
+                } finally {
+                    setLoading(false);
+                }
             }
 
             function addHistory(color) {
@@ -315,7 +627,7 @@
             function setLoading(status) {
                 State.loading = status;
                 UI.placeBet.disabled = status || State.bettingLocked;
-                UI.placeBet.innerHTML = status ? "Processing..." : "Place Bet";
+                UI.placeBet.textContent = status ? "Processing..." : "Trade";
             }
 
             function notifySettledBets(bets, resultColor, settledRoundId) {
@@ -335,6 +647,10 @@
 
                 if (UI.walletPrize) {
                     UI.walletPrize.textContent = "$" + Number(totalPrize).toFixed(2);
+                }
+
+                if (typeof playGameOutcomeSound === "function") {
+                    playGameOutcomeSound(wonAny);
                 }
 
                 if (typeof showGameNotice !== "function") return;
@@ -367,78 +683,76 @@
                         "shadow-brand-primary/40");
                     State.selectedColor = button.dataset.color;
                     updateSelectedColor(State.selectedColor);
-                });
-            });
-
-            UI.chipButtons.forEach(button => {
-                button.addEventListener("click", () => {
-                    if (State.bettingLocked || State.loading) return;
-                    UI.chipButtons.forEach(btn => btn.classList.remove("bg-brand-primary",
-                        "text-white", "scale-105"));
-                    button.classList.add("bg-brand-primary", "text-white", "scale-105");
-                    State.selectedPackageId = Number(button.dataset.packageId);
-                    State.selectedAmount = Number(button.dataset.fee);
-                    UI.betInput.value = "$" + State.selectedAmount.toFixed(2);
-                    if (UI.walletBet) UI.walletBet.textContent = "$" + State.selectedAmount.toFixed(
-                        2);
-                });
-            });
-
-            UI.placeBet.addEventListener("click", async () => {
-                if (State.bettingLocked || State.loading) return;
-                if (!State.selectedColor) {
-                    showGameNotice({
-                        type: 'warning',
-                        title: 'Pick a color',
-                        message: 'Select a color before placing your bet.',
-                        emoji: '🎨',
-                    });
-                    return;
-                }
-                if (!State.selectedPackageId) {
-                    showGameNotice({
-                        type: 'warning',
-                        title: 'Pick a chip',
-                        message: 'Choose a chip package to place your bet.',
-                        emoji: '🪙',
-                    });
-                    return;
-                }
-
-                setLoading(true);
-                try {
-                    const res = await fetch(betUrl, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "X-CSRF-TOKEN": csrf
-                        },
-                        body: JSON.stringify({
-                            package_id: State.selectedPackageId,
-                            color: State.selectedColor,
-                            idempotency_key: crypto.randomUUID()
-                        })
-                    });
-                    const data = await res.json();
-                    if (!res.ok || !data.success) {
-                        throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
-                            "Bet failed");
+                    if (typeof playColorSelectSound === "function") {
+                        playColorSelectSound();
                     }
-                    updateBalance(data.balance);
-                    updateDeduction(data.play?.fee_amount || State.selectedAmount);
-                    applyRound(data.round);
-                } catch (err) {
-                    showGameNotice({
-                        type: 'error',
-                        title: 'Bet failed',
-                        message: err.message || 'Unable to place bet right now.',
-                        emoji: '😔',
-                    });
-                } finally {
-                    setLoading(false);
+                    scheduleAutoBet(150);
+                });
+            });
+
+            UI.betMinus?.addEventListener("click", () => {
+                adjustBet(-1);
+                scheduleAutoBet(150);
+            });
+            UI.betPlus?.addEventListener("click", () => {
+                adjustBet(1);
+                scheduleAutoBet(150);
+            });
+
+            UI.betInput?.addEventListener("input", () => {
+                if (State.bettingLocked || State.loading) return;
+                let raw = String(UI.betInput.value || "").replace(/[^0-9]/g, "");
+                if (raw.length > 8) raw = raw.slice(0, 8);
+                UI.betInput.value = raw;
+                syncInputWidth();
+                const value = Number(raw);
+                if (Number.isFinite(value) && value > 0) {
+                    State.units = value;
+                    refreshBetUI({ keepInputFocus: true });
+                    scheduleAutoBet(500);
+                } else {
+                    UI.actualStake.textContent = money(0);
+                    UI.payoutAmount.textContent = money(0);
                 }
             });
+
+            UI.betInput?.addEventListener("blur", () => {
+                if (State.bettingLocked || State.loading) return;
+                commitBetInput();
+                scheduleAutoBet(100);
+            });
+
+            UI.betInput?.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    UI.betInput.blur();
+                    if (!State.autoBet) {
+                        UI.placeBet?.focus();
+                    }
+                }
+            });
+
+            UI.betModeToggle?.addEventListener("click", () => {
+                if (State.bettingLocked || State.loading) return;
+                State.mode = State.mode === "dollar" ? "percent" : "dollar";
+                State.units = minBet;
+                refreshBetUI();
+                UI.betInput?.focus();
+                UI.betInput?.select();
+                scheduleAutoBet(150);
+            });
+
+            UI.autoBetToggle?.addEventListener("click", () => {
+                State.autoBet = !State.autoBet;
+                syncAutoBetToggle();
+                if (State.autoBet) {
+                    scheduleAutoBet(100);
+                } else {
+                    clearTimeout(State.autoBetTimer);
+                }
+            });
+
+            UI.placeBet.addEventListener("click", () => placeBet({ auto: false }));
 
             function applyRound(round) {
                 if (!round) return;
@@ -447,14 +761,18 @@
                 updateRound(round.round_number);
                 syncTimerFromRound(round);
 
-                if (round.betting_open) {
-                    unlockBetting();
-                } else {
-                    lockBetting();
+                if (isNewRound) {
+                    State.lastAutoBetRoundId = null;
+                    resetSelections();
                 }
 
-                if (isNewRound) {
-                    resetSelections();
+                if (round.betting_open) {
+                    unlockBetting();
+                    if (State.autoBet) {
+                        scheduleAutoBet(200);
+                    }
+                } else {
+                    lockBetting();
                 }
             }
 
@@ -472,7 +790,10 @@
                         updateBalance(data.balance);
                     }
 
-                    if (data.last_result && data.last_result !== State.lastResultShown) {
+                    applyPayout(data.payout);
+
+                    const resultChanged = data.last_result && data.last_result !== State.lastResultShown;
+                    if (resultChanged) {
                         State.lastResultShown = data.last_result;
                         updateResult(data.last_result);
                         addHistory(data.last_result);
@@ -480,12 +801,16 @@
 
                     applyRound(data.round);
 
-                    if (data.last_settled && Array.isArray(data.my_last_round_bets)) {
+                    const hasSettledBets = data.last_settled && Array.isArray(data.my_last_round_bets) &&
+                        data.my_last_round_bets.length > 0;
+                    if (hasSettledBets) {
                         notifySettledBets(
                             data.my_last_round_bets,
                             data.last_result || data.last_settled.result_color,
                             data.last_settled.id
                         );
+                    } else if (resultChanged && typeof playColorRevealSound === "function") {
+                        playColorRevealSound();
                     }
                 } catch (e) {}
             }
@@ -504,6 +829,8 @@
                 setLoading
             };
 
+            syncAutoBetToggle();
+            refreshBetUI();
             pollRound();
             setInterval(pollRound, 1000);
             setInterval(tickLocalTimer, 250);

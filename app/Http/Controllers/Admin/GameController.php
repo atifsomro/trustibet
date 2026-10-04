@@ -508,7 +508,7 @@ class GameController extends Controller
 
         if ($type === GameType::COLOR_TRADING) {
             $normalized['round_seconds'] = (int) ($config['round_seconds'] ?? 10);
-            $normalized['lock_seconds'] = (int) ($config['lock_seconds'] ?? 5);
+            $normalized['lock_seconds'] = (int) ($config['lock_seconds'] ?? 2);
             $normalized['history_limit'] = max(1, min(5, (int) ($config['history_limit'] ?? 3)));
             $normalized['max_bet_per_round'] = max(0, (float) ($config['max_bet_per_round'] ?? 2000));
             $normalized['max_bet_per_day'] = max(0, (float) ($config['max_bet_per_day'] ?? 10000));

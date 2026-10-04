@@ -107,48 +107,52 @@
 
 @push('styles')
     <style>
-        @keyframes scratch-shake {
-
-            0%,
-            100% {
-                transform: translateX(0) rotate(0);
-            }
-
-            25% {
-                transform: translateX(-4px) rotate(-0.6deg);
-            }
-
-            75% {
-                transform: translateX(4px) rotate(0.6deg);
-            }
-        }
-
         @keyframes scratch-reveal {
             0% {
-                transform: scale(0.86) rotate(-3deg);
-                filter: blur(6px);
+                transform: scale(0.92);
                 opacity: 0;
             }
-
-            55% {
-                transform: scale(1.05) rotate(1deg);
-                filter: blur(0);
-                opacity: 1;
-            }
-
             100% {
-                transform: scale(1) rotate(0);
-                filter: blur(0);
+                transform: scale(1);
                 opacity: 1;
             }
-        }
-
-        .scratch-card.is-opening {
-            animation: scratch-shake 0.28s linear infinite;
         }
 
         .scratch-card .scratch-prize {
-            animation: scratch-reveal 0.55s ease;
+            animation: scratch-reveal 0.4s ease;
+        }
+
+        .scratch-card .card-body {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scratch-stage {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        .scratch-stage canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .scratch-card.is-opening {
+            cursor: wait;
+        }
+
+        .scratch-underlay {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
         }
     </style>
 @endpush
@@ -159,16 +163,26 @@
             const cardTotal = {{ $cardCount }};
             let scratchInFlight = false;
             let selectedPackageId = {{ $defaultPackage?->id ?? 'null' }};
+            let activeScratch = null;
             const playUrl = @json(route('games.play', $slug));
             const cards = document.querySelectorAll(".scratch-card");
             const statusText = document.getElementById("scratchStatus");
             const newBoardButton = document.getElementById("newScratchBoard");
-            const walletBalance = document.getElementById("wallet-balance");
             const walletBet = document.getElementById("wallet-bet");
             const walletPrize = document.getElementById("wallet-prize");
 
             function money(value) {
                 return "$" + Number(value || 0).toFixed(2);
+            }
+
+            function escapeHtml(value) {
+                return String(value).replace(/[&<>"']/g, (ch) => ({
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    "\"": "&quot;",
+                    "'": "&#39;"
+                } [ch]));
             }
 
             function selectedPackageButton() {
@@ -202,14 +216,23 @@
                 }
             }
 
+            function coverMarkup(cardId) {
+                return `
+                    <div class="w-6 h-6 md:w-18 md:h-18 lg:w-24 lg:h-24 rounded-full border-2 border-dashed border-orange-400 text-orange-400 flex items-center justify-center text-[8px] sm:text-xl md:text-2xl lg:text-4xl">?</div>
+                    <div class="mt-1 sm:mt-6">
+                        <span class="card-label px-2 py-1 sm:px-4 sm:py-2 rounded-full bg-brand-dark border border-green-500/30 text-green-500 text-[5px] sm:text-xl">Card #${cardId}</span>
+                    </div>`;
+            }
+
             function coverCard(card) {
+                if (activeScratch && activeScratch.card === card) {
+                    activeScratch.cancel();
+                    activeScratch = null;
+                }
                 card.dataset.revealed = "0";
                 card.style.pointerEvents = "";
-                card.classList.remove("opacity-80");
-                card.querySelector(".card-body").innerHTML =
-                    `
-                    <div class="w-12 h-12 md:w-18 md:h-18 lg:w-24 lg:h-24 rounded-full border-2 border-dashed border-brand-primary flex items-center justify-center text-xl md:text-2xl lg:text-4xl">?</div>
-                    <div class="mt-6"><span class="card-label px-2 py-1 sm:px-4 sm:py-2 rounded-full bg-brand-dark border border-brand-border text-[8px] sm:text-xl">Card #${card.dataset.id}</span></div>`;
+                card.classList.remove("opacity-80", "is-opening");
+                card.querySelector(".card-body").innerHTML = coverMarkup(card.dataset.id);
                 const footer = card.querySelector(".card-footer");
                 if (footer) footer.textContent = "Scratch " + money(selectedFee());
             }
@@ -218,6 +241,166 @@
                 cards.forEach(coverCard);
                 if (walletPrize) walletPrize.textContent = "—";
                 refreshBoard();
+            }
+
+            function paintFoil(ctx, width, height) {
+                const gradient = ctx.createLinearGradient(0, 0, width, height);
+                gradient.addColorStop(0, "#8b95a7");
+                gradient.addColorStop(0.28, "#d7dde8");
+                gradient.addColorStop(0.52, "#9aa6b8");
+                gradient.addColorStop(0.78, "#eef2f7");
+                gradient.addColorStop(1, "#6b7280");
+                ctx.globalCompositeOperation = "source-over";
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // Soft metallic speckles
+                for (let i = 0; i < 140; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    const a = 0.08 + Math.random() * 0.18;
+                    ctx.fillStyle = Math.random() > 0.5 ?
+                        `rgba(255,255,255,${a})` :
+                        `rgba(15,23,42,${a * 0.55})`;
+                    ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
+                }
+
+                ctx.fillStyle = "rgba(15, 23, 42, 0.22)";
+                ctx.font = `700 ${Math.max(12, Math.floor(width * 0.12))}px Inter, Arial, sans-serif`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.letterSpacing = "4px";
+                ctx.fillText("SCRATCH", width / 2, height / 2);
+            }
+
+            function startCanvasScratch(card, body) {
+                const rect = body.getBoundingClientRect();
+                const width = Math.max(1, Math.round(rect.width));
+                const height = Math.max(1, Math.round(rect.height));
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+                body.innerHTML = `
+                    <div class="scratch-underlay">${coverMarkup(card.dataset.id)}</div>
+                    <div class="scratch-stage">
+                        <canvas></canvas>
+                    </div>`;
+
+                const canvas = body.querySelector("canvas");
+                const ctx = canvas.getContext("2d", {
+                    willReadFrequently: false
+                });
+                canvas.width = Math.round(width * dpr);
+                canvas.height = Math.round(height * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                paintFoil(ctx, width, height);
+
+                const brush = Math.max(16, Math.min(width, height) * 0.16);
+                const paths = [
+                    [{ x: 0.08, y: 0.22 }, { x: 0.92, y: 0.28 }],
+                    [{ x: 0.12, y: 0.40 }, { x: 0.88, y: 0.48 }],
+                    [{ x: 0.10, y: 0.58 }, { x: 0.90, y: 0.62 }],
+                    [{ x: 0.15, y: 0.74 }, { x: 0.85, y: 0.80 }],
+                    [{ x: 0.20, y: 0.30 }, { x: 0.80, y: 0.78 }],
+                    [{ x: 0.78, y: 0.24 }, { x: 0.22, y: 0.82 }],
+                ];
+
+                let cancelled = false;
+                let rafId = 0;
+                let pathIndex = 0;
+                let progress = 0;
+                let lastX = paths[0][0].x * width;
+                let lastY = paths[0][0].y * height;
+
+                function eraseAt(x, y, radius) {
+                    ctx.globalCompositeOperation = "destination-out";
+                    ctx.beginPath();
+                    ctx.fillStyle = "#000";
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Soft trail between points
+                    ctx.lineWidth = radius * 1.65;
+                    ctx.lineCap = "round";
+                    ctx.strokeStyle = "#000";
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    lastX = x;
+                    lastY = y;
+                }
+
+                function tick() {
+                    if (cancelled) return;
+                    const path = paths[pathIndex];
+                    const from = path[0];
+                    const to = path[1];
+                    progress += 0.045;
+                    const t = Math.min(1, progress);
+                    const x = (from.x + (to.x - from.x) * t) * width + (Math.random() - 0.5) * 4;
+                    const y = (from.y + (to.y - from.y) * t) * height + (Math.random() - 0.5) * 4;
+                    eraseAt(x, y, brush * (0.85 + Math.random() * 0.3));
+
+                    if (t >= 1) {
+                        pathIndex += 1;
+                        progress = 0;
+                        if (pathIndex >= paths.length) {
+                            // Keep gently clearing leftover foil until finished
+                            eraseAt(
+                                Math.random() * width,
+                                Math.random() * height,
+                                brush * (0.9 + Math.random() * 0.5)
+                            );
+                            pathIndex = paths.length - 1;
+                            progress = 0.35;
+                        } else {
+                            lastX = paths[pathIndex][0].x * width;
+                            lastY = paths[pathIndex][0].y * height;
+                        }
+                    }
+                    rafId = requestAnimationFrame(tick);
+                }
+
+                rafId = requestAnimationFrame(tick);
+
+                return {
+                    card,
+                    canvas,
+                    body,
+                    cancel() {
+                        cancelled = true;
+                        if (rafId) cancelAnimationFrame(rafId);
+                    },
+                    finish(onDone) {
+                        // Sweep remaining foil quickly
+                        let clearStep = 0;
+                        const clear = () => {
+                            if (cancelled) return;
+                            clearStep += 1;
+                            for (let i = 0; i < 10; i++) {
+                                eraseAt(
+                                    Math.random() * width,
+                                    Math.random() * height,
+                                    brush * (1.1 + Math.random())
+                                );
+                            }
+                            if (clearStep < 12) {
+                                rafId = requestAnimationFrame(clear);
+                            } else {
+                                cancelled = true;
+                                if (rafId) cancelAnimationFrame(rafId);
+                                const stage = body.querySelector(".scratch-stage");
+                                if (stage) stage.remove();
+                                if (typeof onDone === "function") onDone();
+                            }
+                        };
+                        clear();
+                    },
+                    setPrizeHtml(html) {
+                        const underlay = body.querySelector(".scratch-underlay");
+                        if (underlay) underlay.innerHTML = html;
+                    }
+                };
             }
 
             document.querySelectorAll(".scratch-package").forEach(btn => {
@@ -247,16 +430,20 @@
                     if (scratchInFlight || this.dataset.revealed === "1") return;
                     if (!selectedPackageId) return;
 
-                    const fee = selectedFee();
                     const cardNumber = this.dataset.id;
                     scratchInFlight = true;
+                    const scratchStartedAt = Date.now();
+                    const scratchMinMs = 1500;
+                    const body = this.querySelector(".card-body");
+                    const footer = this.querySelector(".card-footer");
                     this.classList.add("is-opening");
                     this.style.pointerEvents = "none";
-                    this.querySelector(".card-body").innerHTML = `
-                        <div class="text-center">
-                            <div class="w-4 h-4 md:w-14 md:h-14 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-                            <p class="mt-2 sm:mt-4 text-[10px] md:text-xl text-gray-400">Charging ${money(fee)}...</p>
-                        </div>`;
+                    if (footer) footer.textContent = "Scratching...";
+
+                    activeScratch = startCanvasScratch(this, body);
+                    if (typeof startScratchSound === "function") {
+                        startScratchSound();
+                    }
 
                     fetch(playUrl, {
                             method: "POST",
@@ -281,55 +468,78 @@
                         })
                         .then(data => {
                             const prizeAmount = Number(data.play?.prize_amount || 0);
-                            const reward = data.play?.reward || data.play?.label || money(
-                                prizeAmount);
+                            const reward = data.play?.reward || data.play?.label || money(prizeAmount);
                             const won = prizeAmount > 0;
-                            const safeReward = String(reward).replace(/[&<>"']/g, (ch) => ({
-                                "&": "&amp;",
-                                "<": "&lt;",
-                                ">": "&gt;",
-                                "\"": "&quot;",
-                                "'": "&#39;"
-                            } [ch]));
-                            this.classList.remove("is-opening");
-                            this.dataset.revealed = "1";
-                            this.querySelector(".card-body").innerHTML = `
+                            const safeReward = escapeHtml(reward);
+                            const prizeHtml = `
                                 <div class="scratch-prize flex flex-col items-center justify-center h-full">
                                     <div class="text-[10px] md:text-5xl mb-2 sm:mb-4">${won ? "🎉" : "😔"}</div>
                                     <div class="text-[10px] md:text-3xl text-brand-primary">${safeReward}</div>
                                 </div>`;
-                            const footer = this.querySelector(".card-footer");
-                            if (footer) footer.textContent = won ? "Won" : "No prize";
-                            if (typeof data.balance !== "undefined" &&
-                                typeof syncWalletBalance === "function") {
-                                syncWalletBalance(data.balance);
+
+                            if (activeScratch) {
+                                activeScratch.setPrizeHtml(prizeHtml);
                             }
-                            if (walletPrize) walletPrize.textContent = money(prizeAmount);
-                            scratchInFlight = false;
-                            refreshBoard();
-                            if (won && typeof confetti === "function") {
-                                confetti({
-                                    particleCount: 140,
-                                    spread: 80,
-                                    origin: {
-                                        y: 0.65
+
+                            const waitMs = Math.max(0, scratchMinMs - (Date.now() - scratchStartedAt));
+                            setTimeout(() => {
+                                const finishReveal = () => {
+                                    this.classList.remove("is-opening");
+                                    this.dataset.revealed = "1";
+                                    body.innerHTML = prizeHtml;
+                                    if (footer) footer.textContent = won ? "Won" : "No prize";
+                                    if (typeof data.balance !== "undefined" &&
+                                        typeof syncWalletBalance === "function") {
+                                        syncWalletBalance(data.balance);
                                     }
-                                });
-                            }
-                            if (typeof showGameNotice === "function") {
-                                showGameNotice({
-                                    type: won ? "success" : "info",
-                                    title: won ? "You won" : "No prize",
-                                    message: won ?
-                                        `Card #${cardNumber} revealed <strong>${safeReward}</strong>.` :
-                                        `Card #${cardNumber} had no prize. Try another card.`,
-                                    emoji: won ? "🎉" : "😔",
-                                });
-                            }
+                                    if (walletPrize) walletPrize.textContent = money(prizeAmount);
+                                    scratchInFlight = false;
+                                    activeScratch = null;
+                                    refreshBoard();
+                                    if (typeof playGameOutcomeSound === "function") {
+                                        playGameOutcomeSound(won);
+                                    }
+                                    if (won && typeof confetti === "function") {
+                                        confetti({
+                                            particleCount: 140,
+                                            spread: 80,
+                                            origin: {
+                                                y: 0.65
+                                            }
+                                        });
+                                    }
+                                    if (typeof showGameNotice === "function") {
+                                        showGameNotice({
+                                            type: won ? "success" : "info",
+                                            title: won ? "You won" : "No prize",
+                                            message: won ?
+                                                `Card #${cardNumber} revealed <strong>${safeReward}</strong>.` :
+                                                `Card #${cardNumber} had no prize. Try another card.`,
+                                            emoji: won ? "🎉" : "😔",
+                                        });
+                                    }
+                                };
+
+                                if (typeof stopScratchSound === "function") {
+                                    stopScratchSound();
+                                }
+                                if (activeScratch) {
+                                    activeScratch.finish(finishReveal);
+                                } else {
+                                    finishReveal();
+                                }
+                            }, waitMs);
                         })
                         .catch(err => {
                             scratchInFlight = false;
                             this.classList.remove("is-opening");
+                            if (typeof stopScratchSound === "function") {
+                                stopScratchSound();
+                            }
+                            if (activeScratch) {
+                                activeScratch.cancel();
+                                activeScratch = null;
+                            }
                             coverCard(this);
                             refreshBoard();
                             if (typeof showGameNotice === "function") {
