@@ -13,20 +13,21 @@
                 <div class="grid lg:grid-cols-2">
                     <div class="login__content hidden lg:flex flex-col justify-center p-14">
                         <small class="uppercase tracking-[3px] text-brand-primary">
-                            Two-Factor Auth
+                            Extra Security
                         </small>
                         <h2 class="mt-4">
-                            Verify
-                            <span class="text-brand-primary text-inherit">Your Identity</span>
+                            Authenticator
+                            <span class="text-brand-primary text-inherit">Verification</span>
                         </h2>
                         <p class="mt-6">
-                            Enter the 6-digit code from Google Authenticator to complete sign-in.
+                            Open Google Authenticator on your phone and enter the 6-digit code
+                            to finish signing in.
                         </p>
                     </div>
                     <div class="login__form p-4 sm:p-8 md:p-12 lg:p-16">
-                        <h3>Authenticator Code</h3>
+                        <h3>Google Authenticator</h3>
                         <p class="mt-2 text-sm">
-                            Open your authenticator app for
+                            Enter the code for
                             <strong>{{ $user->email }}</strong>
                         </p>
 
@@ -43,9 +44,9 @@
                                        autocomplete="one-time-code"
                                        maxlength="6"
                                        placeholder="000000"
-                                       autofocus
                                        class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary text-[10px] md:text-sm tracking-widest text-center"
-                                       required>
+                                       required
+                                       autofocus>
                                 @error('code')
                                     <small class="mt-2 block text-red-500 text-[10px]">{{ $message }}</small>
                                 @enderror

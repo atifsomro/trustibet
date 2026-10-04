@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Wallet;
 
+use App\Services\Auth\Google2faService;
 use App\Services\Wallet\WalletManager;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ class RequestWithdrawalRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'amount' => [
                 'required',
                 'min:1',
@@ -64,6 +65,16 @@ class RequestWithdrawalRequest extends FormRequest
                 'max:500',
             ],
         ];
+
+        if ($this->requiresAuthenticatorCode()) {
+            $rules['authenticator_code'] = [
+                'required',
+                'string',
+                'regex:/^\d{6}$/',
+            ];
+        }
+
+        return $rules;
     }
 
     public function withValidator(Validator $validator): void
@@ -79,6 +90,24 @@ class RequestWithdrawalRequest extends FormRequest
                     'amount',
                     'Insufficient withdrawable balance.'
                 );
+            }
+
+            if (
+                $this->requiresAuthenticatorCode()
+                && ! $validator->errors()->has('authenticator_code')
+            ) {
+                /** @var Google2faService $google2fa */
+                $google2fa = app(Google2faService::class);
+
+                if (! $google2fa->verify(
+                    $this->user(),
+                    (string) $this->input('authenticator_code', '')
+                )) {
+                    $validator->errors()->add(
+                        'authenticator_code',
+                        'Invalid authenticator code. Please try again.'
+                    );
+                }
             }
         });
     }
@@ -102,6 +131,9 @@ class RequestWithdrawalRequest extends FormRequest
             'crypto_source.required_if' => 'Please specify the crypto exchange or wallet source.',
 
             'remarks.max' => 'Remarks may not exceed 500 characters.',
+
+            'authenticator_code.required' => 'Authenticator code is required to withdraw.',
+            'authenticator_code.regex' => 'Authenticator code must be a 6-digit number.',
         ];
     }
 
@@ -121,6 +153,20 @@ class RequestWithdrawalRequest extends FormRequest
             'remarks' => $this->remarks
                 ? trim((string) $this->remarks)
                 : null,
+            'authenticator_code' => $this->authenticator_code !== null
+                ? preg_replace('/\s+/', '', (string) $this->authenticator_code)
+                : null,
         ]);
+    }
+
+    protected function requiresAuthenticatorCode(): bool
+    {
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        return app(Google2faService::class)->isConfirmed($user);
     }
 }

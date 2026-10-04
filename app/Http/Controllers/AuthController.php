@@ -54,6 +54,14 @@ class AuthController extends Controller
                     ->with('error', 'Please verify your email address before logging in.');
             }
 
+            if ($restriction = $this->rejectIfAccountRestricted($request, $user)) {
+                return $restriction;
+            }
+
+            if ($lock = $this->rejectIfAdminLocked($request, $user)) {
+                return $lock;
+            }
+
             if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
                 return $challenge;
             }
@@ -163,15 +171,53 @@ class AuthController extends Controller
     }
 
     /**
-     * Start the Google Authenticator challenge/setup after password (or social) login.
+     * Suspended / permanently blocked accounts cannot log in.
+     */
+    protected function rejectIfAccountRestricted(Request $request, User $user): ?RedirectResponse
+    {
+        if ($user->canLogin()) {
+            return null;
+        }
+
+        Auth::logout();
+        $this->google2fa->clearSessionFlags();
+
+        return redirect()
+            ->route('auth.login')
+            ->withInput($request->only('email'))
+            ->with('error', $user->accountRestrictionMessage());
+    }
+
+    /**
+     * Admin-managed authenticator lock: user cannot log in at all.
+     */
+    protected function rejectIfAdminLocked(Request $request, User $user): ?RedirectResponse
+    {
+        if (! $this->google2fa->isAdminLocked($user)) {
+            return null;
+        }
+
+        Auth::logout();
+        $this->google2fa->clearSessionFlags();
+
+        return redirect()
+            ->route('auth.login')
+            ->withInput($request->only('email'))
+            ->with(
+                'error',
+                'This account is locked by administrator authenticator. Contact support to regain access.'
+            );
+    }
+
+    /**
+     * Ask for Google Authenticator after a fresh login when user-owned GA is On.
+     * Closing the browser keeps the session (and the passed flag), so OTP is
+     * not asked again until the user logs out.
      */
     protected function beginGoogle2faChallenge(Request $request, User $user): ?RedirectResponse
     {
-        if (! $this->google2fa->requiresChallenge($user)) {
-            $request->session()->forget([
-                Google2faService::SESSION_USER_ID,
-                Google2faService::SESSION_PASSED,
-            ]);
+        if (! $this->google2fa->requiresLoginChallenge($user)) {
+            $this->google2fa->clearSessionFlags();
 
             return null;
         }
@@ -179,12 +225,6 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->forget(Google2faService::SESSION_PASSED);
         $request->session()->put(Google2faService::SESSION_USER_ID, $user->id);
-
-        if ($this->google2fa->isSetupPending($user)) {
-            return redirect()
-                ->route('auth.google2fa.setup')
-                ->with('info', 'Scan the QR code with Google Authenticator to finish signing in.');
-        }
 
         return redirect()
             ->route('auth.google2fa.challenge')
@@ -319,6 +359,14 @@ class AuthController extends Controller
         }
 
         Auth::login($user, true);
+
+        if ($restriction = $this->rejectIfAccountRestricted($request, $user)) {
+            return $restriction;
+        }
+
+        if ($lock = $this->rejectIfAdminLocked($request, $user)) {
+            return $lock;
+        }
 
         if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
             return $challenge;

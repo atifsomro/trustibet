@@ -239,6 +239,29 @@
 
                         </div>
 
+                        @if ($requiresAuthenticator)
+                            <div>
+                                <label class="block text-sm font-medium mb-2">
+                                    Google Authenticator Code
+                                </label>
+                                <input type="text"
+                                    name="authenticator_code"
+                                    value="{{ old('authenticator_code') }}"
+                                    inputmode="numeric"
+                                    autocomplete="one-time-code"
+                                    maxlength="6"
+                                    placeholder="000000"
+                                    class="w-full rounded-xl border border-brand-border bg-brand-dark px-4 py-3 outline-none focus:border-brand-primary tracking-widest text-center"
+                                    required>
+                                <p class="mt-2 text-xs text-gray-500">
+                                    Enter the 6-digit code from your Google Authenticator app to confirm this withdrawal.
+                                </p>
+                                @error('authenticator_code')
+                                    <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        @endif
+
                         <div class="pt-4">
 
                             <button type="submit"
@@ -363,6 +386,13 @@
                             <i class="fas fa-check-circle text-green-500 mt-1 mr-3"></i>
                             Ensure your payment details are correct before submitting.
                         </li>
+
+                        @if ($requiresAuthenticator)
+                            <li class="flex">
+                                <i class="fas fa-shield-halved text-brand-primary mt-1 mr-3"></i>
+                                Google Authenticator is on — a 6-digit code is required to withdraw.
+                            </li>
+                        @endif
 
                     </ul>
 

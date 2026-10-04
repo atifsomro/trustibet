@@ -8,6 +8,8 @@ use App\Http\Controllers\DepositController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\User\KycController;
+use App\Http\Controllers\User\SecurityController;
+use App\Services\Auth\Google2faService;
 use Illuminate\Support\Facades\Route;
 use App\Models\Kyc;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +18,7 @@ Route::get('/contact', function () {
     return view('pages.contact');
 })->name('contact');
 
-Route::get('/user-account', function () {
+Route::get('/user-account', function (Google2faService $google2fa) {
     $user = auth('web')->user();
     $kyc = Kyc::query()->where('user_id', $user->id)->first();
 
@@ -49,12 +51,22 @@ Route::get('/user-account', function () {
         config('wallet.referral.bonus_percent', 5)
     );
 
+    $google2faQrSvg = null;
+    $google2faSecret = null;
+
+    if ($google2fa->isSetupPending($user) && ! $google2fa->isManagedByAdmin($user)) {
+        $google2faQrSvg = $google2fa->qrCodeSvg($user);
+        $google2faSecret = $user->google2fa_secret;
+    }
+
     return view('pages.user-account', compact(
         'kyc',
         'referralStats',
         'referrals',
         'referralLink',
-        'bonusPercent'
+        'bonusPercent',
+        'google2faQrSvg',
+        'google2faSecret'
     ));
 })->middleware('auth')->name('user-account');
 
@@ -153,6 +165,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/investments/transfer-roi', [InvestmentController::class, 'transfer'])->name('investments.transfer');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
         ->name('profile.avatar.update');
+
+    Route::post('/security/google2fa/enable', [SecurityController::class, 'enable'])
+        ->name('security.google2fa.enable');
+    Route::post('/security/google2fa/confirm', [SecurityController::class, 'confirm'])
+        ->name('security.google2fa.confirm');
+    Route::post('/security/google2fa/disable', [SecurityController::class, 'disable'])
+        ->name('security.google2fa.disable');
 });
 
 ### FRONTEND AUTH ROUTE ###
@@ -180,8 +199,6 @@ Route::controller(AuthController::class)->group(function () {
 });
 
 Route::controller(Google2faController::class)->prefix('auth/2fa')->group(function () {
-    Route::get('setup', 'showSetup')->name('auth.google2fa.setup');
-    Route::post('setup', 'confirmSetup')->name('auth.google2fa.setup.confirm');
     Route::get('challenge', 'showChallenge')->name('auth.google2fa.challenge');
     Route::post('challenge', 'verifyChallenge')->name('auth.google2fa.challenge.verify');
 });

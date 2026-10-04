@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\AccountStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -37,10 +38,36 @@ class User extends Authenticatable
             'google2fa_enabled' => 'boolean',
             'google2fa_secret' => 'encrypted',
             'google2fa_confirmed_at' => 'datetime',
+            'google2fa_managed_by_admin' => 'boolean',
+            'account_status' => AccountStatus::class,
         ];
     }
 
     protected $guarded = [];
+
+    public function canLogin(): bool
+    {
+        return ($this->account_status ?? AccountStatus::ACTIVE)->canLogin();
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->account_status === AccountStatus::SUSPENDED;
+    }
+
+    public function isPermanentlyBlocked(): bool
+    {
+        return $this->account_status === AccountStatus::BLOCKED;
+    }
+
+    public function accountRestrictionMessage(): string
+    {
+        return match ($this->account_status) {
+            AccountStatus::SUSPENDED => 'Your account has been suspended. Please contact support.',
+            AccountStatus::BLOCKED => 'Your account has been permanently blocked.',
+            default => 'Your account is not allowed to sign in.',
+        };
+    }
 
     function store($request)
     {

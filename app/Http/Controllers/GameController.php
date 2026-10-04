@@ -15,6 +15,7 @@ use App\Models\Game;
 use App\Models\GamePackage;
 use App\Models\GamePlay;
 use App\Models\GameSession;
+use App\Services\Game\ColorPayoutSchedule;
 use App\Services\Game\ColorRoundTicker;
 use App\Services\Game\FreeSpinCounter;
 use App\Services\Game\LimitedDrawService;
@@ -29,6 +30,7 @@ class GameController extends Controller
     public function __construct(
         protected WalletService $walletService,
         protected ColorRoundTicker $colorRoundTicker,
+        protected ColorPayoutSchedule $colorPayoutSchedule,
         protected FreeSpinCounter $freeSpinCounter,
         protected PackageCreditLedger $packageCredits,
         protected PlayScratchCardAction $playScratchCardAction,
@@ -58,8 +60,10 @@ class GameController extends Controller
         $balances = $this->walletService->balances($user);
 
         $round = null;
+        $payout = null;
         if ($game->type === GameType::COLOR_TRADING) {
             $round = $this->colorRoundTicker->ensureOpenRound($game);
+            $payout = $this->colorPayoutSchedule->current($game);
         }
 
         $freeSpinsRemaining = 0;
@@ -78,6 +82,8 @@ class GameController extends Controller
             'balance' => (float) $balances['withdrawable'],
             'balances' => $balances,
             'round' => $round,
+            'payout' => $payout,
+            'minBet' => (float) $game->configValue('min_bet', 1),
             'freeSpinsRemaining' => $freeSpinsRemaining,
             'packageCredits' => $credits = $this->packageCreditMap($user, $game),
             'resumePackageId' => $this->resumePackageId($user, $game, $credits),
@@ -205,17 +211,14 @@ class GameController extends Controller
             ]);
         }
 
+        $minBet = (float) $game->configValue('min_bet', 1);
+
         $validated = $request->validate([
-            'package_id' => ['required', 'integer', 'exists:game_packages,id'],
+            'amount' => ['required', 'numeric', 'min:'.$minBet],
             'color' => ['required', 'string', 'max:40'],
+            'mode' => ['nullable', 'string', 'in:dollar,percent'],
             'idempotency_key' => ['nullable', 'string', 'max:100'],
         ]);
-
-        $package = GamePackage::query()
-            ->where('id', $validated['package_id'])
-            ->where('game_id', $game->id)
-            ->where('is_active', true)
-            ->firstOrFail();
 
         $round = $this->colorRoundTicker->ensureOpenRound($game);
 
@@ -223,9 +226,10 @@ class GameController extends Controller
             $play = $this->placeColorBetAction->execute(
                 user: $request->user(),
                 game: $game,
-                package: $package,
                 round: $round,
                 color: $validated['color'],
+                amount: (float) $validated['amount'],
+                mode: $validated['mode'] ?? 'dollar',
                 idempotencyKey: $validated['idempotency_key'] ?? null,
             );
         } catch (InsufficientBalanceException $e) {
@@ -241,6 +245,7 @@ class GameController extends Controller
             'success' => true,
             'play' => $this->playPayload($play),
             'round' => $this->roundPayload($round->fresh()),
+            'payout' => $this->colorPayoutSchedule->current($game),
             'balance' => (float) $balances['withdrawable'],
         ]);
     }
@@ -281,6 +286,7 @@ class GameController extends Controller
         return response()->json([
             'success' => true,
             'round' => $this->roundPayload($round),
+            'payout' => $this->colorPayoutSchedule->current($game),
             'last_result' => $lastSettled?->result_color,
             'last_settled' => $lastSettled ? $this->roundPayload($lastSettled) : null,
             'my_bets' => $myPending,

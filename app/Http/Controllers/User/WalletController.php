@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Wallet\RequestWithdrawalRequest;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\Auth\Google2faService;
 use App\Services\Wallet\BonusService;
 use App\Services\Wallet\WalletManager;
 use App\Services\Wallet\WalletService;
@@ -23,7 +24,8 @@ class WalletController extends Controller
         protected WalletManager $walletManager,
         protected WalletService $walletService,
         protected BonusService $bonusService,
-        protected WithdrawalService $withdrawalService
+        protected WithdrawalService $withdrawalService,
+        protected Google2faService $google2fa
     ) {
     }
 
@@ -121,8 +123,11 @@ class WalletController extends Controller
         $wallet = $this->walletManager
             ->getOrCreate($request->user());
 
+        $requiresAuthenticator = $this->google2fa->isConfirmed($request->user());
+
         return view('user.wallet.withdrawal-create', compact(
-            'wallet'
+            'wallet',
+            'requiresAuthenticator'
         ));
     }
 

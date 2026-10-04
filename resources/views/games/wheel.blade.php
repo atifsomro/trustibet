@@ -433,12 +433,22 @@
                         currentRotation = Math.ceil(currentRotation / 360) * 360 + (360 * 8) + finalAngle;
                         wheelGroup.style.transition = "transform 6s cubic-bezier(.17,.67,.18,1)";
                         wheelGroup.style.transform = `rotate(${currentRotation}deg)`;
+                        if (typeof startWheelSpinSound === "function") {
+                            startWheelSpinSound(6000);
+                        }
 
                         if (walletPrize) walletPrize.textContent = "$" + prizeAmount.toFixed(2);
 
                         setTimeout(() => {
                             spinning = false;
-                            if (prizeAmount <= 0) {
+                            if (typeof stopWheelSpinSound === "function") {
+                                stopWheelSpinSound();
+                            }
+                            const won = prizeAmount > 0;
+                            if (typeof playGameOutcomeSound === "function") {
+                                playGameOutcomeSound(won);
+                            }
+                            if (!won) {
                                 showModal("😔 Oops!", `<strong>${label}</strong>. Try Again!`,
                                 "😔");
                             } else {
@@ -449,6 +459,9 @@
                     })
                     .catch(err => {
                         spinning = false;
+                        if (typeof stopWheelSpinSound === "function") {
+                            stopWheelSpinSound();
+                        }
                         showModal("Unable to spin", err.message || "Try again.", "😔");
                     });
             };
