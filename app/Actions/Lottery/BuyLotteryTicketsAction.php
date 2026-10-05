@@ -56,9 +56,21 @@ class BuyLotteryTicketsAction
             }
 
             /*
+             * Round transition / draw in progress — sales reopen after the next round starts.
+             */
+            if (
+                $lottery->isDrawing()
+                || ($lottery->hasEnded() && !$lottery->isCompleted() && !$lottery->isCancelled())
+            ) {
+                throw ValidationException::withMessages([
+                    'lottery' => 'This round is being drawn. Please wait for the next round.',
+                ]);
+            }
+
+            /*
              * Make sure the lottery is currently selling tickets.
              */
-            if ($lottery->hasEnded()) {
+            if ($lottery->hasEnded() || $lottery->isCompleted() || $lottery->isCancelled()) {
                 throw ValidationException::withMessages([
                     'lottery' => 'This lottery has ended. Ticket sales are closed.',
                 ]);

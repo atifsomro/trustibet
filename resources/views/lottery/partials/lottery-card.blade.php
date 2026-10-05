@@ -96,9 +96,18 @@
         </div>
 
         @unless ($lottery->isCompleted() || $lottery->isCancelled())
-            <div class="mt-2 rounded-2xl border border-green-500/20 bg-green-500/5 px-2 py-2 text-center">
-                <span class="block text-xs font-semibold uppercase tracking-[3px] text-green-400">
-                    Round {{ $lottery->currentRoundNumber() }} is live
+            <div class="mt-2 rounded-2xl border {{ $lottery->isSalesOpen() ? 'border-green-500/20 bg-green-500/5' : 'border-orange-500/20 bg-orange-500/5' }} px-2 py-2 text-center">
+                <span
+                    class="block text-xs font-semibold uppercase tracking-[3px] {{ $lottery->isSalesOpen() ? 'text-green-400' : 'text-orange-400' }}"
+                    data-lottery-live-label="{{ $lottery->id }}"
+                >
+                    @if ($lottery->isSalesOpen())
+                        Round {{ $lottery->currentRoundNumber() }} is live
+                    @elseif ($lottery->isDrawing() || $lottery->hasEnded())
+                        Drawing…
+                    @else
+                        Sales closed
+                    @endif
                 </span>
             </div>
         @endunless

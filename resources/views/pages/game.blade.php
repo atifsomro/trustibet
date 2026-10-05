@@ -160,7 +160,7 @@
 @push('scripts')
     @php
         $gameSoundVersion = max(
-            file_exists(public_path('sounds/win-coins.wav')) ? filemtime(public_path('sounds/win-coins.wav')) : 0,
+            file_exists(public_path('sounds/win-profit.mp3')) ? filemtime(public_path('sounds/win-profit.mp3')) : 0,
             file_exists(public_path('sounds/lose.ogg')) ? filemtime(public_path('sounds/lose.ogg')) : 0,
             file_exists(public_path('sounds/scratch-loop.mp3')) ? filemtime(public_path('sounds/scratch-loop.mp3')) : 0,
             file_exists(public_path('sounds/wheel-tick.wav')) ? filemtime(public_path('sounds/wheel-tick.wav')) : 0,
