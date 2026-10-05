@@ -1,6 +1,6 @@
 @extends('layouts.master')
 @section('content')
-    <section class="login py-10 md:py-16 lg:py-20">
+    <section class="login py-6 sm:py-10 md:py-16 lg:py-20">
         <div class="container">
             @if (session('error'))
                 <div class="alert alert-danger">{{ session('error') }}</div>

@@ -58,7 +58,7 @@
                     <form class="form-horizontal form-material" method="POST" action="{{ route('admin.login.submit') }}"
                         enctype="multipart/form-data" novalidate>
                         @csrf
-                        <h3 class="text-center m-b-20">Sign In</h3>
+                        <h3 class="text-center m-b-20">Sign In 6</h3>
                         <div class="form-group">
                             <div class="col-xs-12">
                                 <input type="email" name="email"
