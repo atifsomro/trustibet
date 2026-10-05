@@ -214,9 +214,64 @@
         document.addEventListener("DOMContentLoaded", () => {
             const roundUrl = @json(route('games.round', $slug));
             const betUrl = @json(route('games.bets', $slug));
-            const csrf = "{{ csrf_token() }}";
             const historyLimit = {{ $historyLimit }};
             const minBet = {{ $minBet }};
+
+            function csrfToken() {
+                return syncCsrfFromCookie();
+            }
+
+            function syncCsrfFromCookie() {
+                const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+                const fromCookie = match ? decodeURIComponent(match[1]) : '';
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                const fromMeta = meta?.getAttribute('content') || '';
+                const token = fromCookie || fromMeta;
+
+                if (token) {
+                    document.querySelectorAll('meta[name="csrf-token"]').forEach(function (el) {
+                        el.setAttribute('content', token);
+                    });
+                }
+
+                return token;
+            }
+
+            async function readJsonResponse(res) {
+                const text = await res.text();
+                let data = {};
+
+                if (text) {
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        if (res.status === 419) {
+                            throw new Error('Your session expired. Please refresh the page and try again.');
+                        }
+
+                        throw new Error('Unexpected server response. Please refresh and try again.');
+                    }
+                }
+
+                return data;
+            }
+
+            async function postBet(payload) {
+                const token = csrfToken();
+
+                return fetch(betUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": token,
+                        "X-XSRF-TOKEN": token,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: JSON.stringify(payload)
+                });
+            }
 
             const UI = {
                 timer: document.getElementById("timer"),
@@ -564,21 +619,25 @@
 
                 setLoading(true);
                 try {
-                    const res = await fetch(betUrl, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json",
-                            "X-CSRF-TOKEN": csrf
-                        },
-                        body: JSON.stringify({
-                            amount: stake,
-                            mode: State.mode,
-                            color: State.selectedColor,
-                            idempotency_key: crypto.randomUUID()
-                        })
-                    });
-                    const data = await res.json();
+                    const payload = {
+                        amount: stake,
+                        mode: State.mode,
+                        color: State.selectedColor,
+                        idempotency_key: crypto.randomUUID()
+                    };
+
+                    let res = await postBet(payload);
+
+                    // Session/CSRF rotated while the page stayed open — refresh token and retry once.
+                    if (res.status === 419) {
+                        syncCsrfFromCookie();
+                        res = await postBet(payload);
+                    }
+
+                    const data = await readJsonResponse(res);
+                    if (res.status === 419) {
+                        throw new Error('Your session expired. Please refresh the page and try again.');
+                    }
                     if (!res.ok || !data.success) {
                         throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
                             "Bet failed");
@@ -779,10 +838,14 @@
             async function pollRound() {
                 try {
                     const res = await fetch(roundUrl, {
+                        credentials: "same-origin",
                         headers: {
-                            "Accept": "application/json"
+                            "Accept": "application/json",
+                            "X-Requested-With": "XMLHttpRequest",
                         }
                     });
+                    // Keep CSRF meta aligned with cookies refreshed by polling responses.
+                    syncCsrfFromCookie();
                     const data = await res.json();
                     if (!data.success) return;
 
