@@ -23,7 +23,7 @@
     const base = (window.GAME_SOUND_BASE || "/sounds").replace(/\/$/, "");
     const ver = window.GAME_SOUND_VERSION ? ("?v=" + window.GAME_SOUND_VERSION) : "";
 
-    const winSound = makeAudio(base + "/win-coins.wav" + ver, 0.95);
+    const winSound = makeAudio(base + "/win-profit.mp3" + ver, 0.95);
     const loseSound = makeAudio(base + "/lose.ogg" + ver, 0.8);
     const scratchSound = makeAudio(base + "/scratch-loop.mp3" + ver, 0.85);
     scratchSound.loop = true;

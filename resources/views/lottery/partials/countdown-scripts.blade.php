@@ -204,6 +204,46 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function resolveLotteryId(element) {
+        return element?.dataset?.lotteryId
+            || element?.closest('[data-lottery-shell]')?.getAttribute('data-lottery-shell')
+            || element?.closest('[data-lottery-show-actions]')?.getAttribute('data-lottery-show-actions')
+            || null;
+    }
+
+    function setLotteryLiveLabel(lotteryId, text) {
+        if (!lotteryId) {
+            return;
+        }
+
+        document.querySelectorAll('[data-lottery-live-label="' + lotteryId + '"]').forEach(function (label) {
+            label.textContent = text;
+        });
+    }
+
+    function setLotteryBuyLocked(lotteryId, locked) {
+        if (!lotteryId) {
+            return;
+        }
+
+        document.querySelectorAll('[data-lottery-buy-slot="' + lotteryId + '"]').forEach(function (slot) {
+            if (locked) {
+                if (slot.dataset.buyLocked === '1') {
+                    return;
+                }
+
+                slot.dataset.buyLocked = '1';
+                slot.innerHTML =
+                    '<div class="mt-2 block w-full rounded-2xl border border-orange-500/20 bg-orange-500/10 py-2 text-center text-sm font-semibold text-orange-400">' +
+                        'Drawing…' +
+                    '</div>';
+                return;
+            }
+
+            delete slot.dataset.buyLocked;
+        });
+    }
+
     function refreshLotteryShell(lotteryId, liveHtmlUrl) {
         if (!liveHtmlUrl) {
             return Promise.resolve();
@@ -481,6 +521,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (difference <= 0) {
                 element.textContent = '00:00:00';
+
+                const lotteryId = resolveLotteryId(element);
+                setLotteryBuyLocked(lotteryId, true);
+                setLotteryLiveLabel(lotteryId, 'Drawing…');
 
                 // Keep the interval alive so short (seconds) timers recover after draw races.
                 ensureInterval();
