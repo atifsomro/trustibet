@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 use App\Models\Kyc;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LotteryController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\User\InvestmentController;
 use App\Models\Game;
 use App\Services\Game\LimitedDrawService;
@@ -95,6 +96,12 @@ Route::get('/reset-password', function () {
     return view('auth.reset-password');
 })->name('reset.password');
 
+
+Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
+Route::get('/leaderboard/user/{rank}', [LeaderboardController::class, 'show'])
+    ->whereNumber('rank')
+    ->middleware('throttle:60,1')
+    ->name('leaderboard.user');
 
 Route::get('/winner-history', function () {
     return view('pages.winner.winner-history');

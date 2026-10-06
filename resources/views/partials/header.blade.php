@@ -47,8 +47,8 @@
                         </li>
                     @endauth --}}
                     <li>
-                        <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
-                            class="{{ request()->routeIs('winner.history') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
+                        <a href="{{ route('leaderboard') }}"
+                            class="{{ request()->routeIs('leaderboard') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
                             Leader Board
                         </a>
                     </li>
@@ -206,9 +206,9 @@
             @endauth 
             <li> --}}
             <li>
-                <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
+                <a href="{{ route('leaderboard') }}"
                     class="flex items-center gap-3 rounded-xl px-4 py-3 transition
-                            {{ request()->routeIs('winner.history') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
+                            {{ request()->routeIs('leaderboard') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
                     <i class="fa-solid fa-trophy"></i>
                     <span> Leader Board</span>
                 </a>
