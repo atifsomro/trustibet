@@ -552,11 +552,6 @@
                 });
                 updateSelectedColor("None");
 
-                if (!State.autoBet) {
-                    State.units = minBet;
-                    State.mode = "dollar";
-                }
-
                 updateDeduction(0);
                 refreshBetUI();
             }
