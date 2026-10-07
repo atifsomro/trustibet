@@ -74,6 +74,20 @@ class GameRound extends Model
             && now()->lt($this->locks_at);
     }
 
+    /**
+     * A stake can still join this round until the winning color is stored.
+     * The early lock only warns the screen; it must not reject a bet that
+     * arrived while the countdown was still running.
+     */
+    public function acceptsBets(): bool
+    {
+        if ($this->status === GameRoundStatus::SETTLED) {
+            return false;
+        }
+
+        return $this->result_color === null || $this->result_color === '';
+    }
+
     public function secondsRemaining(?Carbon $now = null): int
     {
         $now ??= now();
