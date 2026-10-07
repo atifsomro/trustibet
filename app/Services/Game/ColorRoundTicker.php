@@ -9,6 +9,7 @@ use App\Enums\GameRoundStatus;
 use App\Enums\GameType;
 use App\Models\Game;
 use App\Models\GameRound;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ColorRoundTicker
@@ -36,41 +37,7 @@ class ColorRoundTicker
 
     protected function tickGame(Game $game): int
     {
-        $processed = 0;
-        $now = now();
-
-        $openRounds = GameRound::query()
-            ->where('game_id', $game->id)
-            ->whereIn('status', [
-                GameRoundStatus::BETTING,
-                GameRoundStatus::LOCKED,
-            ])
-            ->orderBy('round_number')
-            ->get();
-
-        foreach ($openRounds as $round) {
-            if (
-                $round->status === GameRoundStatus::BETTING
-                && $now->gte($round->locks_at)
-            ) {
-                $round->status = GameRoundStatus::LOCKED;
-                $round->save();
-                $processed++;
-            }
-
-            if (
-                in_array($round->status, [GameRoundStatus::BETTING, GameRoundStatus::LOCKED], true)
-                && $now->gte($round->ends_at)
-            ) {
-                if ($round->status === GameRoundStatus::BETTING) {
-                    $round->status = GameRoundStatus::LOCKED;
-                    $round->save();
-                }
-
-                $this->settleColorRoundAction->execute($round);
-                $processed++;
-            }
-        }
+        $processed = $this->advanceEndedRounds($game);
 
         $hasOpen = GameRound::query()
             ->where('game_id', $game->id)
@@ -86,6 +53,43 @@ class ColorRoundTicker
         }
 
         return $processed;
+    }
+
+    /**
+     * The round a new stake should join. Prefer the round the player tapped.
+     * Never settle or lock that round before the stake is saved.
+     */
+    public function roundForBet(Game $game, ?int $roundId): GameRound
+    {
+        if ($roundId) {
+            $requested = GameRound::query()
+                ->where('game_id', $game->id)
+                ->find($roundId);
+
+            if ($requested && $requested->acceptsBets() && ! $this->roundClockEnded($requested)) {
+                return $requested;
+            }
+        }
+
+        $open = GameRound::query()
+            ->where('game_id', $game->id)
+            ->whereIn('status', [
+                GameRoundStatus::BETTING,
+                GameRoundStatus::LOCKED,
+            ])
+            ->orderByDesc('round_number')
+            ->first();
+
+        if ($open && $open->acceptsBets() && ! $this->roundClockEnded($open)) {
+            return $open;
+        }
+
+        return $this->ensureOpenRound($game);
+    }
+
+    protected function roundClockEnded(GameRound $round): bool
+    {
+        return $round->ends_at !== null && now()->gte($round->ends_at);
     }
 
     public function ensureOpenRound(Game $game): GameRound
@@ -114,8 +118,34 @@ class ColorRoundTicker
         return $this->createRound($game);
     }
 
-    protected function advanceEndedRounds(Game $game): void
+    protected function advanceEndedRounds(Game $game): int
     {
+        $lock = null;
+        $holdsLock = false;
+
+        try {
+            // Polls and bets all try to settle the same round. One request does the work;
+            // the rest continue immediately instead of waiting on the round row.
+            $lock = Cache::lock('color-round-advance:'.$game->id, 30);
+            $holdsLock = $lock->get();
+        } catch (\Throwable) {
+            return $this->settleDueRounds($game);
+        }
+
+        if (! $holdsLock) {
+            return 0;
+        }
+
+        try {
+            return $this->settleDueRounds($game);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    protected function settleDueRounds(Game $game): int
+    {
+        $processed = 0;
         $now = now();
 
         $openRounds = GameRound::query()
@@ -134,6 +164,7 @@ class ColorRoundTicker
             ) {
                 $round->status = GameRoundStatus::LOCKED;
                 $round->save();
+                $processed++;
             }
 
             if (
@@ -146,8 +177,11 @@ class ColorRoundTicker
                 }
 
                 $this->settleColorRoundAction->execute($round);
+                $processed++;
             }
         }
+
+        return $processed;
     }
 
     protected function createRound(Game $game): GameRound
