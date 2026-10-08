@@ -313,11 +313,12 @@
                 lastAutoBetRoundId: null,
                 bettingLocked: false,
                 loading: false,
-                currentRoundId: null,
+                currentRoundId: {{ $round?->id ?? 'null' }},
                 lastResultShown: null,
                 lastSettledNotifiedId: null,
                 secondsLeft: Number(UI.timer?.textContent || 0),
-                endsAtMs: null,
+                endsAtMs: {{ $round?->ends_at ? (int) ($round->ends_at->getTimestamp() * 1000) : 'null' }},
+                locksAtMs: {{ $round?->locks_at ? (int) ($round->locks_at->getTimestamp() * 1000) : 'null' }},
             };
 
             const colorMap = {
@@ -349,8 +350,27 @@
                 }
             }
 
+            function bettingWindowOpen() {
+                if (!State.endsAtMs || Number.isNaN(State.endsAtMs)) return true;
+                return Date.now() < State.endsAtMs;
+            }
+
+            function newIdempotencyKey() {
+                if (window.crypto && typeof crypto.randomUUID === "function") {
+                    return crypto.randomUUID();
+                }
+                return "bet-" + Date.now().toString(36) + "-" + Math.random().toString(16).slice(2);
+            }
+
+            function syncBettingWindow() {
+                if (!bettingWindowOpen()) {
+                    lockBetting();
+                }
+            }
+
             function syncTimerFromRound(round) {
                 if (!round) return;
+                State.locksAtMs = round.locks_at ? Date.parse(round.locks_at) : null;
                 if (round.ends_at) {
                     State.endsAtMs = Date.parse(round.ends_at);
                     const left = Math.max(0, Math.ceil((State.endsAtMs - Date.now()) / 1000));
@@ -361,11 +381,13 @@
             }
 
             function tickLocalTimer() {
-                if (!State.endsAtMs) return;
-                const left = Math.max(0, Math.ceil((State.endsAtMs - Date.now()) / 1000));
-                if (left !== State.secondsLeft) {
-                    updateTimer(left);
+                if (State.endsAtMs) {
+                    const left = Math.max(0, Math.ceil((State.endsAtMs - Date.now()) / 1000));
+                    if (left !== State.secondsLeft) {
+                        updateTimer(left);
+                    }
                 }
+                syncBettingWindow();
             }
 
             function updateBalance(balance) {
@@ -499,6 +521,9 @@
                 State.bettingLocked = true;
                 UI.placeBet.disabled = true;
                 UI.placeBet.classList.add("opacity-50", "cursor-not-allowed");
+                if (!State.loading) {
+                    UI.placeBet.textContent = "Locked";
+                }
                 if (UI.betInput) UI.betInput.disabled = true;
                 if (UI.betMinus) UI.betMinus.disabled = true;
                 if (UI.betPlus) UI.betPlus.disabled = true;
@@ -507,10 +532,12 @@
 
             function unlockBetting() {
                 State.bettingLocked = false;
-                State.loading = false;
-                UI.placeBet.disabled = false;
-                UI.placeBet.textContent = "Trade";
-                UI.placeBet.classList.remove("opacity-50", "cursor-not-allowed");
+                const busy = State.loading;
+                UI.placeBet.disabled = busy;
+                if (!busy) {
+                    UI.placeBet.textContent = "Trade";
+                    UI.placeBet.classList.remove("opacity-50", "cursor-not-allowed");
+                }
                 if (UI.betInput) UI.betInput.disabled = false;
                 if (UI.betMinus) UI.betMinus.disabled = false;
                 if (UI.betPlus) UI.betPlus.disabled = false;
@@ -524,11 +551,6 @@
                         "shadow-brand-primary/40");
                 });
                 updateSelectedColor("None");
-
-                if (!State.autoBet) {
-                    State.units = minBet;
-                    State.mode = "dollar";
-                }
 
                 updateDeduction(0);
                 refreshBetUI();
@@ -573,7 +595,7 @@
 
             async function placeBet(options = {}) {
                 const auto = options.auto === true;
-                if (State.bettingLocked || State.loading) return;
+                if (State.loading) return;
                 commitBetInput();
 
                 if (!State.selectedColor) {
@@ -618,39 +640,58 @@
                 }
 
                 setLoading(true);
+                const payload = {
+                    amount: stake,
+                    mode: State.mode,
+                    color: State.selectedColor,
+                    round_id: State.currentRoundId,
+                    idempotency_key: newIdempotencyKey()
+                };
+                let lastError = null;
+
                 try {
-                    const payload = {
-                        amount: stake,
-                        mode: State.mode,
-                        color: State.selectedColor,
-                        idempotency_key: crypto.randomUUID()
-                    };
+                    for (let attempt = 0; attempt < 2; attempt++) {
+                        try {
+                            let res = await postBet(payload);
 
-                    let res = await postBet(payload);
+                            // Session/CSRF rotated while the page stayed open — refresh token and retry once.
+                            if (res.status === 419) {
+                                syncCsrfFromCookie();
+                                res = await postBet(payload);
+                            }
 
-                    // Session/CSRF rotated while the page stayed open — refresh token and retry once.
-                    if (res.status === 419) {
-                        syncCsrfFromCookie();
-                        res = await postBet(payload);
+                            const data = await readJsonResponse(res);
+                            if (res.status === 419) {
+                                const expired = new Error('Your session expired. Please refresh the page and try again.');
+                                expired.permanent = true;
+                                throw expired;
+                            }
+                            if (!res.ok || !data.success) {
+                                const failed = new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
+                                    "Bet failed");
+                                failed.permanent = res.status < 500;
+                                throw failed;
+                            }
+                            if (auto && State.currentRoundId) {
+                                State.lastAutoBetRoundId = State.currentRoundId;
+                            }
+                            applyPayout(data.payout);
+                            applyRound(data.round);
+                            updateBalance(data.balance);
+                            updateDeduction(data.play?.fee_amount || stake);
+                            if (typeof playColorBetSound === "function") {
+                                playColorBetSound();
+                            }
+                            lastError = null;
+                            break;
+                        } catch (err) {
+                            lastError = err;
+                            if (err && err.permanent) break;
+                        }
                     }
 
-                    const data = await readJsonResponse(res);
-                    if (res.status === 419) {
-                        throw new Error('Your session expired. Please refresh the page and try again.');
-                    }
-                    if (!res.ok || !data.success) {
-                        throw new Error(data.message || Object.values(data.errors || {})[0]?.[0] ||
-                            "Bet failed");
-                    }
-                    if (auto && State.currentRoundId) {
-                        State.lastAutoBetRoundId = State.currentRoundId;
-                    }
-                    updateBalance(data.balance);
-                    updateDeduction(data.play?.fee_amount || stake);
-                    applyPayout(data.payout);
-                    applyRound(data.round);
-                    if (typeof playColorBetSound === "function") {
-                        playColorBetSound();
+                    if (lastError) {
+                        throw lastError;
                     }
                 } catch (err) {
                     if (auto && State.currentRoundId && State.lastAutoBetRoundId === State.currentRoundId) {
@@ -686,7 +727,7 @@
             function setLoading(status) {
                 State.loading = status;
                 UI.placeBet.disabled = status || State.bettingLocked;
-                UI.placeBet.textContent = status ? "Processing..." : "Trade";
+                UI.placeBet.textContent = status ? "Processing..." : (State.bettingLocked ? "Locked" : "Trade");
             }
 
             function notifySettledBets(bets, resultColor, settledRoundId) {
@@ -825,7 +866,7 @@
                     resetSelections();
                 }
 
-                if (round.betting_open) {
+                if (round.betting_open && bettingWindowOpen()) {
                     unlockBetting();
                     if (State.autoBet) {
                         scheduleAutoBet(200);
@@ -894,6 +935,7 @@
 
             syncAutoBetToggle();
             refreshBetUI();
+            syncBettingWindow();
             pollRound();
             setInterval(pollRound, 1000);
             setInterval(tickLocalTimer, 250);

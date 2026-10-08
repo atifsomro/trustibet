@@ -1,0 +1,652 @@
+From 6578a2f65fe1ba689fc3e759d9c1b4f6434b3aca Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 17:44:28 +0000
+Subject: [PATCH] Add daily leaderboard (GAME_WIN, BONUS_GRANTED,
+ LOTTERY_PRIZE) with AJAX user popup
+
+---
+ .../Controllers/LeaderboardController.php     |  38 +++
+ .../Leaderboard/LeaderboardService.php        | 200 +++++++++++++
+ ...ard_index_to_wallet_transactions_table.php |  35 +++
+ .../views/pages/leaderboard/index.blade.php   | 281 ++++++++++++++++++
+ resources/views/partials/header.blade.php     |   8 +-
+ routes/web.php                                |   7 +
+ 6 files changed, 565 insertions(+), 4 deletions(-)
+ create mode 100644 app/Http/Controllers/LeaderboardController.php
+ create mode 100644 app/Services/Leaderboard/LeaderboardService.php
+ create mode 100644 database/migrations/2026_10_06_000001_add_leaderboard_index_to_wallet_transactions_table.php
+ create mode 100644 resources/views/pages/leaderboard/index.blade.php
+
+diff --git a/app/Http/Controllers/LeaderboardController.php b/app/Http/Controllers/LeaderboardController.php
+new file mode 100644
+index 0000000..813033c
+--- /dev/null
++++ b/app/Http/Controllers/LeaderboardController.php
+@@ -0,0 +1,38 @@
++<?php
++
++declare(strict_types=1);
++
++namespace App\Http\Controllers;
++
++use App\Services\Leaderboard\LeaderboardService;
++use Illuminate\Http\JsonResponse;
++use Illuminate\View\View;
++
++class LeaderboardController extends Controller
++{
++    public function __construct(private readonly LeaderboardService $leaderboard)
++    {
++    }
++
++    public function index(): View
++    {
++        return view('pages.leaderboard.index', [
++            'board' => $this->leaderboard->today(),
++        ]);
++    }
++
++    /**
++     * Popup details. Looked up by today's rank (not user id) so only users
++     * currently on the board can be viewed and no internal ids are exposed.
++     */
++    public function show(int $rank): JsonResponse
++    {
++        abort_unless($rank >= 1 && $rank <= LeaderboardService::LIMIT, 404);
++
++        $details = $this->leaderboard->detailsByRank($rank);
++
++        abort_if($details === null, 404);
++
++        return response()->json($details);
++    }
++}
+diff --git a/app/Services/Leaderboard/LeaderboardService.php b/app/Services/Leaderboard/LeaderboardService.php
+new file mode 100644
+index 0000000..f92a79d
+--- /dev/null
++++ b/app/Services/Leaderboard/LeaderboardService.php
+@@ -0,0 +1,200 @@
++<?php
++
++declare(strict_types=1);
++
++namespace App\Services\Leaderboard;
++
++use App\Enums\WalletTransactionType;
++use App\Models\Country;
++use App\Models\User;
++use App\Models\WalletTransaction;
++use Illuminate\Support\Carbon;
++use Illuminate\Support\Facades\Cache;
++use Illuminate\Support\Str;
++
++/**
++ * Daily leaderboard built from the wallet ledger.
++ *
++ * - Only GAME_WIN, BONUS_GRANTED and LOTTERY_PRIZE transactions count.
++ * - Only transactions created today (app timezone) are summed.
++ * - The cache key contains the current date, so the board resets
++ *   automatically at midnight without any scheduled job.
++ */
++class LeaderboardService
++{
++    public const LIMIT = 20;
++
++    /** Short TTL keeps the board near real-time while the page stays instant. */
++    private const TTL_SECONDS = 30;
++
++    /**
++     * @return list<WalletTransactionType>
++     */
++    public static function countedTypes(): array
++    {
++        return [
++            WalletTransactionType::GAME_WIN,
++            WalletTransactionType::BONUS_GRANTED,
++            WalletTransactionType::LOTTERY_PRIZE,
++        ];
++    }
++
++    /**
++     * Full board payload for today: rows + summary stats.
++     *
++     * @return array{date:string, resets_at:string, rows:list<array>, stats:array}
++     */
++    public function today(): array
++    {
++        $now = Carbon::now();
++        $key = 'leaderboard:' . $now->toDateString();
++
++        return Cache::remember($key, self::TTL_SECONDS, fn () => $this->build($now));
++    }
++
++    /**
++     * Single row by rank (1-based) from today's board, or null.
++     */
++    public function rowByRank(int $rank): ?array
++    {
++        return $this->today()['rows'][$rank - 1] ?? null;
++    }
++
++    /**
++     * Detailed popup payload for a user already on today's board.
++     */
++    public function detailsByRank(int $rank): ?array
++    {
++        $row = $this->rowByRank($rank);
++
++        if ($row === null) {
++            return null;
++        }
++
++        $cacheKey = 'leaderboard:detail:' . Carbon::now()->toDateString() . ':' . $row['user_id'];
++
++        return Cache::remember($cacheKey, self::TTL_SECONDS, function () use ($row) {
++            $user = User::query()->find($row['user_id']);
++
++            if (! $user) {
++                return null;
++            }
++
++            $start = Carbon::now()->startOfDay();
++            $end = Carbon::now()->endOfDay();
++
++            $breakdown = WalletTransaction::query()
++                ->join('wallets', 'wallets.id', '=', 'wallet_transactions.wallet_id')
++                ->where('wallets.user_id', $user->id)
++                ->whereIn('wallet_transactions.type', array_column(self::countedTypes(), 'value'))
++                ->whereBetween('wallet_transactions.created_at', [$start, $end])
++                ->selectRaw('wallet_transactions.type as type, SUM(wallet_transactions.amount) as total, COUNT(*) as hits, MAX(wallet_transactions.created_at) as last_at')
++                ->groupBy('wallet_transactions.type')
++                ->get()
++                ->keyBy(fn ($r) => (string) $r->type);
++
++            $parts = [];
++            foreach (self::countedTypes() as $type) {
++                $line = $breakdown->get($type->value);
++                $parts[] = [
++                    'label' => $type->label(),
++                    'total' => $this->money((float) ($line->total ?? 0)),
++                    'hits' => (int) ($line->hits ?? 0),
++                ];
++            }
++
++            $lastAt = $breakdown->max('last_at');
++            $country = $user->country_id ? Country::query()->find($user->country_id) : null;
++
++            return [
++                'rank' => $row['rank'],
++                'name' => $row['name'],
++                'avatar' => $row['avatar'],
++                'country' => $country?->name ?: 'Pakistan',
++                'total' => $row['total_formatted'],
++                'transactions' => $row['hits'],
++                'breakdown' => $parts,
++                'last_win' => $lastAt ? Carbon::parse($lastAt)->format('h:i A') : null,
++                'member_since' => $user->created_at?->format('M Y'),
++            ];
++        });
++    }
++
++    private function build(Carbon $now): array
++    {
++        $start = $now->copy()->startOfDay();
++        $end = $now->copy()->endOfDay();
++        $types = array_column(self::countedTypes(), 'value');
++
++        $base = fn () => WalletTransaction::query()
++            ->join('wallets', 'wallets.id', '=', 'wallet_transactions.wallet_id')
++            ->whereIn('wallet_transactions.type', $types)
++            ->whereBetween('wallet_transactions.created_at', [$start, $end]);
++
++        // Top N users by summed amount - one grouped query, uses type/created_at indexes.
++        $top = $base()
++            ->selectRaw('wallets.user_id as user_id, SUM(wallet_transactions.amount) as total, COUNT(*) as hits, MAX(wallet_transactions.created_at) as last_at')
++            ->groupBy('wallets.user_id')
++            ->havingRaw('SUM(wallet_transactions.amount) > 0')
++            ->orderByDesc('total')
++            ->orderBy('user_id')
++            ->limit(self::LIMIT)
++            ->get();
++
++        $users = User::query()
++            ->whereIn('id', $top->pluck('user_id'))
++            ->get(['id', 'name', 'username', 'avatar'])
++            ->keyBy('id');
++
++        $rows = [];
++        foreach ($top->values() as $i => $line) {
++            $user = $users->get($line->user_id);
++            if (! $user) {
++                continue;
++            }
++
++            $rows[] = [
++                'rank' => count($rows) + 1,
++                'user_id' => (int) $user->id,
++                'name' => $this->mask($user->username ?: $user->name),
++                'avatar' => $user->avatar ?: asset('images/profile/avatar.png'),
++                'total' => (float) $line->total,
++                'total_formatted' => $this->money((float) $line->total),
++                'hits' => (int) $line->hits,
++                'last_at' => Carbon::parse($line->last_at)->format('h:i A'),
++            ];
++        }
++
++        $summary = $base()
++            ->selectRaw('COUNT(DISTINCT wallets.user_id) as players, COALESCE(SUM(wallet_transactions.amount), 0) as total')
++            ->first();
++
++        return [
++            'date' => $now->format('d M Y'),
++            'resets_at' => $now->copy()->addDay()->startOfDay()->toIso8601String(),
++            'rows' => $rows,
++            'stats' => [
++                'players' => (int) ($summary->players ?? 0),
++                'total' => $this->money((float) ($summary->total ?? 0)),
++                'last_win' => $rows ? collect($rows)->pluck('last_at')->first() : null,
++            ],
++        ];
++    }
++
++    private function mask(string $value): string
++    {
++        $value = trim($value);
++        $length = Str::length($value);
++
++        if ($length <= 3) {
++            return $value . '***';
++        }
++
++        return Str::substr($value, 0, 3) . '***' . ($length > 6 ? Str::substr($value, -3) : '');
++    }
++
++    private function money(float $amount): string
++    {
++        return '$' . number_format($amount, 2);
++    }
++}
+diff --git a/database/migrations/2026_10_06_000001_add_leaderboard_index_to_wallet_transactions_table.php b/database/migrations/2026_10_06_000001_add_leaderboard_index_to_wallet_transactions_table.php
+new file mode 100644
+index 0000000..6472745
+--- /dev/null
++++ b/database/migrations/2026_10_06_000001_add_leaderboard_index_to_wallet_transactions_table.php
+@@ -0,0 +1,35 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('wallet_transactions', function (Blueprint $table) {
++            // Powers the daily leaderboard: filter by date range + type, group by wallet.
++            $table->index(['created_at', 'type', 'wallet_id'], 'wallet_tx_leaderboard_idx');
++        });
++
++        Schema::table('wallets', function (Blueprint $table) {
++            if (! collect(Schema::getIndexes('wallets'))->contains(fn ($i) => $i['columns'] === ['user_id'])) {
++                $table->index('user_id', 'wallets_user_id_idx');
++            }
++        });
++    }
++
++    public function down(): void
++    {
++        Schema::table('wallet_transactions', function (Blueprint $table) {
++            $table->dropIndex('wallet_tx_leaderboard_idx');
++        });
++
++        Schema::table('wallets', function (Blueprint $table) {
++            if (collect(Schema::getIndexes('wallets'))->contains(fn ($i) => $i['name'] === 'wallets_user_id_idx')) {
++                $table->dropIndex('wallets_user_id_idx');
++            }
++        });
++    }
++};
+diff --git a/resources/views/pages/leaderboard/index.blade.php b/resources/views/pages/leaderboard/index.blade.php
+new file mode 100644
+index 0000000..5bee2c1
+--- /dev/null
++++ b/resources/views/pages/leaderboard/index.blade.php
+@@ -0,0 +1,281 @@
++@extends('layouts.master')
++
++@section('title', 'Leader Board | TrustiBet')
++
++@section('content')
++    <section class="py-8">
++        <div class="container">
++
++            {{-- Heading --}}
++            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 mb-8">
++                <div>
++                    <span
++                        class="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm font-medium uppercase tracking-[3px] text-green-500">
++                        <i class="fa-solid fa-trophy"></i>
++                        TrustiBet
++                    </span>
++                    <h2 class="mt-3">Leader Board</h2>
++                    <p class="mt-2 opacity-70">
++                        Top 20 earners for {{ $board['date'] }}. Resets every day at midnight.
++                    </p>
++                </div>
++                <div class="rounded-2xl border border-orange-500/20 bg-brand-surface px-5 py-3 text-sm">
++                    <span class="opacity-70">Resets in</span>
++                    <span id="lbCountdown" class="ml-2 font-bold text-orange-400" data-reset="{{ $board['resets_at'] }}">--:--:--</span>
++                </div>
++            </div>
++
++            {{-- Stats --}}
++            <div class="grid md:grid-cols-3 gap-6 mb-8">
++                <div
++                    class="group relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:shadow-[0_0_30px_rgba(34,197,94,.18)]">
++                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
++                    <div class="p-6">
++                        <p class="opacity-70">Today's Winners</p>
++                        <span class="text-xl md:text-2xl lg:text-4xl font-extrabold text-green-500">{{ number_format($board['stats']['players']) }}</span>
++                    </div>
++                </div>
++                <div
++                    class="group relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:border-orange-500 hover:shadow-[0_0_30px_rgba(249,115,22,.18)]">
++                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
++                    <div class="p-6">
++                        <p class="opacity-70">Total Won Today</p>
++                        <span class="text-xl md:text-2xl lg:text-4xl text-orange-400 font-extrabold">{{ $board['stats']['total'] }}</span>
++                    </div>
++                </div>
++                <div
++                    class="group relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface transition-all duration-300 hover:-translate-y-1 hover:border-green-500 hover:shadow-[0_0_30px_rgba(34,197,94,.18)]">
++                    <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
++                    <div class="p-6">
++                        <p class="opacity-70">Latest Win</p>
++                        <span class="text-xl md:text-2xl lg:text-4xl text-green-500 font-extrabold">{{ $board['stats']['last_win'] ?? '—' }}</span>
++                    </div>
++                </div>
++            </div>
++
++            {{-- Table card --}}
++            <div class="relative overflow-hidden rounded-3xl border border-brand-border bg-brand-surface">
++                <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
++
++                <div class="p-3 md:p-6 border-b border-brand-border">
++                    <input id="lbSearch" type="text" placeholder="Search by player name..."
++                        class="w-full rounded-xl border border-green-500/30 bg-brand-dark px-4 py-3 outline-none focus:border-green-500">
++                </div>
++
++                <div class="overflow-x-auto">
++                    <table class="w-full min-w-[760px] text-[12px] md:text-base lg:text-xl">
++                        <thead class="border-b border-brand-border bg-gradient-to-r from-green-500/10 to-orange-500/10">
++                            <tr>
++                                <th class="p-3 md:p-5 text-left text-green-500">Rank</th>
++                                <th class="p-3 md:p-5 text-left text-green-500">Player</th>
++                                <th class="p-3 md:p-5 text-left text-green-500">Today's Winnings</th>
++                                <th class="p-3 md:p-5 text-left text-green-500">Wins</th>
++                                <th class="p-3 md:p-5 text-left text-green-500">Last Win</th>
++                                <th class="p-3 md:p-5 text-left text-green-500">Action</th>
++                            </tr>
++                        </thead>
++                        <tbody id="lbBody">
++                            @forelse ($board['rows'] as $row)
++                                <tr class="lb-row border-b border-brand-border last:border-b-0 hover:bg-brand-dark duration-300"
++                                    data-name="{{ strtolower($row['name']) }}">
++                                    <td class="p-3 md:p-5 font-bold">
++                                        @if ($row['rank'] <= 3)
++                                            <i class="fa-solid fa-trophy {{ ['', 'text-yellow-400', 'text-gray-300', 'text-orange-500'][$row['rank']] }} mr-1"></i>
++                                        @endif
++                                        #{{ $row['rank'] }}
++                                    </td>
++                                    <td class="p-3 md:p-5">
++                                        <div class="flex items-center gap-3">
++                                            <img src="{{ $row['avatar'] }}" alt="" loading="lazy"
++                                                class="w-12 h-12 rounded-full object-cover border-2 border-green-500/50">
++                                            <h6>{{ $row['name'] }}</h6>
++                                        </div>
++                                    </td>
++                                    <td class="p-3 md:p-5 text-orange-400 font-semibold">{{ $row['total_formatted'] }}</td>
++                                    <td class="p-3 md:p-5">{{ $row['hits'] }}</td>
++                                    <td class="p-3 md:p-5">{{ $row['last_at'] }}</td>
++                                    <td class="p-3 md:p-5">
++                                        <button type="button" class="viewWinner btn-orange !w-auto px-4 text-sm"
++                                            data-rank="{{ $row['rank'] }}">
++                                            <i class="fa-solid fa-eye mr-2"></i>
++                                            View
++                                        </button>
++                                    </td>
++                                </tr>
++                            @empty
++                                <tr>
++                                    <td colspan="6" class="p-10 text-center opacity-70">
++                                        No winners yet today. Be the first on the board!
++                                    </td>
++                                </tr>
++                            @endforelse
++                            <tr id="lbNoMatch" class="hidden">
++                                <td colspan="6" class="p-10 text-center opacity-70">No players match your search.</td>
++                            </tr>
++                        </tbody>
++                    </table>
++                </div>
++            </div>
++        </div>
++    </section>
++
++    {{-- Winner modal popup --}}
++    <div id="winnerModal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-5">
++        <div
++            class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-brand-border bg-brand-surface shadow-[0_0_45px_rgba(34,197,94,.18),0_0_70px_rgba(249,115,22,.10)]">
++            <div class="h-1.5 bg-gradient-to-r from-green-500 via-orange-400 to-orange-500"></div>
++
++            <div class="p-8 relative">
++                <button id="closeWinnerModal" type="button"
++                    class="absolute right-5 top-5 text-2xl opacity-70 hover:opacity-100 hover:text-orange-400 transition">
++                    <i class="fa-solid fa-xmark"></i>
++                </button>
++
++                <div id="winnerLoading" class="py-16 text-center text-3xl text-green-500">
++                    <i class="fa-solid fa-spinner fa-spin"></i>
++                </div>
++                <div id="winnerError" class="hidden py-16 text-center opacity-70">
++                    Could not load player details. Please try again.
++                </div>
++
++                <div id="winnerContent" class="hidden">
++                    <div class="text-center">
++                        <img id="winnerAvatar" src="" alt=""
++                            class="w-28 h-28 rounded-full object-cover mx-auto border-4 border-green-500 shadow-[0_0_25px_rgba(34,197,94,.3)]">
++                        <h3 id="winnerName" class="mt-5"></h3>
++                        <span id="winnerRank"
++                            class="inline-block mt-3 px-4 py-2 rounded-full text-sm bg-green-500/20 text-green-500"></span>
++                    </div>
++
++                    <div class="grid grid-cols-2 gap-5 mt-8">
++                        <div class="rounded-2xl bg-brand-dark border border-orange-500/20 p-4">
++                            <p class="opacity-60 text-sm">Today's Winnings</p>
++                            <h5 id="winnerTotal" class="text-orange-400 mt-2"></h5>
++                        </div>
++                        <div class="rounded-2xl bg-brand-dark border border-green-500/20 p-4">
++                            <p class="opacity-60 text-sm">Wins Today</p>
++                            <h5 id="winnerHits" class="text-green-500 mt-2"></h5>
++                        </div>
++                        <div class="rounded-2xl bg-brand-dark border border-green-500/20 p-4">
++                            <p class="opacity-60 text-sm">Country</p>
++                            <h5 id="winnerCountry" class="mt-2"></h5>
++                        </div>
++                        <div class="rounded-2xl bg-brand-dark border border-orange-500/20 p-4">
++                            <p class="opacity-60 text-sm">Member Since</p>
++                            <h5 id="winnerSince" class="mt-2"></h5>
++                        </div>
++                    </div>
++
++                    <div id="winnerBreakdown" class="mt-6 space-y-3"></div>
++
++                    <div class="mt-8 text-center">
++                        <p class="font-semibold bg-gradient-to-r from-green-500 to-orange-500 bg-clip-text text-transparent">
++                            🎉 Congratulations to our lucky winner!
++                        </p>
++                    </div>
++                </div>
++            </div>
++        </div>
++    </div>
++@endsection
++
++@push('scripts')
++    <script>
++        (function() {
++            var detailUrl = @json(route('leaderboard.user', ['rank' => '__RANK__']));
++            var modal = document.getElementById('winnerModal');
++            var cache = {};
++            var xhr = null;
++
++            function show(el, on) { el.classList.toggle('hidden', !on); }
++            function openModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
++            function closeModal() {
++                if (xhr) { xhr.abort(); }
++                modal.classList.add('hidden'); modal.classList.remove('flex');
++            }
++
++            function render(d) {
++                document.getElementById('winnerAvatar').src = d.avatar;
++                document.getElementById('winnerName').textContent = d.name;
++                document.getElementById('winnerRank').textContent = 'Rank #' + d.rank + ' Today';
++                document.getElementById('winnerTotal').textContent = d.total;
++                document.getElementById('winnerHits').textContent = d.transactions;
++                document.getElementById('winnerCountry').textContent = d.country;
++                document.getElementById('winnerSince').textContent = d.member_since || '—';
++
++                var box = document.getElementById('winnerBreakdown');
++                box.innerHTML = '';
++                d.breakdown.forEach(function(b) {
++                    var row = document.createElement('div');
++                    row.className = 'flex items-center justify-between rounded-xl bg-brand-dark border border-brand-border px-4 py-3 text-sm';
++                    var l = document.createElement('span');
++                    l.textContent = b.label + ' (' + b.hits + ')';
++                    var v = document.createElement('span');
++                    v.className = 'font-semibold text-orange-400';
++                    v.textContent = b.total;
++                    row.appendChild(l); row.appendChild(v);
++                    box.appendChild(row);
++                });
++
++                show(document.getElementById('winnerLoading'), false);
++                show(document.getElementById('winnerError'), false);
++                show(document.getElementById('winnerContent'), true);
++            }
++
++            $(document).on('click', '.viewWinner', function() {
++                var rank = $(this).data('rank');
++                show(document.getElementById('winnerContent'), false);
++                show(document.getElementById('winnerError'), false);
++                show(document.getElementById('winnerLoading'), true);
++                openModal();
++
++                if (cache[rank]) { return render(cache[rank]); }
++
++                xhr = $.ajax({
++                    url: detailUrl.replace('__RANK__', rank),
++                    method: 'GET',
++                    dataType: 'json',
++                    headers: { 'Accept': 'application/json' },
++                    success: function(d) { cache[rank] = d; render(d); },
++                    error: function(_, status) {
++                        if (status === 'abort') { return; }
++                        show(document.getElementById('winnerLoading'), false);
++                        show(document.getElementById('winnerError'), true);
++                    }
++                });
++            });
++
++            $('#closeWinnerModal').on('click', closeModal);
++            $(modal).on('click', function(e) { if (e.target === modal) { closeModal(); } });
++            $(document).on('keydown', function(e) { if (e.key === 'Escape') { closeModal(); } });
++
++            // Client-side search (max 20 rows)
++            $('#lbSearch').on('input', function() {
++                var q = this.value.trim().toLowerCase(), any = false;
++                $('.lb-row').each(function() {
++                    var hit = !q || this.dataset.name.indexOf(q) !== -1;
++                    this.classList.toggle('hidden', !hit);
++                    any = any || hit;
++                });
++                show(document.getElementById('lbNoMatch'), !any && $('.lb-row').length > 0);
++            });
++
++            // Countdown to the daily reset; reload when the day rolls over.
++            var cd = document.getElementById('lbCountdown');
++            var resetAt = new Date(cd.dataset.reset).getTime();
++            function tick() {
++                var left = Math.max(0, Math.floor((resetAt - Date.now()) / 1000));
++                if (left === 0) {
++                    var k = 'lbReloaded', seen = null;
++                    try { seen = sessionStorage.getItem(k); sessionStorage.setItem(k, String(resetAt)); } catch (e) {}
++                    if (seen !== String(resetAt)) { location.reload(); }
++                    cd.textContent = '00:00:00';
++                    return;
++                }
++                var p = function(n) { return String(n).padStart(2, '0'); };
++                cd.textContent = p(Math.floor(left / 3600)) + ':' + p(Math.floor(left % 3600 / 60)) + ':' + p(left % 60);
++            }
++            tick(); setInterval(tick, 1000);
++        })();
++    </script>
++@endpush
+diff --git a/resources/views/partials/header.blade.php b/resources/views/partials/header.blade.php
+index 01176ed..970058c 100644
+--- a/resources/views/partials/header.blade.php
++++ b/resources/views/partials/header.blade.php
+@@ -47,8 +47,8 @@ class="{{ request()->routeIs('lotteries.history') ? 'text-brand-primary' : '' }}
+                         </li>
+                     @endauth --}}
+                     <li>
+-                        <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
+-                            class="{{ request()->routeIs('winner.history') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
++                        <a href="{{ route('leaderboard') }}"
++                            class="{{ request()->routeIs('leaderboard') ? 'text-brand-primary' : '' }} hover:text-brand-primary transition">
+                             Leader Board
+                         </a>
+                     </li>
+@@ -206,9 +206,9 @@ class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+             @endauth 
+             <li> --}}
+             <li>
+-                <a href="{{ auth()->check() ? route('winner.history') : route('auth.login') }}"
++                <a href="{{ route('leaderboard') }}"
+                     class="flex items-center gap-3 rounded-xl px-4 py-3 transition
+-                            {{ request()->routeIs('winner.history') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
++                            {{ request()->routeIs('leaderboard') ? 'border-green-500 bg-green-500/10 text-green-500' : 'border-transparent bg-brand-dark hover:border-green-500 hover:bg-green-500/10' }}">
+                     <i class="fa-solid fa-trophy"></i>
+                     <span> Leader Board</span>
+                 </a>
+diff --git a/routes/web.php b/routes/web.php
+index 355630a..49469ae 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -15,6 +15,7 @@
+ use App\Models\Kyc;
+ use Illuminate\Support\Facades\Auth;
+ use App\Http\Controllers\LotteryController;
++use App\Http\Controllers\LeaderboardController;
+ use App\Http\Controllers\User\InvestmentController;
+ use App\Models\Game;
+ use App\Services\Game\LimitedDrawService;
+@@ -96,6 +97,12 @@
+ })->name('reset.password');
+ 
+ 
++Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');
++Route::get('/leaderboard/user/{rank}', [LeaderboardController::class, 'show'])
++    ->whereNumber('rank')
++    ->middleware('throttle:60,1')
++    ->name('leaderboard.user');
++
+ Route::get('/winner-history', function () {
+     return view('pages.winner.winner-history');
+ })->name('winner.history');
+-- 
+2.43.0
+

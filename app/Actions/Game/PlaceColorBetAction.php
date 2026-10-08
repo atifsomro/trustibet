@@ -8,12 +8,14 @@ use App\Enums\BalanceType;
 use App\Enums\GamePlayStatus;
 use App\Enums\GameType;
 use App\Enums\WalletTransactionType;
+use App\Exceptions\ColorRoundClosedException;
 use App\Models\Game;
 use App\Models\GamePlay;
 use App\Models\GameRound;
 use App\Models\User;
 use App\Services\Game\ColorPayoutSchedule;
 use App\Services\Wallet\WalletService;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -47,10 +49,8 @@ class PlaceColorBetAction
             ]);
         }
 
-        if ($round->game_id !== $game->id || ! $round->isBetting()) {
-            throw ValidationException::withMessages([
-                'round' => 'Betting is closed for this round.',
-            ]);
+        if ($round->game_id !== $game->id || ! $round->acceptsBets()) {
+            throw new ColorRoundClosedException();
         }
 
         $colors = collect($game->configValue('colors', []))
@@ -79,76 +79,100 @@ class PlaceColorBetAction
         $idempotencyKey ??= (string) Str::uuid();
         $payout = $this->payoutSchedule->current($game);
 
-        return DB::transaction(function () use (
-            $user,
-            $game,
-            $round,
-            $color,
-            $fee,
-            $mode,
-            $payout,
-            $idempotencyKey
-        ) {
-            $existing = GamePlay::query()
-                ->where('user_id', $user->id)
-                ->where('idempotency_key', $idempotencyKey)
-                ->first();
+        try {
+            return DB::transaction(function () use (
+                $user,
+                $game,
+                $round,
+                $color,
+                $fee,
+                $mode,
+                $payout,
+                $idempotencyKey
+            ) {
+                $existing = $this->findExistingPlay($user, $idempotencyKey);
+
+                if ($existing) {
+                    return $existing;
+                }
+
+                $round = GameRound::query()
+                    ->lockForUpdate()
+                    ->findOrFail($round->id);
+
+                if (! $round->acceptsBets()) {
+                    throw new ColorRoundClosedException();
+                }
+
+                $this->assertWithinBetCaps($user, $game, $round, $fee);
+
+                $play = GamePlay::create([
+                    'uuid' => (string) Str::uuid(),
+                    'user_id' => $user->id,
+                    'game_id' => $game->id,
+                    'game_package_id' => null,
+                    'game_round_id' => $round->id,
+                    'fee_amount' => $fee,
+                    'prize_amount' => 0,
+                    'status' => GamePlayStatus::PENDING,
+                    'selection' => [
+                        'color' => $color,
+                        'mode' => $mode,
+                        'payout_rate' => $payout['rate'],
+                        'payout_multiplier' => $payout['multiplier'],
+                    ],
+                    'idempotency_key' => $idempotencyKey,
+                ]);
+
+                $betTxn = $this->walletService->debitWithTransaction(
+                    user: $user,
+                    balanceType: BalanceType::WITHDRAWABLE,
+                    transactionType: WalletTransactionType::GAME_BET,
+                    amount: $fee,
+                    reference: $play,
+                    idempotencyKey: "game-bet-{$idempotencyKey}",
+                    meta: [
+                        'game' => $game->slug,
+                        'round_id' => $round->id,
+                        'color' => $color,
+                        'payout_rate' => $payout['rate'],
+                    ]
+                );
+
+                $play->update([
+                    'bet_transaction_id' => $betTxn->id,
+                ]);
+
+                return $play->fresh(['package', 'round']);
+            }, 3);
+        } catch (QueryException $e) {
+            $existing = $this->isDuplicateKey($e)
+                ? $this->findExistingPlay($user, $idempotencyKey)
+                : null;
 
             if ($existing) {
                 return $existing;
             }
 
-            $round = GameRound::query()
-                ->lockForUpdate()
-                ->findOrFail($round->id);
+            throw $e;
+        }
+    }
 
-            if (! $round->isBetting()) {
-                throw ValidationException::withMessages([
-                    'round' => 'Betting is closed for this round.',
-                ]);
-            }
+    protected function findExistingPlay(User $user, string $idempotencyKey): ?GamePlay
+    {
+        return GamePlay::query()
+            ->where('user_id', $user->id)
+            ->where('idempotency_key', $idempotencyKey)
+            ->first()
+            ?->fresh(['package', 'round']);
+    }
 
-            $this->assertWithinBetCaps($user, $game, $round, $fee);
+    protected function isDuplicateKey(QueryException $e): bool
+    {
+        $sqlState = (string) ($e->errorInfo[0] ?? '');
+        $driverCode = (int) ($e->errorInfo[1] ?? 0);
 
-            $play = GamePlay::create([
-                'uuid' => (string) Str::uuid(),
-                'user_id' => $user->id,
-                'game_id' => $game->id,
-                'game_package_id' => null,
-                'game_round_id' => $round->id,
-                'fee_amount' => $fee,
-                'prize_amount' => 0,
-                'status' => GamePlayStatus::PENDING,
-                'selection' => [
-                    'color' => $color,
-                    'mode' => $mode,
-                    'payout_rate' => $payout['rate'],
-                    'payout_multiplier' => $payout['multiplier'],
-                ],
-                'idempotency_key' => $idempotencyKey,
-            ]);
-
-            $betTxn = $this->walletService->debitWithTransaction(
-                user: $user,
-                balanceType: BalanceType::WITHDRAWABLE,
-                transactionType: WalletTransactionType::GAME_BET,
-                amount: $fee,
-                reference: $play,
-                idempotencyKey: "game-bet-{$idempotencyKey}",
-                meta: [
-                    'game' => $game->slug,
-                    'round_id' => $round->id,
-                    'color' => $color,
-                    'payout_rate' => $payout['rate'],
-                ]
-            );
-
-            $play->update([
-                'bet_transaction_id' => $betTxn->id,
-            ]);
-
-            return $play->fresh(['package', 'round']);
-        });
+        return $sqlState === '23000' || $driverCode === 1062;
     }
 
     protected function assertWithinBetCaps(User $user, Game $game, GameRound $round, float $fee): void

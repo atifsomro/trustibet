@@ -10,17 +10,21 @@ use App\Actions\Game\PlayDiceAction;
 use App\Actions\Game\PlayScratchCardAction;
 use App\Actions\Game\SpinWheelAction;
 use App\Enums\GameType;
+use App\Exceptions\ColorRoundClosedException;
 use App\Exceptions\InsufficientBalanceException;
 use App\Models\Game;
 use App\Models\GamePackage;
 use App\Models\GamePlay;
+use App\Models\GameRound;
 use App\Models\GameSession;
+use App\Models\User;
 use App\Services\Game\ColorPayoutSchedule;
 use App\Services\Game\ColorRoundTicker;
 use App\Services\Game\FreeSpinCounter;
 use App\Services\Game\LimitedDrawService;
 use App\Services\Game\PackageCreditLedger;
 use App\Services\Wallet\WalletService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -203,50 +207,92 @@ class GameController extends Controller
 
     public function placeBet(Request $request, string $slug): JsonResponse
     {
-        $game = Game::query()->active()->where('slug', $slug)->firstOrFail();
-
-        if ($game->type !== GameType::COLOR_TRADING) {
-            throw ValidationException::withMessages([
-                'game' => 'Betting is only available for color trading.',
-            ]);
-        }
-
-        $minBet = (float) $game->configValue('min_bet', 1);
-
-        $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:'.$minBet],
-            'color' => ['required', 'string', 'max:40'],
-            'mode' => ['nullable', 'string', 'in:dollar,percent'],
-            'idempotency_key' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $round = $this->colorRoundTicker->ensureOpenRound($game);
-
         try {
-            $play = $this->placeColorBetAction->execute(
-                user: $request->user(),
-                game: $game,
-                round: $round,
-                color: $validated['color'],
-                amount: (float) $validated['amount'],
-                mode: $validated['mode'] ?? 'dollar',
-                idempotencyKey: $validated['idempotency_key'] ?? null,
+            $game = Game::query()->active()->where('slug', $slug)->firstOrFail();
+
+            if ($game->type !== GameType::COLOR_TRADING) {
+                throw ValidationException::withMessages([
+                    'game' => 'Betting is only available for color trading.',
+                ]);
+            }
+
+            $minBet = (float) $game->configValue('min_bet', 1);
+
+            $validated = $request->validate([
+                'amount' => ['required', 'numeric', 'min:'.$minBet],
+                'color' => ['required', 'string', 'max:40'],
+                'mode' => ['nullable', 'string', 'in:dollar,percent'],
+                'round_id' => ['nullable', 'integer'],
+                'idempotency_key' => ['nullable', 'string', 'max:100'],
+            ]);
+
+            $round = $this->colorRoundTicker->roundForBet(
+                $game,
+                isset($validated['round_id']) ? (int) $validated['round_id'] : null,
             );
+
+            $play = $this->commitColorBet($request->user(), $game, $round, $validated);
         } catch (InsufficientBalanceException $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
+        } catch (ValidationException $e) {
+            $message = collect($e->errors())->flatten()->first() ?: $e->getMessage();
+
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        } catch (QueryException $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'The bet could not be saved. Please try again.',
+            ], 503);
         }
 
         $balances = $this->walletService->balances($request->user());
+        $placedRound = $play->round ?? $round->fresh();
 
         return response()->json([
             'success' => true,
             'play' => $this->playPayload($play),
-            'round' => $this->roundPayload($round->fresh()),
+            'round' => $placedRound ? $this->roundPayload($placedRound) : null,
             'payout' => $this->colorPayoutSchedule->current($game),
             'balance' => (float) $balances['withdrawable'],
+        ]);
+    }
+
+    /**
+     * Save the stake on the open round. If that round is drawn while the
+     * request is in flight, the same stake is placed on the next round.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    protected function commitColorBet(User $user, Game $game, GameRound $round, array $validated): GamePlay
+    {
+        $idempotencyKey = $validated['idempotency_key'] ?? null;
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                return $this->placeColorBetAction->execute(
+                    user: $user,
+                    game: $game,
+                    round: $round,
+                    color: (string) $validated['color'],
+                    amount: (float) $validated['amount'],
+                    mode: (string) ($validated['mode'] ?? 'dollar'),
+                    idempotencyKey: is_string($idempotencyKey) ? $idempotencyKey : null,
+                );
+            } catch (ColorRoundClosedException) {
+                $round = $this->colorRoundTicker->ensureOpenRound($game);
+            }
+        }
+
+        throw ValidationException::withMessages([
+            'round' => 'Betting is closed for this round.',
         ]);
     }
 
@@ -442,7 +488,8 @@ class GameController extends Controller
             'locks_at' => $round->locks_at?->toIso8601String(),
             'ends_at' => $round->ends_at?->toIso8601String(),
             'seconds_left' => (int) $secondsLeft,
-            'betting_open' => $round->isBetting(),
+            'betting_open' => $round->acceptsBets()
+                && ($round->ends_at === null || $now->lt($round->ends_at)),
         ];
     }
 }
