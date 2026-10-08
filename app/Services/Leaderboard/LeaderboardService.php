@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\WalletTransaction;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -83,12 +84,14 @@ class LeaderboardService
             $start = Carbon::now()->startOfDay();
             $end = Carbon::now()->endOfDay();
 
+            $p = DB::getTablePrefix();
+
             $breakdown = WalletTransaction::query()
                 ->join('wallets', 'wallets.id', '=', 'wallet_transactions.wallet_id')
                 ->where('wallets.user_id', $user->id)
                 ->whereIn('wallet_transactions.type', array_column(self::countedTypes(), 'value'))
                 ->whereBetween('wallet_transactions.created_at', [$start, $end])
-                ->selectRaw('wallet_transactions.type as type, SUM(wallet_transactions.amount) as total, COUNT(*) as hits, MAX(wallet_transactions.created_at) as last_at')
+                ->selectRaw("{$p}wallet_transactions.type as type, SUM({$p}wallet_transactions.amount) as total, COUNT(*) as hits, MAX({$p}wallet_transactions.created_at) as last_at")
                 ->groupBy('wallet_transactions.type')
                 ->get()
                 ->keyBy(fn ($r) => (string) $r->type);
@@ -126,6 +129,9 @@ class LeaderboardService
         $end = $now->copy()->endOfDay();
         $types = array_column(self::countedTypes(), 'value');
 
+        // selectRaw/havingRaw bypass the query grammar, so table prefixes must be applied manually.
+        $p = DB::getTablePrefix();
+
         $base = fn () => WalletTransaction::query()
             ->join('wallets', 'wallets.id', '=', 'wallet_transactions.wallet_id')
             ->whereIn('wallet_transactions.type', $types)
@@ -133,9 +139,9 @@ class LeaderboardService
 
         // Top N users by summed amount - one grouped query, uses type/created_at indexes.
         $top = $base()
-            ->selectRaw('wallets.user_id as user_id, SUM(wallet_transactions.amount) as total, COUNT(*) as hits, MAX(wallet_transactions.created_at) as last_at')
+            ->selectRaw("{$p}wallets.user_id as user_id, SUM({$p}wallet_transactions.amount) as total, COUNT(*) as hits, MAX({$p}wallet_transactions.created_at) as last_at")
             ->groupBy('wallets.user_id')
-            ->havingRaw('SUM(wallet_transactions.amount) > 0')
+            ->havingRaw("SUM({$p}wallet_transactions.amount) > 0")
             ->orderByDesc('total')
             ->orderBy('user_id')
             ->limit(self::LIMIT)
@@ -166,7 +172,7 @@ class LeaderboardService
         }
 
         $summary = $base()
-            ->selectRaw('COUNT(DISTINCT wallets.user_id) as players, COALESCE(SUM(wallet_transactions.amount), 0) as total')
+            ->selectRaw("COUNT(DISTINCT {$p}wallets.user_id) as players, COALESCE(SUM({$p}wallet_transactions.amount), 0) as total")
             ->first();
 
         return [
