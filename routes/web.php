@@ -10,6 +10,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\WalletController;
 use App\Http\Controllers\User\KycController;
 use App\Http\Controllers\User\SecurityController;
+use App\Http\Controllers\User\SettingsController;
 use App\Services\Auth\Google2faService;
 use Illuminate\Support\Facades\Route;
 use App\Models\Kyc;
@@ -170,6 +171,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/investments/transfer-roi', [InvestmentController::class, 'transfer'])->name('investments.transfer');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])
         ->name('profile.avatar.update');
+    Route::post('/settings/password', [SettingsController::class, 'updatePassword'])
+        ->name('settings.password.update');
+    Route::post('/settings/notifications', [SettingsController::class, 'updateNotifications'])
+        ->name('settings.notifications.update');
+    Route::post('/settings/account/delete', [SettingsController::class, 'destroy'])
+        ->name('settings.account.destroy');
 
     Route::post('/security/google2fa/enable', [SecurityController::class, 'enable'])
         ->name('security.google2fa.enable');

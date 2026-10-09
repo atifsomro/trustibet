@@ -44,4 +44,20 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Transaction Reference
+    |--------------------------------------------------------------------------
+    |
+    | Public bank-style reference stored in wallet_transactions.uuid.
+    | Example: TBX-260309-A7K2M9XQ
+    |
+    */
+
+    'transaction_reference' => [
+
+        'prefix' => env('WALLET_TX_PREFIX', 'TBX'),
+
+    ],
+
 ];

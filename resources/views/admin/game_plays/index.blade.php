@@ -57,7 +57,9 @@
                         <tbody>
                             @forelse ($plays as $play)
                                 <tr>
-                                    <td title="{{ $play->uuid }}">#{{ $play->id }}</td>
+                                    <td>
+                                        <code title="#{{ $play->id }}">{{ $play->ticket_number }}</code>
+                                    </td>
                                     <td>{{ $play->user?->email ?? '—' }}</td>
                                     <td>{{ $play->game?->title ?? '—' }}</td>
                                     <td>{{ $play->package?->name ?? '—' }}</td>

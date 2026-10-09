@@ -78,11 +78,10 @@
     @if (session('success') && empty($skipFlashSwal))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: @json(session('success')),
-                    confirmButtonText: 'OK'
+                window.showThemeAlert({
+                    type: 'success',
+                    title: 'Success',
+                    message: @json(session('success'))
                 });
             });
         </script>
@@ -173,16 +172,10 @@
     @if ($errors->any() && empty($skipFlashSwal))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Validation Error',
-                    html: `
-                    <ul class="text-center">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                `
+                window.showThemeAlert({
+                    type: 'error',
+                    title: 'Please check the form',
+                    message: @json($errors->first())
                 });
             });
         </script>

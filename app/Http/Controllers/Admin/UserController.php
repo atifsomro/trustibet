@@ -122,7 +122,7 @@ class UserController extends Controller
             ->route('admin.users.google2fa.setup', $user)
             ->with(
                 'success',
-                "Scan the QR code for {$user->email} with Google Authenticator, then enter the 6-digit code. After confirmation this user cannot log in until you disable authenticator."
+                "Scan the QR code for {$user->email} with Google Authenticator, then enter the 6-digit code. After confirmation they must enter a code from your authenticator app to sign in."
             );
     }
 
@@ -163,7 +163,7 @@ class UserController extends Controller
             ->route('admin.users.index')
             ->with(
                 'success',
-                "Authenticator locked for {$user->email}. This user cannot log in until you disable authenticator."
+                "Authenticator is on for {$user->email}. They will see the code page at login. Only your authenticator can produce a valid code."
             );
     }
 
@@ -173,7 +173,7 @@ class UserController extends Controller
 
         return back()->with(
             'success',
-            "Google Authenticator disabled for {$user->email}. They can log in again."
+            "Google Authenticator disabled for {$user->email}. They can sign in without a code."
         );
     }
 }

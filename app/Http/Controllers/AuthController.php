@@ -58,13 +58,11 @@ class AuthController extends Controller
                 return $restriction;
             }
 
-            if ($lock = $this->rejectIfAdminLocked($request, $user)) {
-                return $lock;
-            }
-
             if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
                 return $challenge;
             }
+
+            $user->recordLogin($request->userAgent());
 
             return redirect()->route('home');
         }
@@ -189,28 +187,8 @@ class AuthController extends Controller
     }
 
     /**
-     * Admin-managed authenticator lock: user cannot log in at all.
-     */
-    protected function rejectIfAdminLocked(Request $request, User $user): ?RedirectResponse
-    {
-        if (! $this->google2fa->isAdminLocked($user)) {
-            return null;
-        }
-
-        Auth::logout();
-        $this->google2fa->clearSessionFlags();
-
-        return redirect()
-            ->route('auth.login')
-            ->withInput($request->only('email'))
-            ->with(
-                'error',
-                'This account is locked by administrator authenticator. Contact support to regain access.'
-            );
-    }
-
-    /**
-     * Ask for Google Authenticator after a fresh login when user-owned GA is On.
+     * Ask for Google Authenticator after a fresh login when it is confirmed.
+     * That includes authenticator the admin turned on and scanned.
      * Closing the browser keeps the session (and the passed flag), so OTP is
      * not asked again until the user logs out.
      */
@@ -364,13 +342,11 @@ class AuthController extends Controller
             return $restriction;
         }
 
-        if ($lock = $this->rejectIfAdminLocked($request, $user)) {
-            return $lock;
-        }
-
         if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
             return $challenge;
         }
+
+        $user->recordLogin($request->userAgent());
 
         return redirect()
             ->route('home')

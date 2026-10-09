@@ -370,7 +370,7 @@
                         <tr>
 
                             <td>
-                                {{ $transaction->id }}
+                                <code>{{ $transaction->reference_code }}</code>
                             </td>
 
                             <td>

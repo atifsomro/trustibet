@@ -264,6 +264,10 @@
 
             if (form.matches('[data-purchase-type="investment"]')) {
                 updateInvestmentStats(data || {});
+
+                if (data.wallet && data.wallet.withdrawable !== undefined && typeof window.syncWalletBalance === 'function') {
+                    window.syncWalletBalance(data.wallet.withdrawable);
+                }
             }
         } catch (error) {
             showPurchaseAlert({
@@ -308,4 +312,6 @@
 
         host.innerHTML = '';
     });
+
+    window.showThemeAlert = showPurchaseAlert;
 })();

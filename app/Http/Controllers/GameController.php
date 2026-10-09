@@ -458,6 +458,7 @@ class GameController extends Controller
     {
         return [
             'uuid' => $play->uuid,
+            'ticket_number' => $play->ticket_number,
             'status' => $play->status->value,
             'fee_amount' => (float) $play->fee_amount,
             'prize_amount' => (float) $play->prize_amount,

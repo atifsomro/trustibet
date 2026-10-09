@@ -53,7 +53,7 @@
 
                     <div class="flex justify-between px-6 py-5">
                         <span class="font-medium text-gray-600">Transaction ID</span>
-                        <span>#{{ $transaction->id }}</span>
+                        <span class="font-mono tracking-wide">{{ $transaction->reference_code }}</span>
                     </div>
 
                     <div class="flex justify-between px-6 py-5">

@@ -35,6 +35,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_set_at' => 'datetime',
+            'notification_preferences' => 'array',
+            'last_login_at' => 'datetime',
             'google2fa_enabled' => 'boolean',
             'google2fa_secret' => 'encrypted',
             'google2fa_confirmed_at' => 'datetime',
@@ -128,6 +131,79 @@ class User extends Authenticatable
     public function isSocialAccount(): bool
     {
         return !empty($this->provider) && !empty($this->google_id);
+    }
+
+    /**
+     * A local account always has a chosen password.
+     * A Google-only account does not until the user sets one.
+     */
+    public function hasChosenPassword(): bool
+    {
+        return $this->password_set_at !== null || ! $this->isSocialAccount();
+    }
+
+    /**
+     * @return array{email: bool, sms: bool, offers: bool, winner: bool, transaction: bool}
+     */
+    public function notificationPreferences(): array
+    {
+        $saved = is_array($this->notification_preferences) ? $this->notification_preferences : [];
+
+        return array_merge([
+            'email' => true,
+            'sms' => false,
+            'offers' => true,
+            'winner' => true,
+            'transaction' => true,
+        ], $saved);
+    }
+
+    public function recordLogin(?string $userAgent): void
+    {
+        $this->forceFill([
+            'last_login_at' => now(),
+            'last_login_user_agent' => $userAgent !== null && $userAgent !== ''
+                ? mb_substr($userAgent, 0, 512)
+                : null,
+        ])->save();
+    }
+
+    public function lastLoginLabel(): ?string
+    {
+        if ($this->last_login_at === null) {
+            return null;
+        }
+
+        return $this->last_login_at->format('d M Y').' - '.self::describeUserAgent($this->last_login_user_agent);
+    }
+
+    public static function describeUserAgent(?string $userAgent): string
+    {
+        $ua = $userAgent ?? '';
+
+        if ($ua === '') {
+            return 'Unknown device';
+        }
+
+        $browser = match (true) {
+            str_contains($ua, 'Edg/') => 'Edge',
+            str_contains($ua, 'OPR/') || str_contains($ua, 'Opera') => 'Opera',
+            str_contains($ua, 'Chrome/') => 'Chrome',
+            str_contains($ua, 'Firefox/') => 'Firefox',
+            str_contains($ua, 'Safari/') => 'Safari',
+            default => 'Browser',
+        };
+
+        $os = match (true) {
+            str_contains($ua, 'Windows') => 'Windows',
+            str_contains($ua, 'Mac OS') || str_contains($ua, 'Macintosh') => 'macOS',
+            str_contains($ua, 'Android') => 'Android',
+            str_contains($ua, 'iPhone'), str_contains($ua, 'iPad') => 'iOS',
+            str_contains($ua, 'Linux') => 'Linux',
+            default => '',
+        };
+
+        return trim($browser.' '.$os);
     }
 
     public function deposits()

@@ -12,6 +12,7 @@ use App\Models\Game;
 use App\Models\GamePackage;
 use App\Models\GamePlay;
 use App\Models\User;
+use App\Services\Game\PlayTicketReferenceGenerator;
 use App\Services\Game\WeightedPrizePicker;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,7 @@ class PlayScratchCardAction
     public function __construct(
         protected WalletService $walletService,
         protected WeightedPrizePicker $prizePicker,
+        protected PlayTicketReferenceGenerator $ticketReferenceGenerator,
     ) {
     }
 
@@ -74,7 +76,7 @@ class PlayScratchCardAction
             }
 
             $play = GamePlay::create([
-                'uuid' => (string) Str::uuid(),
+                'uuid' => $this->ticketReferenceGenerator->generate(),
                 'user_id' => $user->id,
                 'game_id' => $game->id,
                 'game_package_id' => $package->id,

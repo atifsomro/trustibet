@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\BalanceType;
 use App\Enums\WalletTransactionType;
+use App\Services\Wallet\TransactionReferenceGenerator;
 use LogicException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -69,6 +70,29 @@ class WalletTransaction extends Model
     public function reference(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Bank-style public reference (e.g. TBX-260309-A7K2M9XQ).
+     */
+    public function referenceCode(): string
+    {
+        return app(TransactionReferenceGenerator::class)->display(
+            stored: $this->uuid,
+            id: (int) $this->id,
+            createdAt: $this->created_at,
+        );
+    }
+
+    public function getReferenceCodeAttribute(): string
+    {
+        return $this->referenceCode();
     }
 
     /*
