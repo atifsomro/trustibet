@@ -25,17 +25,6 @@ class Google2faController extends Controller
             return redirect()->route('auth.login');
         }
 
-        if ($this->google2fa->isAdminLocked($user)) {
-            $this->google2fa->clearSessionFlags();
-
-            return redirect()
-                ->route('auth.login')
-                ->with(
-                    'error',
-                    'This account is locked by administrator authenticator. Contact support to regain access.'
-                );
-        }
-
         if (! $this->google2fa->requiresLoginChallenge($user)) {
             return redirect()->route('auth.login');
         }
@@ -54,15 +43,8 @@ class Google2faController extends Controller
 
         $user = $this->pendingUser($request);
 
-        if (! $user || $this->google2fa->isAdminLocked($user)) {
-            $this->google2fa->clearSessionFlags();
-
-            return redirect()
-                ->route('auth.login')
-                ->with(
-                    'error',
-                    'This account is locked by administrator authenticator. Contact support to regain access.'
-                );
+        if (! $user) {
+            return redirect()->route('auth.login');
         }
 
         if (! $this->google2fa->requiresLoginChallenge($user)) {

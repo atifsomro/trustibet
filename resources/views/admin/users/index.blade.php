@@ -95,7 +95,7 @@
                             <td>
                                 @if($user->google2fa_enabled)
                                     @if($user->google2fa_confirmed_at && $user->google2fa_managed_by_admin)
-                                        <span class="badge bg-danger mb-1 d-inline-block">Login locked</span>
+                                        <span class="badge bg-danger mb-1 d-inline-block">On (admin)</span>
                                     @elseif($user->google2fa_confirmed_at)
                                         <span class="badge bg-success mb-1 d-inline-block">On (user)</span>
                                     @elseif($user->google2fa_managed_by_admin)
@@ -110,7 +110,7 @@
                                     <form method="POST"
                                           action="{{ route('admin.users.google2fa.disable', $user) }}"
                                           class="d-inline"
-                                          onsubmit="return confirm('Disable Google Authenticator for this user? They will be able to log in again.');">
+                                          onsubmit="return confirm('Disable Google Authenticator for this user? They will sign in without a code.');">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                             Disable
@@ -121,7 +121,7 @@
                                     <form method="POST"
                                           action="{{ route('admin.users.google2fa.enable', $user) }}"
                                           class="d-inline"
-                                          onsubmit="return confirm('Enable admin authenticator for this user? You will scan the QR. After confirm, this user cannot log in until you disable it.');">
+                                          onsubmit="return confirm('Enable admin authenticator for this user? You will scan the QR. After confirm, they must enter a code from your authenticator app to sign in.');">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-outline-success">
                                             Enable

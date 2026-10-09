@@ -10,7 +10,8 @@
                 Scan this QR on behalf of
                 <strong>{{ $user->name }}</strong>
                 ({{ $user->email }}).
-                After you confirm, this user will not be able to log in until you disable authenticator.
+                After you confirm, this user sees the authenticator code page at login.
+                A correct code signs them in. Only the app you scan here can produce that code.
             </p>
         </div>
         <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary">
@@ -55,7 +56,7 @@
                                required
                                autofocus>
                         <button type="submit" class="btn btn-dark w-100 mt-3">
-                            Confirm &amp; Lock User Login
+                            Confirm &amp; Turn On
                         </button>
                     </form>
 

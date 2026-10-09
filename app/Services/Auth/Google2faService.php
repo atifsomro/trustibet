@@ -45,8 +45,9 @@ class Google2faService
     }
 
     /**
-     * Admin enable — admin will scan the QR and hold the codes.
-     * After confirm, the user cannot log in until admin disables.
+     * Admin enable — admin scans the QR and holds the authenticator.
+     * After confirm, login asks for a code. A correct code signs the user in.
+     * The user does not have the secret, so they cannot produce that code.
      */
     public function enableForAdmin(User $user): User
     {
@@ -128,14 +129,6 @@ class Google2faService
     }
 
     /**
-     * Admin finished QR setup — user account is locked out of login.
-     */
-    public function isAdminLocked(User $user): bool
-    {
-        return $this->isConfirmed($user) && $this->isManagedByAdmin($user);
-    }
-
-    /**
      * Fully active authenticator (enabled and confirmed).
      */
     public function isConfirmed(User $user): bool
@@ -146,11 +139,12 @@ class Google2faService
     }
 
     /**
-     * User-owned GA: ask for OTP on login (not admin lock).
+     * Ask for a code on login when authenticator is confirmed.
+     * Admin-managed accounts use the same page: only a correct code signs in.
      */
     public function requiresLoginChallenge(User $user): bool
     {
-        return $this->isConfirmed($user) && ! $this->isManagedByAdmin($user);
+        return $this->isConfirmed($user);
     }
 
     public function markSessionPassed(User $user): void

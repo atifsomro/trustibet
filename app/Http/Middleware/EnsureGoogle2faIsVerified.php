@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * - Admin-locked accounts cannot stay logged in.
- * - User-owned GA requires a one-time OTP after fresh login.
- * - Closing/reopening the browser keeps SESSION_PASSED, so OTP is not asked again.
+ * Confirmed authenticator (user-owned or admin-scanned) requires a one-time
+ * OTP after fresh login. A correct code signs the user in.
+ * Closing/reopening the browser keeps SESSION_PASSED, so OTP is not asked again.
  */
 class EnsureGoogle2faIsVerified
 {
@@ -36,18 +36,6 @@ class EnsureGoogle2faIsVerified
 
         if (! $user instanceof User) {
             return $next($request);
-        }
-
-        if ($this->google2fa->isAdminLocked($user)) {
-            Auth::guard('web')->logout();
-            $this->google2fa->clearSessionFlags();
-
-            return redirect()
-                ->route('auth.login')
-                ->with(
-                    'error',
-                    'This account is locked by administrator authenticator. Contact support to regain access.'
-                );
         }
 
         if (! $this->google2fa->requiresLoginChallenge($user)) {
