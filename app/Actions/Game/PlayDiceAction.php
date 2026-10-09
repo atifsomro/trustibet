@@ -13,6 +13,7 @@ use App\Models\GamePackage;
 use App\Models\GamePlay;
 use App\Models\User;
 use App\Services\Game\PackageCreditLedger;
+use App\Services\Game\PlayTicketReferenceGenerator;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -23,6 +24,7 @@ class PlayDiceAction
     public function __construct(
         protected WalletService $walletService,
         protected PackageCreditLedger $packageCredits,
+        protected PlayTicketReferenceGenerator $ticketReferenceGenerator,
     ) {
     }
 
@@ -100,7 +102,7 @@ class PlayDiceAction
             }
 
             $play = GamePlay::create([
-                'uuid' => (string) Str::uuid(),
+                'uuid' => $this->ticketReferenceGenerator->generate(),
                 'user_id' => $user->id,
                 'game_id' => $game->id,
                 'game_package_id' => $package->id,

@@ -312,4 +312,6 @@
 
         host.innerHTML = '';
     });
+
+    window.showThemeAlert = showPurchaseAlert;
 })();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\GamePlayStatus;
+use App\Services\Game\PlayTicketReferenceGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -68,5 +69,22 @@ class GamePlay extends Model
     public function winTransaction(): BelongsTo
     {
         return $this->belongsTo(WalletTransaction::class, 'win_transaction_id');
+    }
+
+    /**
+     * Bank-style public ticket (e.g. TKT-260309-A7K2M9XQ).
+     */
+    public function ticketNumber(): string
+    {
+        return app(PlayTicketReferenceGenerator::class)->display(
+            stored: $this->uuid,
+            id: (int) $this->id,
+            createdAt: $this->created_at,
+        );
+    }
+
+    public function getTicketNumberAttribute(): string
+    {
+        return $this->ticketNumber();
     }
 }

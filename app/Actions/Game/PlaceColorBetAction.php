@@ -14,6 +14,7 @@ use App\Models\GamePlay;
 use App\Models\GameRound;
 use App\Models\User;
 use App\Services\Game\ColorPayoutSchedule;
+use App\Services\Game\PlayTicketReferenceGenerator;
 use App\Services\Wallet\WalletService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +26,7 @@ class PlaceColorBetAction
     public function __construct(
         protected WalletService $walletService,
         protected ColorPayoutSchedule $payoutSchedule,
+        protected PlayTicketReferenceGenerator $ticketReferenceGenerator,
     ) {
     }
 
@@ -107,7 +109,7 @@ class PlaceColorBetAction
                 $this->assertWithinBetCaps($user, $game, $round, $fee);
 
                 $play = GamePlay::create([
-                    'uuid' => (string) Str::uuid(),
+                    'uuid' => $this->ticketReferenceGenerator->generate(),
                     'user_id' => $user->id,
                     'game_id' => $game->id,
                     'game_package_id' => null,

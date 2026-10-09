@@ -60,6 +60,7 @@ class Google2faController extends Controller
 
         Auth::login($user, true);
         $request->session()->regenerate();
+        $user->recordLogin($request->userAgent());
 
         return redirect()
             ->route('home')

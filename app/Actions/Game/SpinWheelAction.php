@@ -14,6 +14,7 @@ use App\Models\GamePlay;
 use App\Models\User;
 use App\Services\Game\FreeSpinCounter;
 use App\Services\Game\PackageCreditLedger;
+use App\Services\Game\PlayTicketReferenceGenerator;
 use App\Services\Game\WeightedPrizePicker;
 use App\Services\Wallet\WalletService;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,7 @@ class SpinWheelAction
         protected WeightedPrizePicker $prizePicker,
         protected FreeSpinCounter $freeSpinCounter,
         protected PackageCreditLedger $packageCredits,
+        protected PlayTicketReferenceGenerator $ticketReferenceGenerator,
     ) {
     }
 
@@ -97,7 +99,7 @@ class SpinWheelAction
             }
 
             $play = GamePlay::create([
-                'uuid' => (string) Str::uuid(),
+                'uuid' => $this->ticketReferenceGenerator->generate(),
                 'user_id' => $user->id,
                 'game_id' => $game->id,
                 'game_package_id' => $package->id,

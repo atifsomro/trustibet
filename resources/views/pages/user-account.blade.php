@@ -273,26 +273,26 @@
                                 Wallet
                             </button>
 
-                            {{-- <button type="button"
+                            <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="entries">
                                 <i class="fa-solid fa-ticket"></i>
                                 My Entries
-                            </button> --}}
+                            </button>
 
-                            {{-- <button type="button"
+                            <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="winnings">
                                 <i class="fa-solid fa-trophy"></i>
                                 Winnings
-                            </button> --}}
+                            </button>
 
-                            {{-- <button type="button"
+                            <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="transactions">
                                 <i class="fa-solid fa-credit-card"></i>
                                 Transactions
-                            </button> --}}
+                            </button>
 
                             <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
@@ -321,12 +321,12 @@
                                 Security
                             </button>
 
-                            {{-- <button type="button"
+                            <button type="button"
                                 class="account-tab-btn flex w-full items-center gap-3 px-4 py-3 rounded-xl hover:bg-brand-dark"
                                 data-tab="settings">
                                 <i class="fa-solid fa-gear"></i>
                                 Settings
-                            </button> --}}
+                            </button>
 
                             <a href="#"
                                 class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 text-red-400">
@@ -632,7 +632,20 @@
                 });
             });
 
-            selectTab(window.location.hash.slice(1) || 'dashboard');
+            const params = new URLSearchParams(window.location.search);
+            const hasEntriesFilters = (params.has('q') && params.get('q') !== '')
+                || (params.has('entries_page') && params.get('entries_page') !== '');
+            const hasWinningsFilters = params.has('winnings_page') && params.get('winnings_page') !== '';
+            const txKeys = ['tx_q', 'tx_type', 'tx_status', 'tx_date', 'transactions_page'];
+            const hasTransactionsFilters = txKeys.some(function(key) {
+                return params.has(key) && params.get(key) !== '';
+            });
+            const initialTab = window.location.hash.slice(1)
+                || (hasEntriesFilters ? 'entries'
+                    : (hasWinningsFilters ? 'winnings'
+                        : (hasTransactionsFilters ? 'transactions' : 'dashboard')));
+
+            selectTab(initialTab);
         });
     </script>
     <script>

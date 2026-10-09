@@ -62,6 +62,8 @@ class AuthController extends Controller
                 return $challenge;
             }
 
+            $user->recordLogin($request->userAgent());
+
             return redirect()->route('home');
         }
         return back()
@@ -343,6 +345,8 @@ class AuthController extends Controller
         if ($challenge = $this->beginGoogle2faChallenge($request, $user)) {
             return $challenge;
         }
+
+        $user->recordLogin($request->userAgent());
 
         return redirect()
             ->route('home')

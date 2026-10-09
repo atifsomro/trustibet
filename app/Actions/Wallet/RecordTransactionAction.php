@@ -9,13 +9,18 @@ use App\Enums\WalletTransactionType;
 use App\Models\Bonus;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\Wallet\TransactionReferenceGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 
 class RecordTransactionAction
 {
+    public function __construct(
+        protected TransactionReferenceGenerator $referenceGenerator,
+    ) {
+    }
+
     /**
      * Create a wallet ledger transaction.
      *
@@ -63,7 +68,7 @@ class RecordTransactionAction
 
         $transaction = new WalletTransaction();
 
-        $transaction->uuid = (string) Str::uuid();
+        $transaction->uuid = $this->referenceGenerator->generate();
         $transaction->wallet_id = $wallet->id;
         $transaction->bonus_id = $bonus?->id;
         $transaction->balance_type = $balanceType;
@@ -86,7 +91,7 @@ class RecordTransactionAction
 
         Log::info('Wallet transaction recorded.', [
             'transaction_id' => $transaction->id,
-            'uuid' => $transaction->uuid,
+            'reference' => $transaction->uuid,
 
             'wallet_id' => $wallet->id,
             'user_id' => $wallet->user_id,

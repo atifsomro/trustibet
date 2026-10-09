@@ -179,7 +179,9 @@
 
                         <td class="px-6 py-5">
 
-                            {{ $transaction->id }}
+                            <code class="font-mono text-sm tracking-wide">
+                                {{ $transaction->reference_code }}
+                            </code>
 
                         </td>
 
